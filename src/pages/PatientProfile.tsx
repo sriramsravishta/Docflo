@@ -720,7 +720,6 @@ export default function PatientProfile() {
                               <p className="font-medium text-gray-900 text-sm">{med.name}</p>
                               <p className="text-gray-600 text-xs mt-1">{med.frequency} • {med.duration} • {med.timing}</p>
                             </div>
-                        </div>
                       ))}
                     </div>
                   </div>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Mic, Upload, CheckCircle } from 'lucide-react';
+import { getFollowUpById, updateFollowUp } from '../lib/database';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -9,12 +10,14 @@ const languages = [
 ];
 
 export default function FollowUpForm() {
-  const { patientId } = useParams();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [followUpId, setFollowUpId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     overallFeeling: '',
@@ -26,6 +29,55 @@ export default function FollowUpForm() {
   });
 
   const totalSteps = 8;
+
+  useEffect(() => {
+    loadFollowUp();
+  }, []);
+
+  const loadFollowUp = async () => {
+    try {
+      setLoading(true);
+      const followUpIdParam = searchParams.get('followUpId');
+
+      if (followUpIdParam) {
+        const followUp = await getFollowUpById(followUpIdParam);
+        setFollowUpId(followUp.id);
+
+        if (followUp.status === 'Submitted') {
+          setIsSubmitted(true);
+        }
+
+        if (followUp.form_data) {
+          setFormData({
+            overallFeeling: followUp.form_data.overallFeeling || '',
+            problemStatus: followUp.form_data.problemStatus || '',
+            newSymptoms: followUp.form_data.newSymptoms || '',
+            medicationAdherence: followUp.form_data.medicationAdherence || '',
+            newReports: [],
+            lifestyleChanges: followUp.form_data.lifestyleChanges || '',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading follow-up:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateFormField = async (fieldName: string, value: any) => {
+    if (!followUpId) return;
+
+    const updatedFormData = { ...formData, [fieldName]: value };
+
+    try {
+      await updateFollowUp(followUpId, {
+        form_data: updatedFormData
+      });
+    } catch (error) {
+      console.error('Error updating form field:', error);
+    }
+  };
 
   const handleNext = () => {
     setCurrentStep(currentStep + 1);
@@ -41,7 +93,7 @@ export default function FollowUpForm() {
     }
   };
 
-  const handleVoiceInput = (field: string) => {
+  const handleVoiceInput = () => {
     setIsRecording(true);
     setTimeout(() => {
       setIsRecording(false);
@@ -52,10 +104,39 @@ export default function FollowUpForm() {
     setShowConfirmation(true);
   };
 
-  const confirmSubmit = () => {
-    setShowConfirmation(false);
-    setIsSubmitted(true);
+  const confirmSubmit = async () => {
+    if (!followUpId) return;
+
+    try {
+      const aiSummary = `Dummy AI analysis of follow-up form.\n\nOverall Feeling: ${formData.overallFeeling}\n\nProblem Status: ${formData.problemStatus}\n\nNew Symptoms: ${formData.newSymptoms || 'None reported'}\n\nMedication Adherence: ${formData.medicationAdherence}\n\nLifestyle Changes: ${formData.lifestyleChanges || 'None reported'}\n\nAssessment: Patient shows signs of recovery. Continue current treatment plan and monitor for any changes.`;
+
+      await updateFollowUp(followUpId, {
+        status: 'Submitted',
+        form_data: {
+          overallFeeling: formData.overallFeeling,
+          problemStatus: formData.problemStatus,
+          newSymptoms: formData.newSymptoms,
+          medicationAdherence: formData.medicationAdherence,
+          lifestyleChanges: formData.lifestyleChanges
+        },
+        ai_summary: aiSummary
+      });
+
+      setShowConfirmation(false);
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting follow-up:', error);
+      alert('Failed to submit form. Please try again.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB]"></div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (
@@ -128,13 +209,17 @@ export default function FollowUpForm() {
               <div className="relative">
                 <textarea
                   value={formData.overallFeeling}
-                  onChange={(e) => setFormData({ ...formData, overallFeeling: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, overallFeeling: value });
+                    updateFormField('overallFeeling', value);
+                  }}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe how you're feeling..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('overallFeeling')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -153,13 +238,17 @@ export default function FollowUpForm() {
               <div className="relative">
                 <textarea
                   value={formData.problemStatus}
-                  onChange={(e) => setFormData({ ...formData, problemStatus: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, problemStatus: value });
+                    updateFormField('problemStatus', value);
+                  }}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe the status of your earlier problems..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('problemStatus')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -178,13 +267,17 @@ export default function FollowUpForm() {
               <div className="relative">
                 <textarea
                   value={formData.newSymptoms}
-                  onChange={(e) => setFormData({ ...formData, newSymptoms: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, newSymptoms: value });
+                    updateFormField('newSymptoms', value);
+                  }}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe any new symptoms..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('newSymptoms')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -203,13 +296,17 @@ export default function FollowUpForm() {
               <div className="relative">
                 <textarea
                   value={formData.medicationAdherence}
-                  onChange={(e) => setFormData({ ...formData, medicationAdherence: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, medicationAdherence: value });
+                    updateFormField('medicationAdherence', value);
+                  }}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Let your doctor know about medication adherence..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('medicationAdherence')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -255,13 +352,17 @@ export default function FollowUpForm() {
               <div className="relative">
                 <textarea
                   value={formData.lifestyleChanges}
-                  onChange={(e) => setFormData({ ...formData, lifestyleChanges: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, lifestyleChanges: value });
+                    updateFormField('lifestyleChanges', value);
+                  }}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe any lifestyle changes..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('lifestyleChanges')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}

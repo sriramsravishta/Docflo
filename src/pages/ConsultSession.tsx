@@ -3,55 +3,123 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Mic, Square, Play, Pause } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { createConsult, updateConsult } from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ConsultSession() {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showDraft, setShowDraft] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [consultId, setConsultId] = useState<string | null>(null);
 
   const [draftData, setDraftData] = useState({
-    diagnosis: 'Hypertension - Stage 1',
-    history: 'Patient has been experiencing elevated blood pressure readings for the past 6 months. Family history of cardiovascular disease.',
-    chiefComplaints: 'Headaches, dizziness, occasional chest discomfort',
-    treatmentSuggested: 'Lifestyle modifications including reduced sodium intake, regular exercise, and stress management',
-    medications: [
-      { name: 'Amlodipine', frequency: 'Once daily', duration: '30 days', timing: 'Morning' },
-    ],
-    keyPersonalInsights: 'Patient is under significant work stress. Recent job change. Lives alone.',
-    followupRecommendations: 'Follow-up after 2 weeks for blood pressure monitoring',
+    diagnosis: '',
+    history: '',
+    chiefComplaints: '',
+    treatmentSuggested: '',
+    medications: [{ name: '', frequency: '', duration: '', timing: '' }],
+    keyPersonalInsights: '',
+    followupRecommendations: '',
   });
 
   const handleStartRecording = () => {
     setIsRecording(true);
     setIsPaused(false);
+    const interval = setInterval(() => {
+      setRecordingTime(prev => {
+        if (!isPaused) return prev + 1;
+        return prev;
+      });
+    }, 1000);
+    (window as any).recordingInterval = interval;
   };
 
   const handlePause = () => {
     setIsPaused(!isPaused);
   };
 
-  const handleEndRecording = () => {
+  const handleEndRecording = async () => {
     setIsRecording(false);
     setIsAnalyzing(true);
+    clearInterval((window as any).recordingInterval);
 
-    setTimeout(() => {
+    try {
+      const consult = await createConsult(
+        user!.id,
+        patientId!,
+        `dummy-recording-url/recording-${Date.now()}.webm`
+      );
+
+      setConsultId(consult.id);
+
+      setTimeout(async () => {
+        const dummyAISummary = {
+          diagnosis: 'General fatigue and mild symptoms',
+          history: 'Reported mild symptoms over the past week',
+          chief_complaints: 'Weakness, headache, and general discomfort',
+          treatment_suggested: 'Hydration, rest, and over-the-counter pain relief',
+          medications: [
+            { name: 'Paracetamol', frequency: 'Twice daily', duration: '5 days', timing: 'After meals' }
+          ],
+          key_personal_insights: 'Patient seems stressed due to work. Consider follow-up for stress management.',
+          followup_recommendations: 'Review after 7 days to assess progress'
+        };
+
+        await updateConsult(consult.id, {
+          recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+          consult_summary_ai: dummyAISummary
+        });
+
+        setDraftData({
+          diagnosis: dummyAISummary.diagnosis,
+          history: dummyAISummary.history,
+          chiefComplaints: dummyAISummary.chief_complaints,
+          treatmentSuggested: dummyAISummary.treatment_suggested,
+          medications: dummyAISummary.medications,
+          keyPersonalInsights: dummyAISummary.key_personal_insights,
+          followupRecommendations: dummyAISummary.followup_recommendations
+        });
+
+        setIsAnalyzing(false);
+        setShowDraft(true);
+      }, 3000);
+    } catch (error) {
+      console.error('Error creating consultation:', error);
       setIsAnalyzing(false);
-      setShowDraft(true);
-    }, 3000);
+      alert('Failed to save consultation');
+    }
   };
 
   const handleApprove = () => {
     setShowConfirmation(true);
   };
 
-  const handleConfirmApprove = () => {
-    setShowConfirmation(false);
-    navigate(`/patient/${patientId}`);
+  const handleConfirmApprove = async () => {
+    try {
+      await updateConsult(consultId!, {
+        consult_summary_final: {
+          diagnosis: draftData.diagnosis,
+          history: draftData.history,
+          chief_complaints: draftData.chiefComplaints,
+          treatment_suggested: draftData.treatmentSuggested,
+          medications: draftData.medications,
+          key_personal_insights: draftData.keyPersonalInsights,
+          followup_recommendations: draftData.followupRecommendations
+        }
+      });
+
+      setShowConfirmation(false);
+      navigate(`/patient/${patientId}`);
+    } catch (error) {
+      console.error('Error approving consultation:', error);
+      alert('Failed to approve consultation');
+    }
   };
 
   const addMedication = () => {
@@ -234,12 +302,14 @@ export default function ConsultSession() {
                       className="input-field"
                     />
                   </div>
-                  <button
-                    onClick={() => removeMedication(index)}
-                    className="text-sm text-red-600 hover:underline mt-2"
-                  >
-                    Remove
-                  </button>
+                  {draftData.medications.length > 1 && (
+                    <button
+                      onClick={() => removeMedication(index)}
+                      className="text-sm text-red-600 hover:underline mt-2"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

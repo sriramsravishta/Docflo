@@ -1,90 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Send, Paperclip, MessageSquare } from 'lucide-react';
-
-const mockThreads = [
-  {
-    id: '1',
-    messages: [
-      { sender: 'patient', content: 'Doctor, I have been experiencing severe headaches for the past two days.', timestamp: '2025-10-04 10:30 AM' },
-      { sender: 'doctor', content: 'I understand. Can you describe the type of pain? Is it throbbing or constant?', timestamp: '2025-10-04 11:15 AM' },
-      { sender: 'patient', content: 'It is a throbbing pain, especially on the left side of my head.', timestamp: '2025-10-04 11:20 AM' },
-    ],
-    status: 'active',
-  },
-];
+import { getQueries, getMessages, createMessage, createQuery } from '../lib/database';
 
 export default function PatientQueries() {
-  const { patientId } = useParams();
-  const [threads, setThreads] = useState(mockThreads);
+  const { patientId, doctorId } = useParams();
+  const [threads, setThreads] = useState<any[]>([]);
   const [selectedThread, setSelectedThread] = useState<any>(null);
   const [newMessage, setNewMessage] = useState('');
   const [showNewThread, setShowNewThread] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSendMessage = () => {
+  useEffect(() => {
+    loadThreads();
+  }, []);
+
+  useEffect(() => {
+    if (selectedThread) {
+      loadMessages(selectedThread.id);
+    }
+  }, [selectedThread]);
+
+  const loadThreads = async () => {
+    try {
+      setLoading(true);
+      const allQueries = await getQueries();
+      const patientQueries = allQueries.filter(q => q.patient_id === patientId);
+      setThreads(patientQueries);
+    } catch (error) {
+      console.error('Error loading queries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMessages = async (queryId: string) => {
+    try {
+      const data = await getMessages(queryId);
+      setMessages(data);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    if (selectedThread) {
-      const updatedThreads = threads.map(thread => {
-        if (thread.id === selectedThread.id) {
-          return {
-            ...thread,
-            messages: [
-              ...thread.messages,
-              {
-                sender: 'patient',
-                content: newMessage,
-                timestamp: new Date().toLocaleString(),
-              },
-            ],
-          };
-        }
-        return thread;
-      });
-      setThreads(updatedThreads);
-      setSelectedThread({
-        ...selectedThread,
-        messages: [
-          ...selectedThread.messages,
-          {
-            sender: 'patient',
-            content: newMessage,
-            timestamp: new Date().toLocaleString(),
-          },
-        ],
-      });
-    } else {
-      const newThread = {
-        id: (threads.length + 1).toString(),
-        messages: [
-          {
-            sender: 'patient',
-            content: newMessage,
-            timestamp: new Date().toLocaleString(),
-          },
-        ],
-        status: 'active',
-      };
-      setThreads([newThread, ...threads]);
-      setSelectedThread(newThread);
-      setShowNewThread(false);
+    try {
+      if (selectedThread) {
+        await createMessage(selectedThread.id, 'Patient', newMessage);
+        setNewMessage('');
+        await loadMessages(selectedThread.id);
+      } else {
+        const newQuery = await createQuery(doctorId!, patientId!, newMessage);
+        setShowNewThread(false);
+        setNewMessage('');
+        await loadThreads();
+        setSelectedThread(newQuery);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
     }
-
-    setNewMessage('');
   };
 
   const handleEndChat = () => {
-    if (selectedThread) {
-      const updatedThreads = threads.map(thread => {
-        if (thread.id === selectedThread.id) {
-          return { ...thread, status: 'resolved' };
-        }
-        return thread;
-      });
-      setThreads(updatedThreads);
-      setSelectedThread(null);
-    }
+    setSelectedThread(null);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB]"></div>
+      </div>
+    );
+  }
 
   if (threads.length === 0 && !showNewThread) {
     return (
@@ -122,25 +117,33 @@ export default function PatientQueries() {
 
         <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
-            {selectedThread.messages.map((message: any, index: number) => (
+            <div className="flex justify-start">
+              <div className="max-w-md rounded-lg p-4 bg-white border border-gray-200 text-gray-900">
+                <p>{selectedThread.initial_query}</p>
+                <p className="text-xs mt-2 text-gray-500">
+                  {formatDate(selectedThread.created_at)}
+                </p>
+              </div>
+            </div>
+            {messages.map((message: any) => (
               <div
-                key={index}
-                className={`flex ${message.sender === 'patient' ? 'justify-end' : 'justify-start'}`}
+                key={message.id}
+                className={`flex ${message.sender_type === 'Patient' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-md rounded-lg p-4 ${
-                    message.sender === 'patient'
+                    message.sender_type === 'Patient'
                       ? 'bg-[#024CDB] text-white'
                       : 'bg-white border border-gray-200 text-gray-900'
                   }`}
                 >
-                  <p>{message.content}</p>
+                  <p>{message.message}</p>
                   <p
                     className={`text-xs mt-2 ${
-                      message.sender === 'patient' ? 'text-blue-100' : 'text-gray-500'
+                      message.sender_type === 'Patient' ? 'text-blue-100' : 'text-gray-500'
                     }`}
                   >
-                    {message.timestamp}
+                    {formatDate(message.created_at)}
                   </p>
                 </div>
               </div>
@@ -190,20 +193,20 @@ export default function PatientQueries() {
             >
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm text-gray-500">
-                  {thread.messages[thread.messages.length - 1].timestamp}
+                  {formatDate(thread.updated_at)}
                 </p>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    thread.status === 'active'
+                    thread.status === 'Open'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {thread.status === 'active' ? 'Active' : 'Resolved'}
+                  {thread.status === 'Open' ? 'Active' : 'Resolved'}
                 </span>
               </div>
               <p className="text-gray-900 line-clamp-2">
-                {thread.messages[thread.messages.length - 1].content}
+                {thread.initial_query}
               </p>
             </div>
           ))}

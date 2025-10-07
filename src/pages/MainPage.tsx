@@ -5,11 +5,9 @@ import Navbar from '../components/Navbar';
 import PatientCard from '../components/PatientCard';
 import Modal from '../components/Modal';
 import { createPatient, getPatients, getPreConsults } from '../lib/database';
-import { useAuth } from '../contexts/AuthContext';
 
 export default function MainPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [loading, setLoading] = useState(true);

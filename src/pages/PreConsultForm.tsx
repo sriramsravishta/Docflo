@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Mic, Upload, CheckCircle } from 'lucide-react';
+import { getPreConsultById, updatePreConsult } from '../lib/database';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -10,11 +11,14 @@ const languages = [
 
 export default function PreConsultForm() {
   const { patientId } = useParams();
+  const preConsultId = patientId;
+  const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [formData, setFormData] = useState({
     documents: [] as File[],
@@ -27,8 +31,67 @@ export default function PreConsultForm() {
 
   const totalSteps = 7;
 
-  const handleNext = () => {
-    if (currentStep === 2) {
+  useEffect(() => {
+    loadPreConsult();
+  }, [preConsultId]);
+
+  const loadPreConsult = async () => {
+    try {
+      setLoading(true);
+      const data = await getPreConsultById(preConsultId!);
+
+      if (data.status === 'Submitted') {
+        setIsSubmitted(true);
+      }
+
+      if (data.form_data && typeof data.form_data === 'object') {
+        const savedData = data.form_data as any;
+        setFormData({
+          documents: [],
+          visitReason: savedData.visitReason || '',
+          isFirstVisit: savedData.isFirstVisit || '',
+          symptoms: savedData.symptoms || '',
+          allergies: savedData.allergies || '',
+          habits: savedData.habits || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading pre-consult:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 1 && formData.documents.length > 0) {
+      setIsAnalyzing(true);
+
+      const dummyDocUrls = formData.documents.map((file) => ({
+        url: `dummy-storage-url/${file.name}`,
+        name: file.name,
+        type: file.type
+      }));
+
+      await updatePreConsult(preConsultId!, {
+        documents_uploaded: dummyDocUrls,
+        doc_summary: 'Dummy summary of uploaded documents.',
+        form_data: {
+          questions: [
+            { id: 1, text: 'How are you feeling today?', type: 'text', answer: '' }
+          ],
+          visitReason: formData.visitReason,
+          isFirstVisit: formData.isFirstVisit,
+          symptoms: formData.symptoms,
+          allergies: formData.allergies,
+          habits: formData.habits
+        }
+      });
+
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setCurrentStep(currentStep + 1);
+      }, 2000);
+    } else if (currentStep === 2) {
       setTimeout(() => setCurrentStep(currentStep + 1), 1000);
     } else {
       setCurrentStep(currentStep + 1);
@@ -45,7 +108,7 @@ export default function PreConsultForm() {
     }
   };
 
-  const handleVoiceInput = (field: string) => {
+  const handleVoiceInput = () => {
     setIsRecording(true);
     setTimeout(() => {
       setIsRecording(false);
@@ -56,10 +119,56 @@ export default function PreConsultForm() {
     setShowConfirmation(true);
   };
 
-  const confirmSubmit = () => {
-    setShowConfirmation(false);
-    setIsSubmitted(true);
+  const confirmSubmit = async () => {
+    try {
+      await updatePreConsult(preConsultId!, {
+        status: 'Submitted',
+        form_data: {
+          visitReason: formData.visitReason,
+          isFirstVisit: formData.isFirstVisit,
+          symptoms: formData.symptoms,
+          allergies: formData.allergies,
+          habits: formData.habits
+        },
+        ai_summary: `Dummy AI analysis of form answers.\n\nVisit Reason: ${formData.visitReason}\nFirst Visit: ${formData.isFirstVisit}\nSymptoms: ${formData.symptoms}\nAllergies: ${formData.allergies || 'None reported'}\nHabits: ${formData.habits || 'None reported'}`
+      });
+      setShowConfirmation(false);
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Failed to submit form. Please try again.');
+    }
   };
+
+  const updateFormField = async (field: string, value: string) => {
+    const updatedData = { ...formData, [field]: value };
+    setFormData(updatedData);
+
+    try {
+      await updatePreConsult(preConsultId!, {
+        form_data: {
+          visitReason: updatedData.visitReason,
+          isFirstVisit: updatedData.isFirstVisit,
+          symptoms: updatedData.symptoms,
+          allergies: updatedData.allergies,
+          habits: updatedData.habits
+        }
+      });
+    } catch (error) {
+      console.error('Error auto-saving:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading form...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (
@@ -70,6 +179,17 @@ export default function PreConsultForm() {
           <p className="text-gray-600">
             Your information has been sent to your doctor. You'll be called when it's your turn.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAnalyzing) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
+          <p className="text-gray-600">Analyzing documents...</p>
         </div>
       </div>
     );
@@ -144,6 +264,9 @@ export default function PreConsultForm() {
               {formData.documents.length > 0 && (
                 <div className="mt-4">
                   <p className="text-sm text-gray-600 mb-2">{formData.documents.length} file(s) selected</p>
+                  {formData.documents.map((file, idx) => (
+                    <div key={idx} className="text-sm text-[#024CDB]">{file.name}</div>
+                  ))}
                 </div>
               )}
             </div>
@@ -166,13 +289,13 @@ export default function PreConsultForm() {
               <div className="relative">
                 <textarea
                   value={formData.visitReason}
-                  onChange={(e) => setFormData({ ...formData, visitReason: e.target.value })}
+                  onChange={(e) => updateFormField('visitReason', e.target.value)}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe your reason for visiting..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('visitReason')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -191,7 +314,7 @@ export default function PreConsultForm() {
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    setFormData({ ...formData, isFirstVisit: 'yes' });
+                    updateFormField('isFirstVisit', 'yes');
                     handleNext();
                   }}
                   className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-[#024CDB] transition-colors"
@@ -200,7 +323,7 @@ export default function PreConsultForm() {
                 </button>
                 <button
                   onClick={() => {
-                    setFormData({ ...formData, isFirstVisit: 'no' });
+                    updateFormField('isFirstVisit', 'no');
                     handleNext();
                   }}
                   className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-[#024CDB] transition-colors"
@@ -219,13 +342,13 @@ export default function PreConsultForm() {
               <div className="relative">
                 <textarea
                   value={formData.symptoms}
-                  onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+                  onChange={(e) => updateFormField('symptoms', e.target.value)}
                   className="input-field min-h-32"
                   rows={5}
                   placeholder="Describe your symptoms..."
                 />
                 <button
-                  onClick={() => handleVoiceInput('symptoms')}
+                  onClick={() => handleVoiceInput()}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                     isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -245,13 +368,13 @@ export default function PreConsultForm() {
                 <div className="relative">
                   <textarea
                     value={formData.allergies}
-                    onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                    onChange={(e) => updateFormField('allergies', e.target.value)}
                     className="input-field min-h-24"
                     rows={3}
                     placeholder="List any allergies..."
                   />
                   <button
-                    onClick={() => handleVoiceInput('allergies')}
+                    onClick={() => handleVoiceInput()}
                     className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                       isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                     }`}
@@ -271,13 +394,13 @@ export default function PreConsultForm() {
                 <div className="relative">
                   <textarea
                     value={formData.habits}
-                    onChange={(e) => setFormData({ ...formData, habits: e.target.value })}
+                    onChange={(e) => updateFormField('habits', e.target.value)}
                     className="input-field min-h-24"
                     rows={3}
                     placeholder="Describe any relevant habits or factors..."
                   />
                   <button
-                    onClick={() => handleVoiceInput('habits')}
+                    onClick={() => handleVoiceInput()}
                     className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
                       isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                     }`}
@@ -301,6 +424,7 @@ export default function PreConsultForm() {
             <button
               onClick={handleNext}
               className="btn-primary flex-1 flex items-center justify-center space-x-2"
+              disabled={currentStep === 1 && formData.documents.length === 0}
             >
               <span>Next</span>
               <ChevronRight className="w-5 h-5" />

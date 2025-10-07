@@ -12,8 +12,7 @@ import {
   getFollowUps,
   createPreConsult,
   createFollowUp,
-  getQueries,
-  getMessages
+  getQueries
 } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -90,7 +89,7 @@ export default function PatientProfile() {
         alert(`Pre-consult form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
       } else {
         const followUp = await createFollowUp(user!.id, patientId!);
-        const link = `${window.location.origin}/follow-up/${followUp.id}`;
+        const link = `${window.location.origin}/follow-up/${patientId}?followUpId=${followUp.id}`;
         console.log('Follow-up link:', link);
         alert(`Follow-up form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
       }

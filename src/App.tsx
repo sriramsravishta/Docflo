@@ -22,7 +22,7 @@ function App() {
           <Route path="/consult/:patientId" element={<ProtectedRoute><ConsultSession /></ProtectedRoute>} />
           <Route path="/pre-consult/:patientId" element={<PreConsultForm />} />
           <Route path="/follow-up/:patientId" element={<FollowUpForm />} />
-          <Route path="/patient-queries/:patientId" element={<PatientQueries />} />
+          <Route path="/patient-queries/:patientId/:doctorId" element={<PatientQueries />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

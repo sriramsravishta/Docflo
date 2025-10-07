@@ -1,54 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import { Send, Paperclip } from 'lucide-react';
-
-const mockQueries = [
-  {
-    id: '1',
-    patientId: '1',
-    patientName: 'Rajesh Kumar',
-    phone: '+91 98765 43210',
-    timestamp: '2025-10-04 10:30 AM',
-    preview: 'Doctor, I have been experiencing severe headaches for the past two days. Should I be worried about this?',
-    priority: 'High',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    patientId: '2',
-    patientName: 'Priya Sharma',
-    phone: '+91 98765 43211',
-    timestamp: '2025-10-04 09:15 AM',
-    preview: 'Hi doctor, I forgot to ask during my last visit - can I take my diabetes medication with food or...',
-    priority: 'Medium',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    patientId: '3',
-    patientName: 'Amit Patel',
-    phone: '+91 98765 43212',
-    timestamp: '2025-10-03 03:45 PM',
-    preview: 'The skin rash you prescribed medicine for is getting better. Should I continue the cream?',
-    priority: 'Low',
-    status: 'Active',
-  },
-];
+import { getQueries, getMessages, createMessage, updateQuery } from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function QueriesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedQuery, setSelectedQuery] = useState<any>(null);
   const [replyText, setReplyText] = useState('');
+  const [queries, setQueries] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadQueries();
+  }, []);
+
+  useEffect(() => {
+    if (selectedQuery) {
+      loadMessages(selectedQuery.id);
+    }
+  }, [selectedQuery]);
+
+  const loadQueries = async () => {
+    try {
+      setLoading(true);
+      const data = await getQueries(user?.id);
+      setQueries(data);
+    } catch (error) {
+      console.error('Error loading queries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMessages = async (queryId: string) => {
+    try {
+      const data = await getMessages(queryId);
+      setMessages(data);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
 
   const filteredQueries = selectedPriority
-    ? mockQueries.filter(q => q.priority === selectedPriority)
-    : mockQueries;
+    ? queries.filter(q => q.priority === selectedPriority)
+    : queries;
 
-  const handleSendReply = () => {
-    setReplyText('');
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !selectedQuery) return;
+
+    try {
+      await createMessage(selectedQuery.id, 'Doctor', replyText);
+      setReplyText('');
+      await loadMessages(selectedQuery.id);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
+    }
+  };
+
+  const handleMarkResolved = async () => {
+    if (!selectedQuery) return;
+
+    try {
+      await updateQuery(selectedQuery.id, { status: 'Closed' });
+      setSelectedQuery(null);
+      await loadQueries();
+    } catch (error) {
+      console.error('Error updating query:', error);
+      alert('Failed to update query');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   return (
@@ -57,6 +87,12 @@ export default function QueriesPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">Patient Queries</h1>
+
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
+          </div>
+        )}
 
         <div className="flex gap-3 mb-6">
           <button
@@ -101,67 +137,87 @@ export default function QueriesPage() {
           </button>
         </div>
 
-        <div className="space-y-3">
-          {filteredQueries.map((query) => (
-            <div
-              key={query.id}
-              onClick={() => setSelectedQuery(query)}
-              className="card"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{query.patientName}</h3>
-                  <p className="text-sm text-gray-500">{query.timestamp}</p>
+        {!loading && (
+          <div className="space-y-3">
+            {filteredQueries.map((query) => (
+              <div
+                key={query.id}
+                onClick={() => setSelectedQuery(query)}
+                className="card"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{query.patients?.name || 'Unknown Patient'}</h3>
+                    <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        query.priority === 'High'
+                          ? 'bg-red-100 text-red-700'
+                          : query.priority === 'Medium'
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {query.priority}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        query.status === 'Open' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {query.status}
+                    </span>
+                  </div>
                 </div>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    query.priority === 'High'
-                      ? 'bg-red-100 text-red-700'
-                      : query.priority === 'Medium'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-green-100 text-green-700'
-                  }`}
-                >
-                  {query.priority}
-                </span>
+                <p className="text-sm text-gray-600 line-clamp-2">{query.initial_query}</p>
               </div>
-              <p className="text-sm text-gray-600 line-clamp-2">{query.preview}</p>
-            </div>
-          ))}
+            ))}
 
-          {filteredQueries.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-gray-500">No queries found</p>
-            </div>
-          )}
-        </div>
+            {filteredQueries.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                <p className="text-gray-500">No queries found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Modal
         isOpen={!!selectedQuery}
         onClose={() => setSelectedQuery(null)}
-        title="Query Details"
+        title="Query Thread"
       >
         {selectedQuery && (
           <div className="space-y-4">
             <div className="border-b border-gray-200 pb-4">
               <p className="text-sm text-gray-600">Patient</p>
-              <p className="font-semibold text-gray-900">{selectedQuery.patientName}</p>
+              <p className="font-semibold text-gray-900">{selectedQuery.patients?.name || 'Unknown Patient'}</p>
+              <p className="text-sm text-gray-500">{selectedQuery.patients?.phone || 'No phone'}</p>
             </div>
 
-            <div className="border-b border-gray-200 pb-4">
-              <p className="text-sm text-gray-600">Phone</p>
-              <p className="text-gray-900">{selectedQuery.phone}</p>
-            </div>
-
-            <div className="border-b border-gray-200 pb-4">
-              <p className="text-sm text-gray-600 mb-2">Timestamp</p>
-              <p className="text-gray-900">{selectedQuery.timestamp}</p>
-            </div>
-
-            <div className="border-b border-gray-200 pb-4">
-              <p className="text-sm text-gray-600 mb-2">Query</p>
-              <p className="text-gray-900">{selectedQuery.preview}</p>
+            <div className="border-b border-gray-200 pb-4 max-h-96 overflow-y-auto">
+              <p className="text-sm font-medium text-gray-700 mb-3">Messages</p>
+              <div className="space-y-3">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Patient - {formatDate(selectedQuery.created_at)}</p>
+                  <p className="text-gray-900">{selectedQuery.initial_query}</p>
+                </div>
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`rounded-lg p-3 ${
+                      msg.sender_type === 'Doctor' ? 'bg-blue-50' : 'bg-gray-50'
+                    }`}
+                  >
+                    <p className="text-xs text-gray-500 mb-1">
+                      {msg.sender_type} - {formatDate(msg.created_at)}
+                    </p>
+                    <p className="text-gray-900">{msg.message}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -186,13 +242,13 @@ export default function QueriesPage() {
 
             <div className="flex gap-3 pt-4">
               <button
-                onClick={() => navigate(`/patient/${selectedQuery.patientId}`)}
+                onClick={() => navigate(`/patient/${selectedQuery.patient_id}`)}
                 className="btn-secondary flex-1"
               >
                 View Patient Profile
               </button>
-              <button className="btn-primary flex-1">
-                Mark Resolved
+              <button onClick={handleMarkResolved} className="btn-primary flex-1" disabled={selectedQuery.status === 'Closed'}>
+                {selectedQuery.status === 'Closed' ? 'Resolved' : 'Mark Resolved'}
               </button>
             </div>
           </div>

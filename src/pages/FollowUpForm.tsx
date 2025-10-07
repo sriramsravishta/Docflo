@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Mic, Upload, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Mic, Upload, CheckCircle, Play, Pause, Square } from 'lucide-react';
 import { getFollowUpById, updateFollowUp } from '../lib/database';
 
 const languages = [
@@ -17,6 +17,11 @@ export default function FollowUpForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [voiceTarget, setVoiceTarget] = useState<string>('');
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const [isVoicePaused, setIsVoicePaused] = useState(false);
+  const [voiceTime, setVoiceTime] = useState(0);
 
   const [formData, setFormData] = useState({
     overallFeeling: '',
@@ -90,10 +95,43 @@ export default function FollowUpForm() {
     }
   };
 
-  const handleVoiceInput = () => {
-    setIsRecording(true);
+  const handleVoiceInput = (targetField: string) => {
+    setVoiceTarget(targetField);
+    setShowVoiceModal(true);
+  };
+
+  const startVoiceRecording = () => {
+    setIsVoiceRecording(true);
+    setIsVoicePaused(false);
+    setVoiceTime(0);
+    const interval = setInterval(() => {
+      setVoiceTime(prev => {
+        if (!isVoicePaused) return prev + 1;
+        return prev;
+      });
+    }, 1000);
+    (window as any).voiceInterval = interval;
+  };
+
+  const pauseVoiceRecording = () => {
+    setIsVoicePaused(!isVoicePaused);
+  };
+
+  const submitVoiceRecording = () => {
+    clearInterval((window as any).voiceInterval);
+    setIsVoiceRecording(false);
+    
+    // Simulate processing
     setTimeout(() => {
-      setIsRecording(false);
+      const dummyTranscription = 'Dummy transcription text from voice input. This is what the patient said during the voice recording.';
+      
+      // Update the target field
+      const updatedData = { ...formData, [voiceTarget]: dummyTranscription };
+      setFormData(updatedData);
+      updateFormField(voiceTarget, dummyTranscription);
+      
+      setShowVoiceModal(false);
+      setVoiceTime(0);
     }, 2000);
   };
 
@@ -216,12 +254,12 @@ export default function FollowUpForm() {
                   placeholder="Describe how you're feeling..."
                 />
                 <button
-                  onClick={() => handleVoiceInput()}
+                  onClick={() => handleVoiceInput('overallFeeling')}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  <Mic className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`} />
+                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -245,12 +283,12 @@ export default function FollowUpForm() {
                   placeholder="Describe the status of your earlier problems..."
                 />
                 <button
-                  onClick={() => handleVoiceInput()}
+                  onClick={() => handleVoiceInput('problemStatus')}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  <Mic className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`} />
+                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -274,12 +312,12 @@ export default function FollowUpForm() {
                   placeholder="Describe any new symptoms..."
                 />
                 <button
-                  onClick={() => handleVoiceInput()}
+                  onClick={() => handleVoiceInput('newSymptoms')}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  <Mic className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`} />
+                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -303,12 +341,12 @@ export default function FollowUpForm() {
                   placeholder="Let your doctor know about medication adherence..."
                 />
                 <button
-                  onClick={() => handleVoiceInput()}
+                  onClick={() => handleVoiceInput('medicationAdherence')}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  <Mic className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`} />
+                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -359,12 +397,12 @@ export default function FollowUpForm() {
                   placeholder="Describe any lifestyle changes..."
                 />
                 <button
-                  onClick={() => handleVoiceInput()}
+                  onClick={() => handleVoiceInput('lifestyleChanges')}
                   className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  <Mic className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`} />
+                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -436,6 +474,62 @@ export default function FollowUpForm() {
                 Confirm
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showVoiceModal && (
+        <div className="modal-overlay" onClick={() => setShowVoiceModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Voice Recording</h3>
+            
+            <div className="text-center mb-6">
+              {!isVoiceRecording ? (
+                <button
+                  onClick={startVoiceRecording}
+                  className="w-20 h-20 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-full flex items-center justify-center mx-auto transition-colors"
+                >
+                  <Mic className="w-8 h-8" />
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                    <Mic className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <div className="text-2xl font-mono text-gray-900">
+                    {Math.floor(voiceTime / 60)}:{(voiceTime % 60).toString().padStart(2, '0')}
+                  </div>
+                  
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={pauseVoiceRecording}
+                      className="btn-secondary flex items-center space-x-2"
+                    >
+                      {isVoicePaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                      <span>{isVoicePaused ? 'Resume' : 'Pause'}</span>
+                    </button>
+                    
+                    <button
+                      onClick={submitVoiceRecording}
+                      className="btn-primary flex items-center space-x-2"
+                    >
+                      <Square className="w-4 h-4" />
+                      <span>Submit</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-center text-gray-600 text-sm">
+              {!isVoiceRecording 
+                ? 'Click the microphone to start recording'
+                : isVoicePaused 
+                  ? 'Recording paused'
+                  : 'Recording in progress...'
+              }
+            </p>
           </div>
         </div>
       )}

@@ -215,7 +215,7 @@ export const getQueries = async (docId?: string) => {
     .from('queries')
     .select(`
       *,
-      patients (name, phone)
+      patients (name, phone, case)
     `)
     .order('created_at', { ascending: false });
 

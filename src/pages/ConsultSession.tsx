@@ -32,16 +32,25 @@ export default function ConsultSession() {
     setIsRecording(true);
     setIsPaused(false);
     const interval = setInterval(() => {
-      setRecordingTime(prev => {
-        if (!isPaused) return prev + 1;
-        return prev;
-      });
+      setRecordingTime(prev => prev + 1);
     }, 1000);
     (window as any).recordingInterval = interval;
   };
 
   const handlePause = () => {
-    setIsPaused(!isPaused);
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
+    
+    if (newPausedState) {
+      // Pausing - stop the interval
+      clearInterval((window as any).recordingInterval);
+    } else {
+      // Resuming - restart the interval
+      const interval = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      (window as any).recordingInterval = interval;
+    }
   };
 
   const handleEndRecording = async () => {

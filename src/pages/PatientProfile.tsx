@@ -168,7 +168,16 @@ export default function PatientProfile() {
   };
 
   const openPreConsultForm = () => {
-    window.open(`/pre-consult/new`, '_blank');
+    const createAndOpenForm = async () => {
+      try {
+        const preConsult = await createPreConsult(user!.id, patientId!);
+        window.open(`/pre-consult/${preConsult.id}`, '_blank');
+      } catch (error) {
+        console.error('Error creating pre-consult form:', error);
+        alert('Failed to create pre-consult form');
+      }
+    };
+    createAndOpenForm();
   };
 
   const formatDate = (dateString: string) => {

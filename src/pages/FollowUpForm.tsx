@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Mic, Upload, CheckCircle } from 'lucide-react';
 import { getFollowUpById, updateFollowUp } from '../lib/database';
 
@@ -10,13 +10,12 @@ const languages = [
 ];
 
 export default function FollowUpForm() {
-  const [searchParams] = useSearchParams();
+  const { followUpId } = useParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [followUpId, setFollowUpId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -37,11 +36,9 @@ export default function FollowUpForm() {
   const loadFollowUp = async () => {
     try {
       setLoading(true);
-      const followUpIdParam = searchParams.get('followUpId');
 
-      if (followUpIdParam) {
-        const followUp = await getFollowUpById(followUpIdParam);
-        setFollowUpId(followUp.id);
+      if (followUpId) {
+        const followUp = await getFollowUpById(followUpId);
 
         if (followUp.status === 'Submitted') {
           setIsSubmitted(true);

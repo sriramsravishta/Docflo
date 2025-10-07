@@ -10,8 +10,7 @@ const languages = [
 ];
 
 export default function PreConsultForm() {
-  const { patientId } = useParams();
-  const preConsultId = patientId;
+  const { preConsultId } = useParams();
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('en');

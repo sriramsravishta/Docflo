@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Edit, FileText, Link as LinkIcon } from 'lucide-react';
+import { Edit, Link as LinkIcon, MessageSquare } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -89,7 +89,7 @@ export default function PatientProfile() {
         alert(`Pre-consult form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
       } else {
         const followUp = await createFollowUp(user!.id, patientId!);
-        const link = `${window.location.origin}/follow-up/${patientId}?followUpId=${followUp.id}`;
+        const link = `${window.location.origin}/follow-up/${followUp.id}`;
         console.log('Follow-up link:', link);
         alert(`Follow-up form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
       }
@@ -116,10 +116,6 @@ export default function PatientProfile() {
       console.error('Error updating patient:', error);
       alert('Failed to update patient');
     }
-  };
-
-  const openPreConsultForm = () => {
-    window.open(`/pre-consult/${patientId}?doctorId=${user?.id}`, '_blank');
   };
 
   const formatDate = (dateString: string) => {
@@ -239,13 +235,6 @@ export default function PatientProfile() {
                     <LinkIcon className="w-4 h-4" />
                     <span>Send Link</span>
                   </button>
-                  <button
-                    onClick={openPreConsultForm}
-                    className="btn-secondary flex items-center space-x-2"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>Open Form</span>
-                  </button>
                 </div>
 
                 <div className="space-y-3">
@@ -338,8 +327,19 @@ export default function PatientProfile() {
             )}
 
             {activeTab === 'queries' && (
-              <div className="space-y-3">
-                {queries.map((query) => (
+              <div>
+                <div className="flex justify-end mb-6">
+                  <button
+                    onClick={() => window.open(`/patient-queries/${patientId}/${user?.id}`, '_blank')}
+                    className="btn-primary flex items-center space-x-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Open Query Page</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {queries.map((query) => (
                   <div
                     key={query.id}
                     className="card"
@@ -356,11 +356,12 @@ export default function PatientProfile() {
                   </div>
                 ))}
 
-                {queries.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">No queries from this patient</p>
-                  </div>
-                )}
+                  {queries.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">No queries from this patient</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -14,7 +14,6 @@ export default function PreConsultForm() {
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [isRecording, setIsRecording] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -23,17 +22,14 @@ export default function PreConsultForm() {
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [isVoicePaused, setIsVoicePaused] = useState(false);
   const [voiceTime, setVoiceTime] = useState(0);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     documents: [] as File[],
-    visitReason: '',
-    isFirstVisit: '',
-    symptoms: '',
-    allergies: '',
-    habits: '',
   });
 
-  const totalSteps = 7;
+  const totalSteps = 5; // Language, Upload, Processing, Questions, Submit
 
   useEffect(() => {
     loadPreConsult();
@@ -43,7 +39,6 @@ export default function PreConsultForm() {
     try {
       setLoading(true);
       
-      // Check if preConsultId is 'new' or invalid
       if (!preConsultId || preConsultId === 'new') {
         console.error('Invalid pre-consult ID:', preConsultId);
         return;
@@ -53,18 +48,27 @@ export default function PreConsultForm() {
 
       if (data.status === 'Submitted') {
         setIsSubmitted(true);
+        return;
       }
 
+      // Load existing form data if available
       if (data.form_data && typeof data.form_data === 'object') {
         const savedData = data.form_data as any;
-        setFormData({
-          documents: [],
-          visitReason: savedData.visitReason || '',
-          isFirstVisit: savedData.isFirstVisit || '',
-          symptoms: savedData.symptoms || '',
-          allergies: savedData.allergies || '',
-          habits: savedData.habits || '',
-        });
+        if (savedData.questions) {
+          setQuestions(savedData.questions);
+          const existingAnswers: Record<string, string> = {};
+          savedData.questions.forEach((q: any) => {
+            if (q.answer) {
+              existingAnswers[q.id] = q.answer;
+            }
+          });
+          setAnswers(existingAnswers);
+          
+          // If we have questions, skip to the questions step
+          if (savedData.questions.length > 0) {
+            setCurrentStep(3);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading pre-consult:', error);
@@ -76,43 +80,94 @@ export default function PreConsultForm() {
   const handleNext = async () => {
     if (currentStep === 1 && formData.documents.length > 0) {
       setIsAnalyzing(true);
+      setCurrentStep(2); // Move to processing step
 
+      // Simulate file upload and AI analysis
       const dummyDocUrls = formData.documents.map((file) => ({
         url: `dummy-storage-url/${file.name}`,
         name: file.name,
-        type: file.type
+        type: file.type,
+        size: file.size
       }));
 
+      // Simulate AI processing
+      setTimeout(async () => {
+        const dummyQuestions = [
+          { 
+            id: "q1", 
+            text: "Why are you visiting today?", 
+            type: "text_multiline", 
+            required: true, 
+            answer: "" 
+          },
+          { 
+            id: "q2", 
+            text: "Current symptoms and duration", 
+            type: "text_multiline", 
+            required: true, 
+            answer: "" 
+          },
+          { 
+            id: "q3", 
+            text: "Any specific concerns based on your uploaded documents?", 
+            type: "text_multiline", 
+            required: false, 
+            answer: "" 
+          }
+        ];
+
+        await updatePreConsult(preConsultId!, {
+          documents_uploaded: dummyDocUrls,
+          doc_summary: 'Dummy summary of uploaded documents. The documents contain medical reports and prescriptions that have been analyzed.',
+          form_data: {
+            questions: dummyQuestions,
+            order: ["q1", "q2", "q3"]
+          }
+        });
+
+        setQuestions(dummyQuestions);
+        setIsAnalyzing(false);
+        setCurrentStep(3); // Move to questions step
+      }, 2000);
+    } else if (currentStep === 1 && formData.documents.length === 0) {
+      // Skip upload, create default questions
+      const defaultQuestions = [
+        { 
+          id: "q1", 
+          text: "Why are you visiting today?", 
+          type: "text_multiline", 
+          required: true, 
+          answer: "" 
+        },
+        { 
+          id: "q2", 
+          text: "Current symptoms and duration", 
+          type: "text_multiline", 
+          required: true, 
+          answer: "" 
+        }
+      ];
+
       await updatePreConsult(preConsultId!, {
-        documents_uploaded: dummyDocUrls,
-        doc_summary: 'Dummy summary of uploaded documents. The documents contain medical reports and prescriptions that have been analyzed.',
         form_data: {
-          schema: [
-            { id: 'q1', question: 'How are you feeling today?', type: 'textarea', required: true },
-            { id: 'q2', question: 'Any specific concerns based on your documents?', type: 'textarea', required: false }
-          ],
-          answers: {},
-          visitReason: formData.visitReason,
-          isFirstVisit: formData.isFirstVisit,
-          symptoms: formData.symptoms,
-          allergies: formData.allergies,
-          habits: formData.habits
+          questions: defaultQuestions,
+          order: ["q1", "q2"]
         }
       });
 
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        setCurrentStep(currentStep + 1);
-      }, 2000);
-    } else if (currentStep === 2) {
-      setTimeout(() => setCurrentStep(currentStep + 1), 1000);
+      setQuestions(defaultQuestions);
+      setCurrentStep(3);
     } else {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleBack = () => {
-    setCurrentStep(currentStep - 1);
+    if (currentStep === 3 && formData.documents.length === 0) {
+      setCurrentStep(1); // Skip processing step if no documents
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,8 +176,34 @@ export default function PreConsultForm() {
     }
   };
 
-  const handleVoiceInput = (targetField: string) => {
-    setVoiceTarget(targetField);
+  const handleAnswerChange = async (questionId: string, value: string) => {
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
+
+    // Update questions with new answer
+    const updatedQuestions = questions.map(q => 
+      q.id === questionId ? { ...q, answer: value } : q
+    );
+    setQuestions(updatedQuestions);
+
+    // Debounced autosave to database
+    clearTimeout((window as any).autosaveTimeout);
+    (window as any).autosaveTimeout = setTimeout(async () => {
+      try {
+        await updatePreConsult(preConsultId!, {
+          form_data: {
+            questions: updatedQuestions,
+            order: questions.map(q => q.id)
+          }
+        });
+      } catch (error) {
+        console.error('Error auto-saving:', error);
+      }
+    }, 1000);
+  };
+
+  const handleVoiceInput = (questionId: string) => {
+    setVoiceTarget(questionId);
     setShowVoiceModal(true);
   };
 
@@ -147,14 +228,12 @@ export default function PreConsultForm() {
     clearInterval((window as any).voiceInterval);
     setIsVoiceRecording(false);
     
-    // Simulate processing
+    // Show transcribing state
     setTimeout(() => {
       const dummyTranscription = 'Dummy transcription text from voice input. This is what the patient said during the voice recording.';
       
-      // Update the target field
-      const updatedData = { ...formData, [voiceTarget]: dummyTranscription };
-      setFormData(updatedData);
-      updateFormField(voiceTarget, dummyTranscription);
+      // Update the target question's answer
+      handleAnswerChange(voiceTarget, dummyTranscription);
       
       setShowVoiceModal(false);
       setVoiceTime(0);
@@ -167,41 +246,21 @@ export default function PreConsultForm() {
 
   const confirmSubmit = async () => {
     try {
+      // Generate AI summary from answers
+      const answeredQuestions = questions.filter(q => q.answer && q.answer.trim());
+      const summaryParts = answeredQuestions.map(q => `${q.text}: ${q.answer}`);
+      const aiSummary = `Patient Pre-Consult Summary:\n\n${summaryParts.join('\n\n')}\n\nAssessment: Patient has provided detailed information about their visit reason and symptoms. Ready for consultation.`;
+
       await updatePreConsult(preConsultId!, {
         status: 'Submitted',
-        form_data: {
-          visitReason: formData.visitReason,
-          isFirstVisit: formData.isFirstVisit,
-          symptoms: formData.symptoms,
-          allergies: formData.allergies,
-          habits: formData.habits
-        },
-        ai_summary: `Dummy AI analysis of form answers.\n\nVisit Reason: ${formData.visitReason}\nFirst Visit: ${formData.isFirstVisit}\nSymptoms: ${formData.symptoms}\nAllergies: ${formData.allergies || 'None reported'}\nHabits: ${formData.habits || 'None reported'}`
+        ai_summary: aiSummary
       });
+
       setShowConfirmation(false);
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Failed to submit form. Please try again.');
-    }
-  };
-
-  const updateFormField = async (field: string, value: string) => {
-    const updatedData = { ...formData, [field]: value };
-    setFormData(updatedData);
-
-    try {
-      await updatePreConsult(preConsultId!, {
-        form_data: {
-          visitReason: updatedData.visitReason,
-          isFirstVisit: updatedData.isFirstVisit,
-          symptoms: updatedData.symptoms,
-          allergies: updatedData.allergies,
-          habits: updatedData.habits
-        }
-      });
-    } catch (error) {
-      console.error('Error auto-saving:', error);
     }
   };
 
@@ -225,17 +284,6 @@ export default function PreConsultForm() {
           <p className="text-gray-600">
             Your information has been sent to your doctor. You'll be called when it's your turn.
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAnalyzing) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
-          <p className="text-gray-600">Analyzing documents...</p>
         </div>
       </div>
     );
@@ -322,138 +370,57 @@ export default function PreConsultForm() {
             <div className="flex items-center justify-center h-48">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
-                <p className="text-gray-600">Analyzing documents...</p>
+                <p className="text-gray-600">Analyzing documents and preparing personalized questions...</p>
               </div>
             </div>
           )}
 
           {currentStep === 3 && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Why are you visiting the doctor today?
-              </h2>
-              <div className="relative">
-                <textarea
-                  value={formData.visitReason}
-                  onChange={(e) => updateFormField('visitReason', e.target.value)}
-                  className="input-field min-h-32"
-                  rows={5}
-                  placeholder="Describe your reason for visiting..."
-                />
-                <button
-                  onClick={() => handleVoiceInput('visitReason')}
-                  className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
-                  }`}
-                >
-                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
-                </button>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Please answer the following questions</h2>
+              <div className="space-y-6">
+                {questions.map((question, index) => (
+                  <div key={question.id}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {question.text}
+                      {question.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        value={answers[question.id] || ''}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        className="input-field min-h-32 pr-12"
+                        rows={4}
+                        placeholder="Type your answer here..."
+                        required={question.required}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleVoiceInput(question.id)}
+                        className="absolute bottom-3 right-3 p-2 rounded-lg transition-colors bg-gray-100 hover:bg-gray-200"
+                      >
+                        <Mic className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {currentStep === 4 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Is this your first visit or a follow-up?
-              </h2>
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    updateFormField('isFirstVisit', 'yes');
-                    handleNext();
-                  }}
-                  className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-[#024CDB] transition-colors"
-                >
-                  <span className="font-medium">First Visit</span>
-                </button>
-                <button
-                  onClick={() => {
-                    updateFormField('isFirstVisit', 'no');
-                    handleNext();
-                  }}
-                  className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-[#024CDB] transition-colors"
-                >
-                  <span className="font-medium">Follow-up</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 5 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                What symptoms or concerns do you have, how long, and severity?
-              </h2>
-              <div className="relative">
-                <textarea
-                  value={formData.symptoms}
-                  onChange={(e) => updateFormField('symptoms', e.target.value)}
-                  className="input-field min-h-32"
-                  rows={5}
-                  placeholder="Describe your symptoms..."
-                />
-                <button
-                  onClick={() => handleVoiceInput('symptoms')}
-                  className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                    false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
-                  }`}
-                >
-                  <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 6 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Any allergies the doctor should know? (Optional)
-                </h2>
-                <div className="relative">
-                  <textarea
-                    value={formData.allergies}
-                    onChange={(e) => updateFormField('allergies', e.target.value)}
-                    className="input-field min-h-24"
-                    rows={3}
-                    placeholder="List any allergies..."
-                  />
-                  <button
-                    onClick={() => handleVoiceInput('allergies')}
-                    className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                      false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Habits/personal factors (Optional)
-                </h2>
-                <p className="text-sm text-gray-600 mb-2">
-                  Smoking, alcohol, stress, special events, etc.
-                </p>
-                <div className="relative">
-                  <textarea
-                    value={formData.habits}
-                    onChange={(e) => updateFormField('habits', e.target.value)}
-                    className="input-field min-h-24"
-                    rows={3}
-                    placeholder="Describe any relevant habits or factors..."
-                  />
-                  <button
-                    onClick={() => handleVoiceInput('habits')}
-                    className={`absolute bottom-3 right-3 p-2 rounded-lg transition-colors ${
-                      false ? 'bg-red-500' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Mic className={`w-5 h-5 ${false ? 'text-white' : 'text-gray-600'}`} />
-                  </button>
-                </div>
+            <div className="text-center py-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Review Your Information</h2>
+              <p className="text-gray-600 mb-6">
+                Please review your responses before submitting.
+              </p>
+              <div className="space-y-4 text-left">
+                {questions.filter(q => answers[q.id]).map((question) => (
+                  <div key={question.id} className="border-b pb-3">
+                    <p className="text-sm font-medium text-gray-700">{question.text}</p>
+                    <p className="text-gray-600 text-sm mt-1">{answers[question.id]}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -466,17 +433,25 @@ export default function PreConsultForm() {
               <span>Back</span>
             </button>
           )}
-          {currentStep < 6 && currentStep !== 2 && (
+          {currentStep < 3 && currentStep !== 2 && (
             <button
               onClick={handleNext}
               className="btn-primary flex-1 flex items-center justify-center space-x-2"
-              disabled={currentStep === 1 && formData.documents.length === 0}
             >
               <span>Next</span>
               <ChevronRight className="w-5 h-5" />
             </button>
           )}
-          {currentStep === 6 && (
+          {currentStep === 3 && (
+            <button
+              onClick={() => setCurrentStep(4)}
+              className="btn-primary flex-1 flex items-center justify-center space-x-2"
+            >
+              <span>Review</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
+          {currentStep === 4 && (
             <button
               onClick={handleSubmit}
               className="btn-primary flex-1"
@@ -555,7 +530,9 @@ export default function PreConsultForm() {
                 ? 'Click the microphone to start recording'
                 : isVoicePaused 
                   ? 'Recording paused'
-                  : 'Recording in progress...'
+                  : isVoiceRecording && voiceTime === 0
+                    ? 'Transcribing...'
+                    : 'Recording in progress...'
               }
             </p>
           </div>

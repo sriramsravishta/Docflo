@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X } from 'lucide-react';
+import { Edit, Link as LinkIcon, MessageSquare, ExternalLink, X, Send } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -181,7 +181,16 @@ export default function PatientProfile() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }) + ' at ' + date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
   };
 
   if (loading) {
@@ -212,29 +221,43 @@ export default function PatientProfile() {
       <Navbar showBack />
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{patient.name}</h1>
               {patient.case && (
-                <p className="text-lg text-[#024CDB] mt-1">{patient.case}</p>
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
+                  {patient.case}
+                </div>
               )}
-              <p className="text-gray-600 mt-2">
-                {patient.age} yrs, {patient.gender}
-              </p>
-              <p className="text-gray-600">{patient.phone}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 font-medium">Age & Gender</span>
+                  <p className="text-gray-900 font-semibold">{patient.age} years, {patient.gender}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500 font-medium">Phone</span>
+                  <p className="text-gray-900 font-semibold">{patient.phone}</p>
+                </div>
+                {patient.last_visit_at && (
+                  <div>
+                    <span className="text-gray-500 font-medium">Last Visit</span>
+                    <p className="text-gray-900 font-semibold">{formatDate(patient.last_visit_at)}</p>
+                  </div>
+                )}
+              </div>
             </div>
             <button
               onClick={() => setShowEditModal(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <Edit className="w-5 h-5 text-gray-600" />
+              <Edit className="w-6 h-6 text-gray-600" />
             </button>
           </div>
 
           <button
             onClick={() => navigate(`/consult/${patientId}`)}
-            className="w-full btn-primary text-lg py-3"
+            className="w-full btn-primary text-lg py-4 rounded-xl font-semibold"
           >
             Start Consultation
           </button>
@@ -314,12 +337,21 @@ export default function PatientProfile() {
                         setSelectedItem(item);
                         setShowDetailModal(true);
                       }}
-                      className="card"
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
                     >
-                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {formatDate(item.created_at)}
+                        </span>
+                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                          Submitted
+                        </span>
+                      </div>
+                      <p className="text-gray-900 text-sm line-clamp-2 mb-2">{item.ai_summary || 'Processing...'}</p>
                       {item.documents_uploaded && item.documents_uploaded.length > 0 && (
-                        <p className="text-sm text-[#024CDB] mt-2">{item.documents_uploaded.length} documents</p>
+                        <div className="flex items-center text-xs text-[#024CDB] bg-blue-50 px-2 py-1 rounded w-fit">
+                          📎 {item.documents_uploaded.length} document{item.documents_uploaded.length !== 1 ? 's' : ''}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -342,10 +374,17 @@ export default function PatientProfile() {
                       setSelectedItem(item);
                       setShowDetailModal(true);
                     }}
-                    className="card"
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
                   >
-                    <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                    <p className="text-gray-900 line-clamp-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {formatDate(item.created_at)}
+                      </span>
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        Completed
+                      </span>
+                    </div>
+                    <p className="text-gray-900 text-sm line-clamp-2">
                       {item.consult_summary_final?.diagnosis || item.consult_summary_ai?.diagnosis || 'Processing...'}
                     </p>
                   </div>
@@ -379,10 +418,17 @@ export default function PatientProfile() {
                         setSelectedItem(item);
                         setShowDetailModal(true);
                       }}
-                      className="card"
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
                     >
-                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {formatDate(item.created_at)}
+                        </span>
+                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                          Submitted
+                        </span>
+                      </div>
+                      <p className="text-gray-900 text-sm line-clamp-2">{item.ai_summary || 'Processing...'}</p>
                     </div>
                   ))}
 
@@ -412,12 +458,14 @@ export default function PatientProfile() {
                     <div
                       key={query.id}
                       onClick={() => handleQueryClick(query)}
-                      className="card"
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {formatDate(query.created_at)}
+                        </span>
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-2 py-1 rounded text-xs font-medium ${
                             query.priority === 'High'
                               ? 'bg-red-100 text-red-700'
                               : query.priority === 'Medium'
@@ -428,7 +476,7 @@ export default function PatientProfile() {
                           {query.priority}
                         </span>
                       </div>
-                      <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
+                      <p className="text-gray-900 text-sm line-clamp-2">{query.initial_query}</p>
                     </div>
                   ))}
 
@@ -572,6 +620,7 @@ export default function PatientProfile() {
                   className="flex-1 input-field"
                 />
                 <button onClick={handleSendReply} className="btn-primary flex items-center space-x-2">
+                  <Send className="w-4 h-4" />
                   <span>Send</span>
                 </button>
               </div>
@@ -592,26 +641,29 @@ export default function PatientProfile() {
           title={activeTab === 'pre-consult' ? 'Pre-Consult Details' :
                  activeTab === 'consultations' ? 'Consultation Details' : 'Follow-Up Details'}
         >
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Date</p>
-              <p className="text-gray-900">{formatDate(selectedItem.created_at)}</p>
+              <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
+              <p className="text-gray-900 font-semibold">{formatDate(selectedItem.created_at)}</p>
             </div>
 
             {activeTab === 'pre-consult' && (
               <>
                 {selectedItem.ai_summary && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
-                    <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-2">AI Summary</p>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                    </div>
                   </div>
                 )}
                 {selectedItem.documents_uploaded && selectedItem.documents_uploaded.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Documents</p>
-                    <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-500 mb-2">Uploaded Documents</p>
+                    <div className="space-y-2 bg-gray-50 rounded-lg p-4">
                       {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
-                        <div key={idx} className="text-sm text-[#024CDB]">
+                        <div key={idx} className="flex items-center text-sm text-[#024CDB] bg-white rounded px-3 py-2">
+                          <span className="mr-2">📎</span>
                           {doc.name || `Document ${idx + 1}`}
                         </div>
                       ))}
@@ -621,39 +673,78 @@ export default function PatientProfile() {
               </>
             )}
 
-            {activeTab === 'consultations' && selectedItem.consult_summary_final && (
-              <div className="space-y-3">
+            {activeTab === 'consultations' && (selectedItem.consult_summary_final || selectedItem.consult_summary_ai) && (
+              <div className="space-y-4">
+                {(() => {
+                  const summary = selectedItem.consult_summary_final || selectedItem.consult_summary_ai;
+                  return (
+                    <>
                 {selectedItem.consult_summary_final.diagnosis && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Diagnosis</p>
-                    <p className="text-gray-900">{selectedItem.consult_summary_final.diagnosis}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-2">Diagnosis</p>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-900 text-sm">{summary.diagnosis}</p>
+                        </div>
                   </div>
                 )}
+                      {summary.history && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">History</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.history}</p>
+                          </div>
+                        </div>
+                      )}
+                      {summary.chief_complaints && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Chief Complaints</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.chief_complaints}</p>
+                          </div>
+                        </div>
+                      )}
                 {selectedItem.consult_summary_final.treatment_suggested && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Treatment</p>
-                    <p className="text-gray-900">{selectedItem.consult_summary_final.treatment_suggested}</p>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Treatment Plan</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.treatment_suggested}</p>
+                          </div>
                   </div>
                 )}
                 {selectedItem.consult_summary_final.medications && selectedItem.consult_summary_final.medications.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
-                    <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-500 mb-2">Medications</p>
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
-                        <div key={idx} className="text-sm">
-                          <span className="font-medium">{med.name}</span> - {med.frequency}, {med.duration}
+                            <div key={idx} className="bg-white rounded p-3 border-l-4 border-[#024CDB]">
+                              <p className="font-medium text-gray-900 text-sm">{med.name}</p>
+                              <p className="text-gray-600 text-xs mt-1">{med.frequency} • {med.duration} • {med.timing}</p>
+                            </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+                      {summary.followup_recommendations && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Recommendations</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.followup_recommendations}</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 
             {activeTab === 'monitoring' && selectedItem.ai_summary && (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
-                <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
+                <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Summary</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                </div>
               </div>
             )}
           </div>

@@ -121,7 +121,7 @@ export default function FollowUpForm() {
     clearInterval((window as any).voiceInterval);
     setIsVoiceRecording(false);
     
-    // Simulate processing
+    // Show transcribing state
     setTimeout(() => {
       const dummyTranscription = 'Dummy transcription text from voice input. This is what the patient said during the voice recording.';
       
@@ -527,7 +527,9 @@ export default function FollowUpForm() {
                 ? 'Click the microphone to start recording'
                 : isVoicePaused 
                   ? 'Recording paused'
-                  : 'Recording in progress...'
+                  : isVoiceRecording && voiceTime === 0
+                    ? 'Transcribing...'
+                    : 'Recording in progress...'
               }
             </p>
           </div>

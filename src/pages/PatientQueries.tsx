@@ -175,6 +175,8 @@ export default function PatientQueries() {
                   >
                     <span className="font-medium">
                       {message.sender_type === 'Patient' ? (patient?.name || 'Patient') : doctorName}
+                    </span> - {formatDate(message.created_at)}
+                  </p>
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {message.attachments.map((attachment: any, idx: number) => (

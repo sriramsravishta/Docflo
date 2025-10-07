@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Edit, Link as LinkIcon, MessageSquare } from 'lucide-react';
+import { Edit, Link as LinkIcon, MessageSquare, ExternalLink, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -31,6 +31,10 @@ export default function PatientProfile() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showQueryModal, setShowQueryModal] = useState(false);
+  const [selectedQuery, setSelectedQuery] = useState<any>(null);
+  const [queryMessages, setQueryMessages] = useState<any[]>([]);
+  const [replyText, setReplyText] = useState('');
   const [confirmAction, setConfirmAction] = useState<string>('');
   const [editForm, setEditForm] = useState({
     name: '',
@@ -116,6 +120,52 @@ export default function PatientProfile() {
       console.error('Error updating patient:', error);
       alert('Failed to update patient');
     }
+  };
+
+  const loadQueryMessages = async (queryId: string) => {
+    try {
+      const data = await getMessages(queryId);
+      setQueryMessages(data);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleQueryClick = (query: any) => {
+    setSelectedQuery(query);
+    setShowQueryModal(true);
+    loadQueryMessages(query.id);
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !selectedQuery) return;
+
+    try {
+      await createMessage(selectedQuery.id, 'Doctor', replyText, []);
+      setReplyText('');
+      await loadQueryMessages(selectedQuery.id);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
+    }
+  };
+
+  const handleMarkResolved = async () => {
+    if (!selectedQuery) return;
+
+    try {
+      await updateQuery(selectedQuery.id, { status: 'Closed' });
+      setShowQueryModal(false);
+      setSelectedQuery(null);
+      await loadPatientData();
+    } catch (error) {
+      console.error('Error updating query:', error);
+      alert('Failed to update query');
+    }
+  };
+
+  const openPreConsultForm = () => {
+    window.open(`/pre-consult/new`, '_blank');
   };
 
   const formatDate = (dateString: string) => {
@@ -229,6 +279,13 @@ export default function PatientProfile() {
               <div>
                 <div className="flex gap-3 mb-6">
                   <button
+                    onClick={openPreConsultForm}
+                    className="btn-secondary flex items-center space-x-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Open Form</span>
+                  </button>
+                  <button
                     onClick={() => handleSendLink('pre-consult')}
                     className="btn-secondary flex items-center space-x-2"
                   >
@@ -340,21 +397,28 @@ export default function PatientProfile() {
 
                 <div className="space-y-3">
                   {queries.map((query) => (
-                  <div
-                    key={query.id}
-                    className="card"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        query.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {query.status}
-                      </span>
+                    <div
+                      key={query.id}
+                      onClick={() => handleQueryClick(query)}
+                      className="card"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            query.priority === 'High'
+                              ? 'bg-red-100 text-red-700'
+                              : query.priority === 'Medium'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {query.priority}
+                        </span>
+                      </div>
+                      <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
                     </div>
-                    <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
-                  </div>
-                ))}
+                  ))}
 
                   {queries.length === 0 && (
                     <div className="text-center py-12">
@@ -428,6 +492,86 @@ export default function PatientProfile() {
           </div>
         </form>
       </Modal>
+
+      {showQueryModal && selectedQuery && (
+        <div className="modal-overlay" onClick={() => setShowQueryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Query Thread</h2>
+                <p className="text-sm text-gray-600">{patient?.name || 'Unknown Patient'}</p>
+                {patient?.case && (
+                  <p className="text-sm text-[#024CDB]">{patient.case}</p>
+                )}
+                <p className="text-sm text-gray-500">{patient?.phone || 'No phone'}</p>
+              </div>
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 max-h-96">
+              <div className="space-y-3">
+                <div className="flex justify-start pr-12">
+                  <div className="bg-gray-50 rounded-lg p-3 max-w-md">
+                    <p className="text-xs text-gray-500 mb-1">{formatDate(selectedQuery.created_at)}</p>
+                    <p className="text-gray-900">{selectedQuery.initial_query}</p>
+                  </div>
+                </div>
+                {queryMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      msg.sender_type === 'Doctor' ? 'justify-end pl-12' : 'justify-start pr-12'
+                    }`}
+                  >
+                    <div
+                      className={`rounded-lg p-3 max-w-md ${
+                        msg.sender_type === 'Doctor' ? 'bg-blue-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      <p className="text-xs text-gray-500 mb-1">{formatDate(msg.created_at)}</p>
+                      <p className="text-gray-900">{msg.message}</p>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {msg.attachments.map((attachment: any, idx: number) => (
+                            <div key={idx} className="text-xs text-[#024CDB] bg-white rounded px-2 py-1">
+                              📎 {attachment.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your reply..."
+                  className="flex-1 input-field"
+                />
+                <button onClick={handleSendReply} className="btn-primary flex items-center space-x-2">
+                  <span>Send</span>
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleMarkResolved} className="btn-primary flex-1" disabled={selectedQuery.status === 'Closed'}>
+                  {selectedQuery.status === 'Closed' ? 'Resolved' : 'Mark Resolved'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDetailModal && selectedItem && (
         <Modal

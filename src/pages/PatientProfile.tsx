@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Edit, Link as LinkIcon, MessageSquare, ExternalLink, X } from 'lucide-react';
+import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';

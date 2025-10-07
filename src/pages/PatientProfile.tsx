@@ -12,7 +12,10 @@ import {
   getFollowUps,
   createPreConsult,
   createFollowUp,
-  getQueries
+  getQueries,
+  getMessages,
+  createMessage,
+  updateQuery
 } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
 

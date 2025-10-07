@@ -1,25 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MessageSquare, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PatientCard from '../components/PatientCard';
 import Modal from '../components/Modal';
-
-const mockPatientsListA = [
-  { id: '1', name: 'Rajesh Kumar', case: 'Hypertension', age: 45, gender: 'Male', lastVisit: '2025-10-03', completedToday: true },
-  { id: '2', name: 'Priya Sharma', case: 'Diabetes', age: 38, gender: 'Female', lastVisit: '2025-10-02', completedToday: true },
-];
-
-const mockPatientsListB = [
-  { id: '3', name: 'Amit Patel', case: 'Skin', age: 32, gender: 'Male', lastVisit: '2025-10-01' },
-  { id: '4', name: 'Sunita Reddy', age: 28, gender: 'Female', lastVisit: '2025-09-30' },
-  { id: '5', name: 'Vikram Singh', case: 'Hair', age: 41, gender: 'Male', lastVisit: '2025-09-28' },
-];
+import { createPatient, getPatients, getPreConsults } from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function MainPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [patientsWithPreConsult, setPatientsWithPreConsult] = useState<any[]>([]);
+  const [allPatients, setAllPatients] = useState<any[]>([]);
   const [newPatient, setNewPatient] = useState({
     name: '',
     case: '',
@@ -28,17 +23,61 @@ export default function MainPage() {
     gender: 'Male',
   });
 
-  const filteredListA = mockPatientsListA.filter(p =>
+  useEffect(() => {
+    loadPatients();
+  }, []);
+
+  const loadPatients = async () => {
+    try {
+      setLoading(true);
+      const patients = await getPatients();
+      const today = new Date().toISOString().split('T')[0];
+
+      const patientsWithTodayPreConsult = [];
+      for (const patient of patients) {
+        const preConsults = await getPreConsults(patient.id);
+        const todaySubmitted = preConsults.find(pc =>
+          pc.status === 'Submitted' &&
+          pc.created_at.startsWith(today)
+        );
+        if (todaySubmitted) {
+          patientsWithTodayPreConsult.push(patient);
+        }
+      }
+
+      setPatientsWithPreConsult(patientsWithTodayPreConsult);
+      setAllPatients(patients);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredListA = patientsWithPreConsult.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredListB = mockPatientsListB.filter(p =>
+  const filteredListB = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddPatient = () => {
-    setShowAddPatient(false);
-    setNewPatient({ name: '', case: '', phone: '', age: '', gender: 'Male' });
+  const handleAddPatient = async () => {
+    try {
+      await createPatient({
+        name: newPatient.name,
+        age: parseInt(newPatient.age),
+        phone: newPatient.phone,
+        case: newPatient.case || undefined,
+        gender: newPatient.gender,
+      });
+      setShowAddPatient(false);
+      setNewPatient({ name: '', case: '', phone: '', age: '', gender: 'Male' });
+      await loadPatients();
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      alert('Failed to create patient');
+    }
   };
 
   return (
@@ -83,9 +122,22 @@ export default function MainPage() {
               Today's Pre-consult Completed
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-              {filteredListA.slice(0, 5).map((patient) => (
-                <PatientCard key={patient.id} patient={patient} />
-              ))}
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
+                </div>
+              ) : (
+                filteredListA.slice(0, 5).map((patient) => (
+                  <PatientCard key={patient.id} patient={{
+                    id: patient.id,
+                    name: patient.name,
+                    case: patient.case,
+                    age: patient.age,
+                    gender: patient.gender,
+                    lastVisit: patient.last_visit_at ? new Date(patient.last_visit_at).toLocaleDateString() : undefined
+                  }} />
+                ))
+              )}
             </div>
             {filteredListA.length > 5 && (
               <button className="text-[#024CDB] hover:underline text-sm font-medium">
@@ -104,9 +156,22 @@ export default function MainPage() {
               All Patients
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-              {filteredListB.slice(0, 5).map((patient) => (
-                <PatientCard key={patient.id} patient={patient} />
-              ))}
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
+                </div>
+              ) : (
+                filteredListB.slice(0, 5).map((patient) => (
+                  <PatientCard key={patient.id} patient={{
+                    id: patient.id,
+                    name: patient.name,
+                    case: patient.case,
+                    age: patient.age,
+                    gender: patient.gender,
+                    lastVisit: patient.last_visit_at ? new Date(patient.last_visit_at).toLocaleDateString() : undefined
+                  }} />
+                ))
+              )}
             </div>
             {filteredListB.length > 5 && (
               <button className="text-[#024CDB] hover:underline text-sm font-medium">

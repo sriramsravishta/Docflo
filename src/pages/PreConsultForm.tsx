@@ -24,6 +24,7 @@ export default function PreConsultForm() {
   const [voiceTime, setVoiceTime] = useState(0);
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [formNotFound, setFormNotFound] = useState(false);
 
   const [formData, setFormData] = useState({
     documents: [] as File[],
@@ -45,6 +46,11 @@ export default function PreConsultForm() {
       }
       
       const data = await getPreConsultById(preConsultId!);
+
+      if (!data) {
+        setFormNotFound(true);
+        return;
+      }
 
       if (data.status === 'Submitted') {
         setIsSubmitted(true);
@@ -263,6 +269,22 @@ export default function PreConsultForm() {
       alert('Failed to submit form. Please try again.');
     }
   };
+
+  if (formNotFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Found</h2>
+          <p className="text-gray-600">
+            The pre-consult form you're looking for doesn't exist or may have been removed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

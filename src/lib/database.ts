@@ -289,7 +289,7 @@ export const getPreConsultById = async (id: string) => {
     .from('pre_consult')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -300,7 +300,7 @@ export const getFollowUpById = async (id: string) => {
     .from('follow_up')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

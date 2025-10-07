@@ -22,6 +22,7 @@ export default function FollowUpForm() {
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [isVoicePaused, setIsVoicePaused] = useState(false);
   const [voiceTime, setVoiceTime] = useState(0);
+  const [formNotFound, setFormNotFound] = useState(false);
 
   const [formData, setFormData] = useState({
     overallFeeling: '',
@@ -44,6 +45,11 @@ export default function FollowUpForm() {
 
       if (followUpId) {
         const followUp = await getFollowUpById(followUpId);
+
+        if (!followUp) {
+          setFormNotFound(true);
+          return;
+        }
 
         if (followUp.status === 'Submitted') {
           setIsSubmitted(true);
@@ -164,6 +170,22 @@ export default function FollowUpForm() {
       alert('Failed to submit form. Please try again.');
     }
   };
+
+  if (formNotFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Found</h2>
+          <p className="text-gray-600">
+            The follow-up form you're looking for doesn't exist or may have been removed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

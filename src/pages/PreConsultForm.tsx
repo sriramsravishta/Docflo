@@ -42,6 +42,13 @@ export default function PreConsultForm() {
   const loadPreConsult = async () => {
     try {
       setLoading(true);
+      
+      // Check if preConsultId is 'new' or invalid
+      if (!preConsultId || preConsultId === 'new') {
+        console.error('Invalid pre-consult ID:', preConsultId);
+        return;
+      }
+      
       const data = await getPreConsultById(preConsultId!);
 
       if (data.status === 'Submitted') {

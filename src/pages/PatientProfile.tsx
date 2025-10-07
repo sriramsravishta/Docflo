@@ -1,63 +1,154 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Copy, FileText, Link as LinkIcon } from 'lucide-react';
+import { Edit, FileText, Link as LinkIcon } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
-
-const mockPatient = {
-  id: '1',
-  name: 'Rajesh Kumar',
-  case: 'Hypertension',
-  age: 45,
-  gender: 'Male',
-  phone: '+91 98765 43210',
-};
-
-const mockPreConsults = [
-  {
-    id: '1',
-    timestamp: '2025-10-04 09:00 AM',
-    summary: 'Patient reporting increased blood pressure readings. Experiencing headaches and dizziness...',
-    documents: 3,
-  },
-];
-
-const mockConsultations = [
-  {
-    id: '1',
-    timestamp: '2025-10-03 11:30 AM',
-    summary: 'Blood pressure controlled. Continue medication. Patient feeling better overall...',
-  },
-];
-
-const mockFollowUps = [
-  {
-    id: '1',
-    timestamp: '2025-10-02 02:00 PM',
-    summary: 'Taking medication regularly. Blood pressure readings stable. No new symptoms...',
-  },
-];
+import {
+  getPatientById,
+  updatePatient,
+  getPreConsults,
+  getConsults,
+  getFollowUps,
+  createPreConsult,
+  createFollowUp,
+  getQueries,
+  getMessages
+} from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function PatientProfile() {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'pre-consult' | 'consultations' | 'monitoring' | 'queries'>('pre-consult');
+  const [loading, setLoading] = useState(true);
+  const [patient, setPatient] = useState<any>(null);
+  const [preConsults, setPreConsults] = useState<any[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const [queries, setQueries] = useState<any[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string>('');
+  const [editForm, setEditForm] = useState({
+    name: '',
+    case: '',
+    age: '',
+    gender: '',
+  });
+
+  useEffect(() => {
+    if (patientId) {
+      loadPatientData();
+    }
+  }, [patientId]);
+
+  const loadPatientData = async () => {
+    try {
+      setLoading(true);
+      const patientData = await getPatientById(patientId!);
+      setPatient(patientData);
+      setEditForm({
+        name: patientData.name,
+        case: patientData.case || '',
+        age: patientData.age.toString(),
+        gender: patientData.gender,
+      });
+
+      const [preConsultData, consultData, followUpData, queryData] = await Promise.all([
+        getPreConsults(patientId!),
+        getConsults(patientId!),
+        getFollowUps(patientId!),
+        getQueries(user?.id).then(queries => queries.filter(q => q.patient_id === patientId))
+      ]);
+
+      setPreConsults(preConsultData.filter(pc => pc.status === 'Submitted'));
+      setConsultations(consultData);
+      setFollowUps(followUpData.filter(fu => fu.status === 'Submitted'));
+      setQueries(queryData);
+    } catch (error) {
+      console.error('Error loading patient data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSendLink = (type: 'pre-consult' | 'follow-up') => {
     setConfirmAction(type);
     setShowConfirmation(true);
   };
 
-  const handleConfirmSend = () => {
-    setShowConfirmation(false);
-    alert(`${confirmAction === 'pre-consult' ? 'Pre-consult' : 'Follow-up'} form link sent via WhatsApp!`);
+  const handleConfirmSend = async () => {
+    try {
+      if (confirmAction === 'pre-consult') {
+        const preConsult = await createPreConsult(user!.id, patientId!);
+        const link = `${window.location.origin}/pre-consult/${preConsult.id}`;
+        console.log('Pre-consult link:', link);
+        alert(`Pre-consult form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
+      } else {
+        const followUp = await createFollowUp(user!.id, patientId!);
+        const link = `${window.location.origin}/follow-up/${followUp.id}`;
+        console.log('Follow-up link:', link);
+        alert(`Follow-up form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
+      }
+      setShowConfirmation(false);
+      await loadPatientData();
+    } catch (error) {
+      console.error('Error creating form:', error);
+      alert('Failed to create form');
+    }
   };
+
+  const handleUpdatePatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updatePatient(patientId!, {
+        name: editForm.name,
+        case: editForm.case || undefined,
+        age: parseInt(editForm.age),
+        gender: editForm.gender,
+      });
+      setShowEditModal(false);
+      await loadPatientData();
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      alert('Failed to update patient');
+    }
+  };
+
+  const openPreConsultForm = () => {
+    window.open(`/pre-consult/${patientId}?doctorId=${user?.id}`, '_blank');
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showBack />
+        <div className="max-w-5xl mx-auto px-4 py-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading patient data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showBack />
+        <div className="max-w-5xl mx-auto px-4 py-12 text-center">
+          <p className="text-gray-600">Patient not found</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -67,14 +158,14 @@ export default function PatientProfile() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{mockPatient.name}</h1>
-              {mockPatient.case && (
-                <p className="text-lg text-[#024CDB] mt-1">{mockPatient.case}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
+              {patient.case && (
+                <p className="text-lg text-[#024CDB] mt-1">{patient.case}</p>
               )}
               <p className="text-gray-600 mt-2">
-                {mockPatient.age} yrs, {mockPatient.gender}
+                {patient.age} yrs, {patient.gender}
               </p>
-              <p className="text-gray-600">{mockPatient.phone}</p>
+              <p className="text-gray-600">{patient.phone}</p>
             </div>
             <button
               onClick={() => setShowEditModal(true)}
@@ -150,7 +241,7 @@ export default function PatientProfile() {
                     <span>Send Link</span>
                   </button>
                   <button
-                    onClick={() => window.open(`/pre-consult/${patientId}?doctorId=1`, '_blank')}
+                    onClick={openPreConsultForm}
                     className="btn-secondary flex items-center space-x-2"
                   >
                     <FileText className="w-4 h-4" />
@@ -159,7 +250,7 @@ export default function PatientProfile() {
                 </div>
 
                 <div className="space-y-3">
-                  {mockPreConsults.map((item) => (
+                  {preConsults.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => {
@@ -168,13 +259,15 @@ export default function PatientProfile() {
                       }}
                       className="card"
                     >
-                      <p className="text-sm text-gray-500 mb-2">{item.timestamp}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.summary}</p>
-                      <p className="text-sm text-[#024CDB] mt-2">{item.documents} documents</p>
+                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
+                      {item.documents_uploaded && item.documents_uploaded.length > 0 && (
+                        <p className="text-sm text-[#024CDB] mt-2">{item.documents_uploaded.length} documents</p>
+                      )}
                     </div>
                   ))}
 
-                  {mockPreConsults.length === 0 && (
+                  {preConsults.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500">No pre-consult forms submitted</p>
                     </div>
@@ -185,7 +278,7 @@ export default function PatientProfile() {
 
             {activeTab === 'consultations' && (
               <div className="space-y-3">
-                {mockConsultations.map((item) => (
+                {consultations.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => {
@@ -194,12 +287,14 @@ export default function PatientProfile() {
                     }}
                     className="card"
                   >
-                    <p className="text-sm text-gray-500 mb-2">{item.timestamp}</p>
-                    <p className="text-gray-900 line-clamp-2">{item.summary}</p>
+                    <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                    <p className="text-gray-900 line-clamp-2">
+                      {item.consult_summary_final?.diagnosis || item.consult_summary_ai?.diagnosis || 'Processing...'}
+                    </p>
                   </div>
                 ))}
 
-                {mockConsultations.length === 0 && (
+                {consultations.length === 0 && (
                   <div className="text-center py-12">
                     <p className="text-gray-500">No consultations recorded</p>
                   </div>
@@ -220,7 +315,7 @@ export default function PatientProfile() {
                 </div>
 
                 <div className="space-y-3">
-                  {mockFollowUps.map((item) => (
+                  {followUps.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => {
@@ -229,12 +324,12 @@ export default function PatientProfile() {
                       }}
                       className="card"
                     >
-                      <p className="text-sm text-gray-500 mb-2">{item.timestamp}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.summary}</p>
+                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
                     </div>
                   ))}
 
-                  {mockFollowUps.length === 0 && (
+                  {followUps.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500">No follow-up forms submitted</p>
                     </div>
@@ -244,8 +339,29 @@ export default function PatientProfile() {
             )}
 
             {activeTab === 'queries' && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No queries from this patient</p>
+              <div className="space-y-3">
+                {queries.map((query) => (
+                  <div
+                    key={query.id}
+                    className="card"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        query.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {query.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
+                  </div>
+                ))}
+
+                {queries.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No queries from this patient</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -257,23 +373,45 @@ export default function PatientProfile() {
         onClose={() => setShowEditModal(false)}
         title="Edit Patient"
       >
-        <form className="space-y-4">
+        <form onSubmit={handleUpdatePatient} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input type="text" defaultValue={mockPatient.name} className="input-field" />
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="input-field"
+              required
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
-            <input type="text" defaultValue={mockPatient.case} className="input-field" />
+            <input
+              type="text"
+              value={editForm.case}
+              onChange={(e) => setEditForm({ ...editForm, case: e.target.value })}
+              className="input-field"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-              <input type="number" defaultValue={mockPatient.age} className="input-field" />
+              <input
+                type="number"
+                value={editForm.age}
+                onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+                className="input-field"
+                required
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select defaultValue={mockPatient.gender} className="input-field">
+              <select
+                value={editForm.gender}
+                onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+                className="input-field"
+                required
+              >
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
@@ -291,12 +429,87 @@ export default function PatientProfile() {
         </form>
       </Modal>
 
+      {showDetailModal && selectedItem && (
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={activeTab === 'pre-consult' ? 'Pre-Consult Details' :
+                 activeTab === 'consultations' ? 'Consultation Details' : 'Follow-Up Details'}
+        >
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Date</p>
+              <p className="text-gray-900">{formatDate(selectedItem.created_at)}</p>
+            </div>
+
+            {activeTab === 'pre-consult' && (
+              <>
+                {selectedItem.ai_summary && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
+                  </div>
+                )}
+                {selectedItem.documents_uploaded && selectedItem.documents_uploaded.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Documents</p>
+                    <div className="space-y-2">
+                      {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
+                        <div key={idx} className="text-sm text-[#024CDB]">
+                          {doc.name || `Document ${idx + 1}`}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === 'consultations' && selectedItem.consult_summary_final && (
+              <div className="space-y-3">
+                {selectedItem.consult_summary_final.diagnosis && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Diagnosis</p>
+                    <p className="text-gray-900">{selectedItem.consult_summary_final.diagnosis}</p>
+                  </div>
+                )}
+                {selectedItem.consult_summary_final.treatment_suggested && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Treatment</p>
+                    <p className="text-gray-900">{selectedItem.consult_summary_final.treatment_suggested}</p>
+                  </div>
+                )}
+                {selectedItem.consult_summary_final.medications && selectedItem.consult_summary_final.medications.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
+                    <div className="space-y-2">
+                      {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
+                        <div key={idx} className="text-sm">
+                          <span className="font-medium">{med.name}</span> - {med.frequency}, {med.duration}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'monitoring' && selectedItem.ai_summary && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
       <ConfirmationModal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmSend}
         title="Send Form Link"
-        message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${mockPatient.name} via WhatsApp?`}
+        message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${patient.name}?`}
       />
     </div>
   );

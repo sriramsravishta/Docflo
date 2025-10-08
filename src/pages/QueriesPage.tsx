@@ -187,11 +187,11 @@ export default function QueriesPage() {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h3 className="font-semibold text-gray-1000">{query.patients?.name || 'Unknown Patient'}</h3>
+                    <h3 className="font-semibold text-gray-900">{query.patients?.name || 'Unknown Patient'}</h3>
                     {query.patients?.case && (
                       <p className="text-sm text-[#024CDB]">{query.patients.case}</p>
                     )}
-                    <p className="text-sm text-gray-400">{formatDate(query.created_at)}</p>
+                    <p className="text-sm text-gray-400 border-t border-gray-100">{formatDate(query.created_at)}</p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${

@@ -268,7 +268,7 @@ export default function PatientProfile() {
             <div className="flex overflow-x-auto">
               <button
                 onClick={() => setActiveTab('pre-consult')}
-                className={`px-0 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'pre-consult'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -278,7 +278,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('consultations')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'consultations'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -288,7 +288,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('monitoring')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'monitoring'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -298,7 +298,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('queries')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'queries'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'

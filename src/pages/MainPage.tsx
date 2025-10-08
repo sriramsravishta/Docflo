@@ -149,7 +149,7 @@ export default function MainPage() {
                     )}
                     
                     </div>
-                    <div className="text-sm text-gray-500 mb-2">
+                    <div className="text-sm text-gray-500 mb-3">
                         {patient.age}y, {patient.gender}
                       </div>
                     <div className="mt-3 pt-3 border-t border-gray-100">

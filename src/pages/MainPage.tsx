@@ -150,7 +150,7 @@ export default function MainPage() {
                     
                       
                     </div>
-                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <div className="text-sm text-gray-500">
                         {patient.age}y, {patient.gender}
                       </div>
                     <div className="mt-3 pt-3 border-t border-gray-100">

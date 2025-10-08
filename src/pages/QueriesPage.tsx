@@ -191,7 +191,7 @@ export default function QueriesPage() {
                     {query.patients?.case && (
                       <p className="text-sm text-[#024CDB]">{query.patients.case}</p>
                     )}
-                    <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                    <p className="text-sm text-gray-400">{formatDate(query.created_at)}</p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${

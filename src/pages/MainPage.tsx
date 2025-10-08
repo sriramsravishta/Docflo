@@ -187,7 +187,7 @@ export default function MainPage() {
                   <div
                     key={patient.id}
                     onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB] group"
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer] group"
                   >
                     <div className="flex items-start justify-between">
                       <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>

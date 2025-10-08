@@ -149,10 +149,10 @@ export default function MainPage() {
                     )}
                     
                     </div>
-                    <div className="text-sm text-gray-500 mb-30">
+                    <div className="text-sm text-gray-500">
                         {patient.age}y, {patient.gender}
                       </div>
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-4 pt-3 border-t border-gray-100">
                       {patient.last_visit_at && (
                       <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
                     )}

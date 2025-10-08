@@ -142,14 +142,15 @@ export default function MainPage() {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
-                      <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {patient.age}y, {patient.gender}
-                      </div>
-                    </div>
-                    {patient.case && (
+                      {patient.case && (
                       <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
                         {patient.case}
                       </div>
+                    </div>
+                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {patient.age}y, {patient.gender}
+                      </div>
+                    
                     )}
                     {patient.last_visit_at && (
                       <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>

@@ -205,7 +205,7 @@ export default function QueriesPage() {
                   </span>
                 </div>
                 <p className="border-t border-gray-100 my-3"></p>
-                <p className="text-xs text-gray-400">{formatDate(query.created_at)}</p>
+                <p className="text-sm text-gray-400">{formatDate(query.created_at)}</p>
                 <p className="text-sm text-gray-600 line-clamp-2">{query.initial_query}</p>
               </div>
             ))}

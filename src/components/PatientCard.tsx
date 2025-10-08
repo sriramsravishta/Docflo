@@ -22,15 +22,23 @@ export default function PatientCard({ patient }: PatientCardProps) {
       onClick={() => navigate(`/patient/${patient.id}`)}
     >
       <h3 className="font-semibold text-lg text-gray-900">{patient.name}</h3>
+
+      {/* Age/Gender first */}
+      <p className="text-sm text-gray-600 mt-1">
+        {patient.age}y, {patient.gender}
+      </p>
+
+      {/* Case below */}
       {patient.case && (
         <p className="text-sm text-[#024CDB] mt-1">{patient.case}</p>
       )}
+
+      {/* Last Visit */}
       {patient.lastVisit && (
-        <p className="text-sm text-gray-500 mt-1">Last visit: {patient.lastVisit}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Last visit: {patient.lastVisit}
+        </p>
       )}
-      <p className="text-sm text-gray-600 mt-2">
-        {patient.age} yrs, {patient.gender}
-      </p>
     </div>
   );
 }

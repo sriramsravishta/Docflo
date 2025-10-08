@@ -189,7 +189,7 @@ export default function QueriesPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900">{query.patients?.name || 'Unknown Patient'}</h3>
                     {query.patients?.case && (
-                      <p className="text-sm text-[#024CDB] mt-1">{query.patients.case}</p>
+                      <p className="text-sm text-[#024CDB]">{query.patients.case}</p>
                     )}
                     <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
                   </div>

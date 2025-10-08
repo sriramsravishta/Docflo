@@ -309,7 +309,7 @@ export default function PatientProfile() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4">
             {activeTab === 'pre-consult' && (
               <div>
                 <div className="flex gap-3 mb-6">

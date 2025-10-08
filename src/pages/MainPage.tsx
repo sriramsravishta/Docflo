@@ -143,7 +143,7 @@ export default function MainPage() {
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
                       {patient.case && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-1">
                         {patient.case}
                       </div>
                     )}

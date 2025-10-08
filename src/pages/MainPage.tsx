@@ -34,8 +34,9 @@ export default function MainPage() {
       const patientsWithTodayPreConsult = [];
       for (const patient of patients) {
         const preConsults = await getPreConsults(patient.id);
-        const todaySubmitted = preConsults.find(
-          (pc) => pc.status === 'Submitted' && pc.created_at.startsWith(today)
+        const todaySubmitted = preConsults.find(pc =>
+          pc.status === 'Submitted' &&
+          pc.created_at.startsWith(today)
         );
         if (todaySubmitted) {
           patientsWithTodayPreConsult.push(patient);
@@ -51,20 +52,20 @@ export default function MainPage() {
     }
   };
 
-  const filteredListA = patientsWithPreConsult.filter((p) =>
+  const filteredListA = patientsWithPreConsult.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredListB = allPatients.filter((p) =>
+  const filteredListB = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
   };
 
@@ -104,12 +105,18 @@ export default function MainPage() {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => navigate('/queries')} className="btn-secondary flex items-center space-x-2">
+            <button
+              onClick={() => navigate('/queries')}
+              className="btn-secondary flex items-center space-x-2"
+            >
               <MessageSquare className="w-5 h-5" />
               <span>Queries</span>
             </button>
 
-            <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2">
+            <button
+              onClick={() => setShowAddPatient(true)}
+              className="btn-primary flex items-center space-x-2"
+            >
               <Plus className="w-5 h-5" />
               <span>Patient</span>
             </button>
@@ -117,9 +124,10 @@ export default function MainPage() {
         </div>
 
         <div className="space-y-8">
-          {/* ===== Today's Pre-consult Completed ===== */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Pre-consult Completed</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Today's Pre-consult Completed
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
               {loading ? (
                 <div className="col-span-full text-center py-8">
@@ -132,27 +140,23 @@ export default function MainPage() {
                     onClick={() => navigate(`/patient/${patient.id}`)}
                     className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB] group"
                   >
-                    {/* Top row: name + CASE chip (moved here) */}
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-                        {patient.name}
-                      </h3>
-                      {patient.case && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                          {patient.case}
-                        </div>
-                      )}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
+                      <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {patient.age}y, {patient.gender}
+                      </div>
                     </div>
-
-                    {/* Age/Gender chip now below */}
-                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block mb-3">
-                      {patient.age}y, {patient.gender}
-                    </div>
-
+                    {patient.case && (
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
+                        {patient.case}
+                      </div>
+                    )}
                     {patient.last_visit_at && (
                       <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
                     )}
-                    {/* Removed bottom divider + phone */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-400">{patient.phone}</p>
+                    </div>
                   </div>
                 ))
               )}
@@ -169,9 +173,10 @@ export default function MainPage() {
             )}
           </section>
 
-          {/* ===== All Patients ===== */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">All Patients</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              All Patients
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
               {loading ? (
                 <div className="col-span-full text-center py-8">
@@ -184,27 +189,23 @@ export default function MainPage() {
                     onClick={() => navigate(`/patient/${patient.id}`)}
                     className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB] group"
                   >
-                    {/* Top row: name + CASE chip (moved here) */}
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-                        {patient.name}
-                      </h3>
-                      {patient.case && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                          {patient.case}
-                        </div>
-                      )}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
+                      <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {patient.age}y, {patient.gender}
+                      </div>
                     </div>
-
-                    {/* Age/Gender chip now below */}
-                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block mb-3">
-                      {patient.age}y, {patient.gender}
-                    </div>
-
+                    {patient.case && (
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
+                        {patient.case}
+                      </div>
+                    )}
                     {patient.last_visit_at && (
                       <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
                     )}
-                    {/* Removed bottom divider + phone */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-400">{patient.phone}</p>
+                    </div>
                   </div>
                 ))
               )}
@@ -223,14 +224,12 @@ export default function MainPage() {
         </div>
       </div>
 
-      <Modal isOpen={showAddPatient} onClose={() => setShowAddPatient(false)} title="Add New Patient">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddPatient();
-          }}
-          className="space-y-4"
-        >
+      <Modal
+        isOpen={showAddPatient}
+        onClose={() => setShowAddPatient(false)}
+        title="Add New Patient"
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleAddPatient(); }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name <span className="text-red-500">*</span>
@@ -245,7 +244,9 @@ export default function MainPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Case (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Case (optional)
+            </label>
             <input
               type="text"
               value={newPatient.case}

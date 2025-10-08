@@ -224,7 +224,7 @@ export default function PatientProfile() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900 mb-2">{patient.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-1">{patient.name}</h1>
               {patient.case && (
                 <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-3">
                   {patient.case}

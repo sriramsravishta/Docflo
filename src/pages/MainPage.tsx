@@ -154,9 +154,7 @@ export default function MainPage() {
                     {patient.last_visit_at && (
                       <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
                     )}
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-xs text-gray-400">{patient.phone}</p>
-                    </div>
+                  
                   </div>
                 ))
               )}

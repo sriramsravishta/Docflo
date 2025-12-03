@@ -104,43 +104,67 @@ export default function ConsultSession() {
 
   const handleEndRecording = async () => {
     setIsRecording(false);
-    setIsAnalyzing(true);
     clearInterval((window as any).recordingInterval);
 
-    // Stop the media recorder
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-    }
-
-    // Wait for recording to finish and chunks to be available
-    setTimeout(async () => {
+    if (mediaRecorder) {
+      // Create a promise that resolves when recording stops
+      const recordingPromise = new Promise<Blob[]>((resolve) => {
+        const chunks: Blob[] = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          resolve(chunks);
+        };
+      });
+      
+      // Stop recording
+      if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      
+      setIsAnalyzing(true);
+      
       try {
+        // Wait for recording to complete
+        const finalChunks = await recordingPromise;
         let recordingFileUrl = '';
 
-        if (audioChunks.length > 0) {
+        if (finalChunks.length > 0) {
           // Create audio blob from chunks
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
           const fileName = `consultation-${patientId}-${Date.now()}.webm`;
+
+          console.log('Uploading audio file:', fileName, 'Size:', audioBlob.size);
 
           // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('consultation-recordings')
+            .from('Consultation Recordings')
             .upload(fileName, audioBlob, {
               contentType: 'audio/webm',
               upsert: false
             });
 
           if (uploadError) {
-            console.error('Upload error:', uploadError);
+            console.error('Storage upload error:', uploadError);
             throw new Error('Failed to upload recording');
           }
 
+          console.log('Upload successful:', uploadData);
+
           // Get public URL
           const { data: urlData } = supabase.storage
-            .from('consultation-recordings')
+            .from('Consultation Recordings')
             .getPublicUrl(uploadData.path);
 
           recordingFileUrl = urlData.publicUrl;
+          console.log('Public URL:', recordingFileUrl);
+        } else {
+          console.warn('No audio chunks recorded');
         }
 
         // Create consultation record with the public URL
@@ -150,6 +174,7 @@ export default function ConsultSession() {
           recordingFileUrl
         );
 
+        console.log('Consultation created with recording URL:', recordingFileUrl);
         setConsultId(consult.id);
 
         // Simulate AI processing
@@ -187,7 +212,10 @@ export default function ConsultSession() {
         setIsAnalyzing(false);
         alert('Failed to save consultation');
       }
-    }, 1000); // Wait 1 second for recording to finish
+    } else {
+      console.error('No media recorder available');
+      setIsAnalyzing(false);
+    }
   };
 
   const handleApprove = () => {

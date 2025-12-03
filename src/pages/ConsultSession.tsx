@@ -4,6 +4,7 @@ import { Mic, Square, Play, Pause } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { createConsult, updateConsult } from '../lib/database';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ConsultSession() {
@@ -17,6 +18,8 @@ export default function ConsultSession() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [consultId, setConsultId] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const [draftData, setDraftData] = useState({
     diagnosis: '',
@@ -41,7 +44,32 @@ export default function ConsultSession() {
     });
   };
 
-  const handleStartRecording = () => {
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        setAudioChunks(chunks);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      setMediaRecorder(recorder);
+      setAudioChunks([]);
+      recorder.start();
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Failed to start recording. Please check microphone permissions.');
+      return;
+    }
+
     setIsRecording(true);
     setIsPaused(false);
     const interval = setInterval(() => {
@@ -54,6 +82,14 @@ export default function ConsultSession() {
     const newPausedState = !isPaused;
     setIsPaused(newPausedState);
     
+    if (mediaRecorder) {
+      if (newPausedState) {
+        mediaRecorder.pause();
+      } else {
+        mediaRecorder.resume();
+      }
+    }
+
     if (newPausedState) {
       // Pausing - stop the interval
       clearInterval((window as any).recordingInterval);
@@ -71,16 +107,52 @@ export default function ConsultSession() {
     setIsAnalyzing(true);
     clearInterval((window as any).recordingInterval);
 
-    try {
-      const consult = await createConsult(
-        user!.id,
-        patientId!,
-        `dummy-recording-url/recording-${Date.now()}.webm`
-      );
+    // Stop the media recorder
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
 
-      setConsultId(consult.id);
+    // Wait for recording to finish and chunks to be available
+    setTimeout(async () => {
+      try {
+        let recordingFileUrl = '';
 
-      setTimeout(async () => {
+        if (audioChunks.length > 0) {
+          // Create audio blob from chunks
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const fileName = `consultation-${patientId}-${Date.now()}.webm`;
+
+          // Upload to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('consultation-recordings')
+            .upload(fileName, audioBlob, {
+              contentType: 'audio/webm',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw new Error('Failed to upload recording');
+          }
+
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('consultation-recordings')
+            .getPublicUrl(uploadData.path);
+
+          recordingFileUrl = urlData.publicUrl;
+        }
+
+        // Create consultation record with the public URL
+        const consult = await createConsult(
+          user!.id,
+          patientId!,
+          recordingFileUrl
+        );
+
+        setConsultId(consult.id);
+
+        // Simulate AI processing
         const dummyAISummary = {
           diagnosis: 'General fatigue and mild symptoms',
           history: 'Reported mild symptoms over the past week',
@@ -110,12 +182,12 @@ export default function ConsultSession() {
 
         setIsAnalyzing(false);
         setShowDraft(true);
-      }, 3000);
-    } catch (error) {
-      console.error('Error creating consultation:', error);
-      setIsAnalyzing(false);
-      alert('Failed to save consultation');
-    }
+      } catch (error) {
+        console.error('Error creating consultation:', error);
+        setIsAnalyzing(false);
+        alert('Failed to save consultation');
+      }
+    }, 1000); // Wait 1 second for recording to finish
   };
 
   const handleApprove = () => {

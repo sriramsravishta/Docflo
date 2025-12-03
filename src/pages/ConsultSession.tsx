@@ -143,7 +143,7 @@ export default function ConsultSession() {
 
           // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('Consultation Recordings')
+            .from('consultation-recordings')
             .upload(fileName, audioBlob, {
               contentType: 'audio/webm',
               upsert: false
@@ -158,7 +158,7 @@ export default function ConsultSession() {
 
           // Get public URL
           const { data: urlData } = supabase.storage
-            .from('Consultation Recordings')
+            .from('consultation-recordings')
             .getPublicUrl(uploadData.path);
 
           recordingFileUrl = urlData.publicUrl;

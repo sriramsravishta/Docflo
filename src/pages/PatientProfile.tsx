@@ -71,7 +71,12 @@ export default function PatientProfile() {
         getQueries(user?.id).then(queries => queries.filter(q => q.patient_id === patientId))
       ]);
 
-      setPreConsults(preConsultData.filter(pc => pc.status === 'Submitted'));
+      // Only show pre-consults that are submitted AND have AI summary populated
+      setPreConsults(preConsultData.filter(pc => 
+        pc.status === 'Submitted' && 
+        pc.ai_summary && 
+        pc.ai_summary.trim() !== ''
+      ));
       setConsultations(consultData);
       setFollowUps(followUpData.filter(fu => fu.status === 'Submitted'));
       setQueries(queryData);

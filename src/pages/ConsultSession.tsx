@@ -17,6 +17,9 @@ export default function ConsultSession() {
   const [showDraft, setShowDraft] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isWaitingForAI, setIsWaitingForAI] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [showDelayMessage, setShowDelayMessage] = useState(false);
   const [consultId, setConsultId] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
@@ -177,36 +180,75 @@ export default function ConsultSession() {
         console.log('Consultation created with recording URL:', recordingFileUrl);
         setConsultId(consult.id);
 
-        // Simulate AI processing
-        const dummyAISummary = {
-          diagnosis: 'General fatigue and mild symptoms',
-          history: 'Reported mild symptoms over the past week',
-          chief_complaints: 'Weakness, headache, and general discomfort',
-          treatment_suggested: 'Hydration, rest, and over-the-counter pain relief',
-          medications: [
-            { name: 'Paracetamol', frequency: 'Twice daily', duration: '5 days', timing: 'After meals' }
-          ],
-          key_personal_insights: 'Patient seems stressed due to work. Consider follow-up for stress management.',
-          followup_recommendations: 'Review after 7 days to assess progress'
-        };
-
+        // Set empty AI summary initially - will be filled by n8n workflow
         await updateConsult(consult.id, {
           recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
-          consult_summary_ai: dummyAISummary
-        });
-
-        setDraftData({
-          diagnosis: dummyAISummary.diagnosis,
-          history: dummyAISummary.history,
-          chiefComplaints: dummyAISummary.chief_complaints,
-          treatmentSuggested: dummyAISummary.treatment_suggested,
-          medications: dummyAISummary.medications,
-          keyPersonalInsights: dummyAISummary.key_personal_insights,
-          followupRecommendations: dummyAISummary.followup_recommendations
+          consult_summary_ai: ''
         });
 
         setIsAnalyzing(false);
-        setShowDraft(true);
+        setIsWaitingForAI(true);
+        setCountdown(60);
+        setShowDelayMessage(false);
+        
+        // Start countdown timer
+        const countdownInterval = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              setShowDelayMessage(true);
+              clearInterval(countdownInterval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
+        // Poll database for AI summary
+        const pollForAISummary = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('consult')
+              .select('consult_summary_ai')
+              .eq('id', consult.id)
+              .single();
+            
+            if (error) {
+              console.error('Error polling for AI summary:', error);
+              return;
+            }
+            
+            if (data.consult_summary_ai && typeof data.consult_summary_ai === 'object' && Object.keys(data.consult_summary_ai).length > 0) {
+              // AI summary is ready
+              clearInterval(countdownInterval);
+              clearInterval(pollInterval);
+              
+              const aiSummary = data.consult_summary_ai;
+              setDraftData({
+                diagnosis: aiSummary.diagnosis || '',
+                history: aiSummary.history || '',
+                chiefComplaints: aiSummary.chief_complaints || '',
+                treatmentSuggested: aiSummary.treatment_suggested || '',
+                medications: aiSummary.medications || [{ name: '', frequency: '', duration: '', timing: '' }],
+                keyPersonalInsights: aiSummary.key_personal_insights || '',
+                followupRecommendations: aiSummary.followup_recommendations || ''
+              });
+              
+              setIsWaitingForAI(false);
+              setShowDraft(true);
+            }
+          } catch (error) {
+            console.error('Error polling for AI summary:', error);
+          }
+        };
+        
+        // Poll every 2 seconds
+        const pollInterval = setInterval(pollForAISummary, 2000);
+        
+        // Cleanup function
+        (window as any).cleanupPolling = () => {
+          clearInterval(countdownInterval);
+          clearInterval(pollInterval);
+        };
       } catch (error) {
         console.error('Error creating consultation:', error);
         setIsAnalyzing(false);
@@ -217,6 +259,15 @@ export default function ConsultSession() {
       setIsAnalyzing(false);
     }
   };
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      if ((window as any).cleanupPolling) {
+        (window as any).cleanupPolling();
+      }
+    };
+  }, []);
 
   const handleApprove = () => {
     setShowConfirmation(true);
@@ -271,6 +322,40 @@ export default function ConsultSession() {
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Analyzing audio and preparing draft...</h2>
             <p className="text-gray-600">This will take just a moment</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isWaitingForAI) {
+    const progressPercentage = ((60 - countdown) / 60) * 100;
+    
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showBack />
+        <div className="max-w-5xl mx-auto px-4 py-12">
+          <div className="text-center max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Processing Consultation</h2>
+            
+            <div className="mb-4">
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-[#024CDB] h-3 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <p className="text-gray-600 mb-2">
+              The transcript will be ready in {countdown} seconds
+            </p>
+            
+            {showDelayMessage && (
+              <p className="text-orange-600 text-sm">
+                Taking longer than expected…
+              </p>
+            )}
           </div>
         </div>
       </div>

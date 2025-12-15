@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X, Send } from 'lucide-react';
+import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X, Send, Upload, CheckCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -18,6 +18,7 @@ import {
   updateQuery
 } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function PatientProfile() {
   const { patientId } = useParams();
@@ -39,6 +40,10 @@ export default function PatientProfile() {
   const [queryMessages, setQueryMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState('');
   const [confirmAction, setConfirmAction] = useState<string>('');
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [uploadDocuments, setUploadDocuments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showUploadConfirmation, setShowUploadConfirmation] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     case: '',
@@ -185,6 +190,88 @@ export default function PatientProfile() {
     createAndOpenForm();
   };
 
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setUploadDocuments(Array.from(e.target.files));
+    }
+  };
+
+  const handleSubmitDocuments = () => {
+    if (uploadDocuments.length === 0) {
+      alert('Please upload at least one document before submitting.');
+      return;
+    }
+    setShowUploadConfirmation(true);
+  };
+
+  const confirmDocumentSubmit = async () => {
+    if (!patientId || !user) return;
+
+    try {
+      setIsUploading(true);
+      setShowUploadConfirmation(false);
+
+      // Create new pre-consult record
+      const preConsult = await createPreConsult(user.id, patientId);
+
+      // Upload each file to Supabase Storage
+      const uploadedUrls = [];
+      
+      for (const file of uploadDocuments) {
+        const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
+        
+        console.log('Uploading file:', fileName, 'Size:', file.size);
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('pre-consultation-documents')
+          .upload(fileName, file, {
+            contentType: file.type,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error('Failed to upload document: ' + file.name);
+        }
+
+        console.log('Upload successful:', uploadData);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('pre-consultation-documents')
+          .getPublicUrl(uploadData.path);
+
+        const publicUrl = urlData.publicUrl;
+        console.log('Public URL:', publicUrl);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      // Update pre-consult record with uploaded document URLs
+      await updatePreConsult(preConsult.id, {
+        status: 'Submitted',
+        documents_uploaded: uploadedUrls,
+        ai_summary: null // Will be filled by n8n workflow
+      });
+
+      console.log('Pre-consult submitted with documents:', uploadedUrls);
+      
+      // Reset form and close modal
+      setUploadDocuments([]);
+      setShowDocumentUpload(false);
+      
+      // Reload patient data to show new submission
+      await loadPatientData();
+      
+      alert('Documents uploaded successfully!');
+    } catch (error) {
+      console.error('Error submitting documents:', error);
+      alert('Failed to upload documents. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -318,6 +405,13 @@ export default function PatientProfile() {
             {activeTab === 'pre-consult' && (
               <div>
                 <div className="flex gap-3 mb-6">
+                  <button
+                    onClick={() => setShowDocumentUpload(true)}
+                    className="btn-primary flex items-center space-x-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Documents</span>
+                  </button>
                   <button
                     onClick={openPreConsultForm}
                     className="btn-secondary flex items-center space-x-2"
@@ -764,6 +858,102 @@ export default function PatientProfile() {
         title="Send Form Link"
         message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${patient.name}?`}
       />
+
+      {showDocumentUpload && (
+        <div className="modal-overlay" onClick={() => setShowDocumentUpload(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Upload Documents</h3>
+              <button
+                onClick={() => setShowDocumentUpload(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Upload medical documents, prescriptions, or reports for this patient.
+            </p>
+            
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <Upload className="w-16 h-16 text-gray-400 mb-4" />
+              <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
+              <span className="text-sm text-gray-500">Images (JPG, PNG) or PDF files</span>
+              <input
+                type="file"
+                multiple
+                accept="image/*,.pdf"
+                onChange={handleDocumentUpload}
+                className="hidden"
+              />
+            </label>
+            
+            {uploadDocuments.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-medium text-gray-700 mb-3">
+                  {uploadDocuments.length} file{uploadDocuments.length !== 1 ? 's' : ''} selected:
+                </p>
+                <div className="space-y-2">
+                  {uploadDocuments.map((file, idx) => (
+                    <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
+                      <span className="mr-2">📎</span>
+                      <span className="flex-1">{file.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {(file.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end mt-8">
+              <button 
+                onClick={() => setShowDocumentUpload(false)} 
+                className="btn-secondary"
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSubmitDocuments} 
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isUploading || uploadDocuments.length === 0}
+              >
+                {isUploading ? 'Uploading...' : 'Submit Documents'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUploadConfirmation && (
+        <div className="modal-overlay" onClick={() => setShowUploadConfirmation(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Documents</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to submit these {uploadDocuments.length} document{uploadDocuments.length !== 1 ? 's' : ''}? They will be processed and added to the patient's pre-consult records.
+            </p>
+            <div className="flex space-x-3 justify-end">
+              <button 
+                onClick={() => setShowUploadConfirmation(false)} 
+                className="btn-secondary"
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDocumentSubmit} 
+                className="btn-primary"
+                disabled={isUploading}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

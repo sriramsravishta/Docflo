@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  CreditCard as Edit,
-  Link as LinkIcon,
-  MessageSquare,
-  ExternalLink,
-  X,
-  Send,
-  Upload,
-  CheckCircle
-} from 'lucide-react';
+import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X, Send, Upload, CheckCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -54,10 +45,6 @@ export default function PatientProfile() {
   const [uploadDocuments, setUploadDocuments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadConfirmation, setShowUploadConfirmation] = useState(false);
-
-  // ✅ NEW: in-app success toast message (replaces alert)
-  const [uploadSuccessMsg, setUploadSuccessMsg] = useState('');
-
   const [editForm, setEditForm] = useState({
     name: '',
     case: '',
@@ -91,9 +78,9 @@ export default function PatientProfile() {
       ]);
 
       // Only show pre-consults that are submitted AND have AI summary populated
-      setPreConsults(preConsultData.filter(pc =>
-        pc.status === 'Submitted' &&
-        pc.ai_summary &&
+      setPreConsults(preConsultData.filter(pc => 
+        pc.status === 'Submitted' && 
+        pc.ai_summary && 
         pc.ai_summary.trim() !== ''
       ));
       setConsultations(consultData);
@@ -218,20 +205,6 @@ export default function PatientProfile() {
     setShowUploadConfirmation(true);
   };
 
-  // ✅ NEW: helper functions for Safari-friendly upload
-  const sanitizeFileName = (name: string) => name.replace(/[^\w.\-]/g, '_');
-
-  const guessContentType = (file: File) => {
-    if (file.type && file.type.trim()) return file.type;
-    const lower = file.name.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'application/pdf';
-    if (lower.endsWith('.png')) return 'image/png';
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-    if (lower.endsWith('.webp')) return 'image/webp';
-    if (lower.endsWith('.gif')) return 'image/gif';
-    return 'application/octet-stream';
-  };
-
   const confirmDocumentSubmit = async () => {
     if (!patientId || !user) return;
 
@@ -243,31 +216,23 @@ export default function PatientProfile() {
       const preConsult = await createPreConsult(user.id, patientId);
 
       // Upload each file to Supabase Storage
-      const uploadedUrls: string[] = [];
-
+      const uploadedUrls = [];
+      
       for (const file of uploadDocuments) {
-        const contentType = guessContentType(file);
-        const safeName = sanitizeFileName(file.name);
-
-        // ✅ Keep bucket structure stable + unique
-        const filePath = `${preConsult.id}/${Date.now()}-${safeName}`;
-
-        console.log('Uploading file:', filePath, 'Size:', file.size, 'Type:', contentType);
-
-        // ✅ Safari-friendly: upload as Blob created from arrayBuffer
-        const blob = new Blob([await file.arrayBuffer()], { type: contentType });
+        const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
+        
+        console.log('Uploading file:', fileName, 'Size:', file.size);
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
-          .upload(filePath, blob, {
-            contentType,
-            upsert: false,
-            cacheControl: '3600'
+          .upload(fileName, file, {
+            contentType: file.type,
+            upsert: false
           });
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
-          throw new Error(`Failed to upload document: ${file.name} (${uploadError.message})`);
+          throw new Error('Failed to upload document: ' + file.name);
         }
 
         console.log('Upload successful:', uploadData);
@@ -291,18 +256,15 @@ export default function PatientProfile() {
       });
 
       console.log('Pre-consult submitted with documents:', uploadedUrls);
-
+      
       // Reset form and close modal
       setUploadDocuments([]);
       setShowDocumentUpload(false);
-
+      
       // Reload patient data to show new submission
       await loadPatientData();
-
-      // ✅ REPLACED: no browser alert popup
-      setUploadSuccessMsg('Documents uploaded successfully!');
-      setTimeout(() => setUploadSuccessMsg(''), 2500);
-
+      
+      alert('Documents uploaded successfully!');
     } catch (error) {
       console.error('Error submitting documents:', error);
       alert('Failed to upload documents. Please try again.');
@@ -313,14 +275,14 @@ export default function PatientProfile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }) + ' at ' + date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }) + ' at ' + date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
       minute: '2-digit',
-      hour12: true
+      hour12: true 
     });
   };
 
@@ -351,15 +313,6 @@ export default function PatientProfile() {
     <div className="min-h-screen bg-gray-50">
       <Navbar showBack />
 
-      {/* ✅ NEW: success toast (no alert popup) */}
-      {uploadSuccessMsg && (
-        <div className="fixed top-20 right-4 z-[999] bg-white border border-green-200 shadow-lg rounded-lg px-4 py-3 flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <p className="text-sm text-gray-900">{uploadSuccessMsg}</p>
-        </div>
-      )}
-
-      {/* Everything else below is unchanged from your original code */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-6 px-4 mb-6">
           <div className="flex items-start justify-between mb-6">
@@ -512,14 +465,401 @@ export default function PatientProfile() {
               </div>
             )}
 
-            {/* ...the rest of your component remains unchanged... */}
-            {/* (Keeping everything else same as you asked) */}
+            {activeTab === 'consultations' && (
+              <div className="space-y-3">
+                {consultations.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedItem(item);
+                      setShowDetailModal(true);
+                    }}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {formatDate(item.created_at)}
+                      </span>
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        Completed
+                      </span>
+                    </div>
+                    <p className="text-gray-900 text-sm line-clamp-2">
+                      {item.consult_summary_final?.diagnosis || item.consult_summary_ai?.diagnosis || 'Processing...'}
+                    </p>
+                  </div>
+                ))}
+
+                {consultations.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No consultations recorded</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'monitoring' && (
+              <div>
+                <div className="flex justify-end mb-6">
+                  <button
+                    onClick={() => handleSendLink('follow-up')}
+                    className="btn-primary flex items-center space-x-2"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    <span>Send Follow-up Form</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {followUps.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setShowDetailModal(true);
+                      }}
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {formatDate(item.created_at)}
+                        </span>
+                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                          Submitted
+                        </span>
+                      </div>
+                      <p className="text-gray-900 text-sm line-clamp-2">{item.ai_summary || 'Processing...'}</p>
+                    </div>
+                  ))}
+
+                  {followUps.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">No follow-up forms submitted</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'queries' && (
+              <div>
+                <div className="flex justify-end mb-6">
+                  <button
+                    onClick={() => window.open(`/patient-queries/${patientId}/${user?.id}`, '_blank')}
+                    className="btn-primary flex items-center space-x-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Open Query Page</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {queries.map((query) => (
+                    <div
+                      key={query.id}
+                      onClick={() => handleQueryClick(query)}
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {formatDate(query.created_at)}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            query.priority === 'High'
+                              ? 'bg-red-100 text-red-700'
+                              : query.priority === 'Medium'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {query.priority}
+                        </span>
+                      </div>
+                      <p className="text-gray-900 text-sm line-clamp-2">{query.initial_query}</p>
+                    </div>
+                  ))}
+
+                  {queries.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">No queries from this patient</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Your existing modals remain unchanged */}
-      {/* Upload Documents Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Patient"
+      >
+        <form onSubmit={handleUpdatePatient} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="input-field"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
+            <input
+              type="text"
+              value={editForm.case}
+              onChange={(e) => setEditForm({ ...editForm, case: e.target.value })}
+              className="input-field"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <input
+                type="number"
+                value={editForm.age}
+                onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+                className="input-field"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+              <select
+                value={editForm.gender}
+                onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+                className="input-field"
+                required
+              >
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex space-x-3 justify-end pt-4">
+            <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              Save
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {showQueryModal && selectedQuery && (
+        <div className="modal-overlay" onClick={() => setShowQueryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Query Thread</h2>
+                <p className="text-sm text-gray-600">{patient?.name || 'Unknown Patient'}</p>
+                {patient?.case && (
+                  <p className="text-sm text-[#024CDB]">{patient.case}</p>
+                )}
+                <p className="text-sm text-gray-500">{patient?.phone || 'No phone'}</p>
+              </div>
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 max-h-96">
+              <div className="space-y-3">
+                <div className="flex justify-start pr-12">
+                  <div className="bg-gray-50 rounded-lg p-3 max-w-md">
+                    <p className="text-xs text-gray-500 mb-1">{formatDate(selectedQuery.created_at)}</p>
+                    <p className="text-gray-900">{selectedQuery.initial_query}</p>
+                  </div>
+                </div>
+                {queryMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      msg.sender_type === 'Doctor' ? 'justify-end pl-12' : 'justify-start pr-12'
+                    }`}
+                  >
+                    <div
+                      className={`rounded-lg p-3 max-w-md ${
+                        msg.sender_type === 'Doctor' ? 'bg-blue-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      <p className="text-xs text-gray-500 mb-1">{formatDate(msg.created_at)}</p>
+                      <p className="text-gray-900">{msg.message}</p>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {msg.attachments.map((attachment: any, idx: number) => (
+                            <div key={idx} className="text-xs text-[#024CDB] bg-white rounded px-2 py-1">
+                              📎 {attachment.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your reply..."
+                  className="flex-1 input-field"
+                />
+                <button onClick={handleSendReply} className="btn-primary flex items-center space-x-2">
+                  <Send className="w-4 h-4" />
+                  <span>Send</span>
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleMarkResolved} className="btn-primary flex-1" disabled={selectedQuery.status === 'Closed'}>
+                  {selectedQuery.status === 'Closed' ? 'Resolved' : 'Mark Resolved'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDetailModal && selectedItem && (
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={activeTab === 'pre-consult' ? 'Pre-Consult Details' :
+                 activeTab === 'consultations' ? 'Consultation Details' : 'Follow-Up Details'}
+        >
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
+              <p className="text-gray-900 font-semibold">{formatDate(selectedItem.created_at)}</p>
+            </div>
+
+            {activeTab === 'pre-consult' && (
+              <>
+                {selectedItem.ai_summary && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-2">AI Summary</p>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                    </div>
+                  </div>
+                )}
+                {selectedItem.documents_uploaded && selectedItem.documents_uploaded.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-2">Uploaded Documents</p>
+                    <div className="space-y-2 bg-gray-50 rounded-lg p-4">
+                      {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
+                        <div key={idx} className="flex items-center text-sm text-[#024CDB] bg-white rounded px-3 py-2">
+                          <span className="mr-2">📎</span>
+                          <a href={doc} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                            Document {idx + 1}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === 'consultations' && (selectedItem.consult_summary_final || selectedItem.consult_summary_ai) && (
+              <div className="space-y-4">
+                {(() => {
+                  const summary = selectedItem.consult_summary_final || selectedItem.consult_summary_ai;
+                  return (
+                    <>
+                {selectedItem.consult_summary_final.diagnosis && (
+                  <div>
+                        <p className="text-sm font-medium text-gray-500 mb-2">Diagnosis</p>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-900 text-sm">{summary.diagnosis}</p>
+                        </div>
+                  </div>
+                )}
+                      {summary.history && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">History</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.history}</p>
+                          </div>
+                        </div>
+                      )}
+                      {summary.chief_complaints && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Chief Complaints</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.chief_complaints}</p>
+                          </div>
+                        </div>
+                      )}
+                {selectedItem.consult_summary_final.treatment_suggested && (
+                  <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Treatment Plan</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.treatment_suggested}</p>
+                          </div>
+                  </div>
+                )}
+                {selectedItem.consult_summary_final.medications && selectedItem.consult_summary_final.medications.length > 0 && (
+                  <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Medications</p>
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
+                            <div key={idx} className="bg-white rounded p-3 border-l-4 border-[#024CDB]">
+                              <p className="font-medium text-gray-900 text-sm">{med.name}</p>
+                              <p className="text-gray-600 text-xs mt-1">{med.frequency} • {med.duration} • {med.timing}</p>
+                            </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                      {summary.followup_recommendations && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Recommendations</p>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-900 text-sm">{summary.followup_recommendations}</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTab === 'monitoring' && selectedItem.ai_summary && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Summary</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      <ConfirmationModal
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmSend}
+        title="Send Form Link"
+        message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${patient.name}?`}
+      />
+
       {showDocumentUpload && (
         <div className="modal-overlay" onClick={() => setShowDocumentUpload(false)}>
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -532,11 +872,11 @@ export default function PatientProfile() {
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-
+            
             <p className="text-gray-600 mb-6">
               Upload medical documents, prescriptions, or reports for this patient.
             </p>
-
+            
             <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
               <Upload className="w-16 h-16 text-gray-400 mb-4" />
               <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
@@ -549,7 +889,7 @@ export default function PatientProfile() {
                 className="hidden"
               />
             </label>
-
+            
             {uploadDocuments.length > 0 && (
               <div className="mt-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">
@@ -570,15 +910,15 @@ export default function PatientProfile() {
             )}
 
             <div className="flex gap-3 justify-end mt-8">
-              <button
-                onClick={() => setShowDocumentUpload(false)}
+              <button 
+                onClick={() => setShowDocumentUpload(false)} 
                 className="btn-secondary"
                 disabled={isUploading}
               >
                 Cancel
               </button>
-              <button
-                onClick={handleSubmitDocuments}
+              <button 
+                onClick={handleSubmitDocuments} 
                 className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isUploading || uploadDocuments.length === 0}
               >
@@ -589,7 +929,6 @@ export default function PatientProfile() {
         </div>
       )}
 
-      {/* Upload Confirmation Modal */}
       {showUploadConfirmation && (
         <div className="modal-overlay" onClick={() => setShowUploadConfirmation(false)}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -598,15 +937,15 @@ export default function PatientProfile() {
               Are you sure you want to submit these {uploadDocuments.length} document{uploadDocuments.length !== 1 ? 's' : ''}? They will be processed and added to the patient's pre-consult records.
             </p>
             <div className="flex space-x-3 justify-end">
-              <button
-                onClick={() => setShowUploadConfirmation(false)}
+              <button 
+                onClick={() => setShowUploadConfirmation(false)} 
                 className="btn-secondary"
                 disabled={isUploading}
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmDocumentSubmit}
+              <button 
+                onClick={confirmDocumentSubmit} 
                 className="btn-primary"
                 disabled={isUploading}
               >
@@ -616,14 +955,6 @@ export default function PatientProfile() {
           </div>
         </div>
       )}
-
-      <ConfirmationModal
-        isOpen={false /* keep your existing usage */}
-        onClose={() => {}}
-        onConfirm={() => {}}
-        title=""
-        message=""
-      />
     </div>
   );
 }

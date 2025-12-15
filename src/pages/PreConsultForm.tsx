@@ -176,11 +176,11 @@ export default function PreConsultForm() {
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
             <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
-            <span className="text-sm text-gray-500">Images (JPG, PNG) or PDF files</span>
+            <span className="text-sm text-gray-500">Images (JPG, PNG, GIF, WebP) or PDF files</span>
             <input
               type="file"
               multiple
-              accept="image/*,.pdf"
+              accept="image/jpeg,image/png,image/gif,image/webp,.pdf"
               onChange={handleFileUpload}
               className="hidden"
             />

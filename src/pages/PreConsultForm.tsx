@@ -95,12 +95,7 @@ export default function PreConsultForm() {
         const publicUrl = urlData.publicUrl;
         console.log('Public URL:', publicUrl);
 
-        uploadedUrls.push({
-          url: publicUrl,
-          name: file.name,
-          type: file.type,
-          size: file.size
-        });
+        uploadedUrls.push(publicUrl);
       }
 
       // Update pre-consult record with uploaded document URLs

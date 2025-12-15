@@ -669,7 +669,9 @@ export default function PatientProfile() {
                       {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
                         <div key={idx} className="flex items-center text-sm text-[#024CDB] bg-white rounded px-3 py-2">
                           <span className="mr-2">📎</span>
-                          {doc.name || `Document ${idx + 1}`}
+                          <a href={doc} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                            Document {idx + 1}
+                          </a>
                         </div>
                       ))}
                     </div>

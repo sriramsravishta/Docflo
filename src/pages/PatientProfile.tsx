@@ -15,7 +15,8 @@ import {
   getQueries,
   getMessages,
   createMessage,
-  updateQuery
+  updateQuery,
+  updatePreConsult
 } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';

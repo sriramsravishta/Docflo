@@ -306,31 +306,7 @@ export default function PatientProfile() {
 
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const supportedTypes = [
-        'image/jpeg',
-        'image/jpg', 
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'application/pdf'
-      ];
-      
-      const unsupportedFiles = files.filter(file => !supportedTypes.includes(file.type.toLowerCase()));
-      
-      if (unsupportedFiles.length > 0) {
-        const unsupportedNames = unsupportedFiles.map(f => f.name).join(', ');
-        alert(`The following files are not supported: ${unsupportedNames}\n\nSupported formats: JPEG, PNG, GIF, WebP, PDF`);
-        
-        // Only keep supported files
-        const supportedFiles = files.filter(file => supportedTypes.includes(file.type.toLowerCase()));
-        setDocumentsToUpload(supportedFiles);
-        
-        // Reset the input value to allow re-selection
-        e.target.value = '';
-      } else {
-        setDocumentsToUpload(files);
-      }
+      setUploadDocuments(Array.from(e.target.files));
       setUploadError('');
     }
   };

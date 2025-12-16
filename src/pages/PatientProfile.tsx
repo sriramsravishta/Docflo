@@ -299,7 +299,25 @@ export default function PatientProfile() {
 
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setUploadDocuments(Array.from(e.target.files));
+      const files = Array.from(e.target.files);
+      const supportedTypes = [
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf'
+      ];
+      
+      const validFiles = files.filter(file => {
+        if (!supportedTypes.includes(file.type)) {
+          alert(`File "${file.name}" is not supported. Please upload only JPEG, PNG, GIF, WebP images or PDF files.`);
+          return false;
+        }
+        return true;
+      });
+      
+      setUploadDocuments(validFiles);
     }
   };
 
@@ -864,11 +882,11 @@ export default function PatientProfile() {
                   <div>
                     <p className="text-sm font-medium text-gray-500 mb-2">AI Summary</p>
 
-                    {/* QUICK-WIN: Show more of what’s in DB, without schema enforcement */}
+                    {/* QUICK-WIN: Show more of what's in DB, without schema enforcement */}
                     {(() => {
                       const ai = normalizeAiSummary(selectedItem.ai_summary);
 
-                      // If it’s plain text, show it as-is
+                      // If it's plain text, show it as-is
                       if (typeof ai === 'string') {
                         return (
                           <div className="bg-gray-50 rounded-lg p-4">
@@ -877,7 +895,7 @@ export default function PatientProfile() {
                         );
                       }
 
-                      // If it’s an object, show overall summary + additional sections + raw fallback
+                      // If it's an object, show overall summary + additional sections + raw fallback
                       if (typeof ai === 'object' && ai) {
                         const overall =
                           (typeof ai.overall_summary_markdown === 'string' && ai.overall_summary_markdown.trim())
@@ -1153,11 +1171,12 @@ export default function PatientProfile() {
               <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
               <span className="text-sm text-gray-500">Images (JPG, PNG, GIF, WebP) or PDF files</span>
               <input
-  type="file"
-  multiple
-  onChange={handleDocumentUpload}
-  className="hidden"
-/>
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
+                onChange={handleDocumentUpload}
+                className="hidden"
+              />
             </label>
 
             {uploadDocuments.length > 0 && (

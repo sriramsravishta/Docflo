@@ -80,9 +80,10 @@ export default function PatientProfile() {
       // Only show pre-consults that are submitted AND have AI summary populated
       setPreConsults(preConsultData.filter(pc => 
         pc.status === 'Submitted' && 
-        pc.ai_summary && 
-        typeof pc.ai_summary === 'string' && 
-        pc.ai_summary.trim() !== ''
+        pc.ai_summary && (
+          (typeof pc.ai_summary === 'string' && pc.ai_summary.trim() !== '') ||
+          (typeof pc.ai_summary === 'object' && Object.keys(pc.ai_summary).length > 0)
+        )
       ));
       setConsultations(consultData);
       setFollowUps(followUpData.filter(fu => fu.status === 'Submitted'));
@@ -448,7 +449,16 @@ export default function PatientProfile() {
                           Submitted
                         </span>
                       </div>
-                      <p className="text-gray-900 text-sm line-clamp-2 mb-2">{item.ai_summary || 'Processing...'}</p>
+                      <p className="text-gray-900 text-sm line-clamp-2 mb-2">
+                        {typeof item.ai_summary === 'string' 
+                          ? item.ai_summary 
+                          : typeof item.ai_summary === 'object' && item.ai_summary?.summary
+                            ? item.ai_summary.summary
+                            : typeof item.ai_summary === 'object' && item.ai_summary?.analysis
+                              ? item.ai_summary.analysis
+                              : 'AI analysis completed'
+                        }
+                      </p>
                       {item.documents_uploaded && item.documents_uploaded.length > 0 && (
                         <div className="flex items-center text-xs text-[#024CDB] bg-blue-50 px-2 py-1 rounded w-fit">
                           📎 {item.documents_uploaded.length} document{item.documents_uploaded.length !== 1 ? 's' : ''}
@@ -753,8 +763,124 @@ export default function PatientProfile() {
                 {selectedItem.ai_summary && (
                   <div>
                     <p className="text-sm font-medium text-gray-500 mb-2">AI Summary</p>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                      {typeof selectedItem.ai_summary === 'string' ? (
+                        <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
+                      ) : typeof selectedItem.ai_summary === 'object' ? (
+                        <div className="space-y-4">
+                          {selectedItem.ai_summary.summary && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Summary</p>
+                              <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.summary}</p>
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.analysis && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Analysis</p>
+                              <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.analysis}</p>
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.key_findings && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Key Findings</p>
+                              {Array.isArray(selectedItem.ai_summary.key_findings) ? (
+                                <ul className="list-disc list-inside space-y-1">
+                                  {selectedItem.ai_summary.key_findings.map((finding: string, idx: number) => (
+                                    <li key={idx} className="text-gray-900 text-sm">{finding}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.key_findings}</p>
+                              )}
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.recommendations && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Recommendations</p>
+                              {Array.isArray(selectedItem.ai_summary.recommendations) ? (
+                                <ul className="list-disc list-inside space-y-1">
+                                  {selectedItem.ai_summary.recommendations.map((rec: string, idx: number) => (
+                                    <li key={idx} className="text-gray-900 text-sm">{rec}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.recommendations}</p>
+                              )}
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.medical_history && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Medical History</p>
+                              <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.medical_history}</p>
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.symptoms && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Symptoms</p>
+                              {Array.isArray(selectedItem.ai_summary.symptoms) ? (
+                                <ul className="list-disc list-inside space-y-1">
+                                  {selectedItem.ai_summary.symptoms.map((symptom: string, idx: number) => (
+                                    <li key={idx} className="text-gray-900 text-sm">{symptom}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.symptoms}</p>
+                              )}
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.medications && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Current Medications</p>
+                              {Array.isArray(selectedItem.ai_summary.medications) ? (
+                                <div className="space-y-2">
+                                  {selectedItem.ai_summary.medications.map((med: any, idx: number) => (
+                                    <div key={idx} className="bg-white rounded p-3 border-l-4 border-blue-400">
+                                      {typeof med === 'string' ? (
+                                        <p className="text-gray-900 text-sm">{med}</p>
+                                      ) : (
+                                        <>
+                                          <p className="font-medium text-gray-900 text-sm">{med.name || med.medication}</p>
+                                          {(med.dosage || med.frequency) && (
+                                            <p className="text-gray-600 text-xs mt-1">
+                                              {med.dosage && `${med.dosage}`}
+                                              {med.dosage && med.frequency && ' • '}
+                                              {med.frequency && `${med.frequency}`}
+                                            </p>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.medications}</p>
+                              )}
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.allergies && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Allergies</p>
+                              <p className="text-gray-900 text-sm leading-relaxed">{selectedItem.ai_summary.allergies}</p>
+                            </div>
+                          )}
+                          {selectedItem.ai_summary.urgency && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Urgency Level</p>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                selectedItem.ai_summary.urgency.toLowerCase() === 'high' 
+                                  ? 'bg-red-100 text-red-800'
+                                  : selectedItem.ai_summary.urgency.toLowerCase() === 'medium'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {selectedItem.ai_summary.urgency}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">AI summary not available</p>
+                      )}
                     </div>
                   </div>
                 )}

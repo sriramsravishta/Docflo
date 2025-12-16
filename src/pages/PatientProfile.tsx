@@ -81,6 +81,7 @@ export default function PatientProfile() {
       setPreConsults(preConsultData.filter(pc => 
         pc.status === 'Submitted' && 
         pc.ai_summary && 
+        typeof pc.ai_summary === 'string' && 
         pc.ai_summary.trim() !== ''
       ));
       setConsultations(consultData);

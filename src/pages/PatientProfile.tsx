@@ -299,25 +299,7 @@ export default function PatientProfile() {
 
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const supportedTypes = [
-        'image/jpeg',
-        'image/jpg', 
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'application/pdf'
-      ];
-      
-      const validFiles = files.filter(file => {
-        if (!supportedTypes.includes(file.type)) {
-          alert(`File "${file.name}" is not supported. Please upload only JPEG, PNG, GIF, WebP images or PDF files.`);
-          return false;
-        }
-        return true;
-      });
-      
-      setUploadDocuments(validFiles);
+      setUploadDocuments(Array.from(e.target.files));
     }
   };
 
@@ -1173,7 +1155,6 @@ export default function PatientProfile() {
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
                 onChange={handleDocumentUpload}
                 className="hidden"
               />

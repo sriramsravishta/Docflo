@@ -45,6 +45,7 @@ export default function PatientProfile() {
   const [uploadDocuments, setUploadDocuments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadConfirmation, setShowUploadConfirmation] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
   const [editForm, setEditForm] = useState({
     name: '',
     case: '',
@@ -297,9 +298,16 @@ export default function PatientProfile() {
     createAndOpenForm();
   };
 
+  const handleCloseDocumentUpload = () => {
+    setShowDocumentUpload(false);
+    setUploadDocuments([]);
+    setUploadError('');
+  };
+
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setUploadDocuments(Array.from(e.target.files));
+      setUploadError('');
     }
   };
 
@@ -317,6 +325,7 @@ export default function PatientProfile() {
     try {
       setIsUploading(true);
       setShowUploadConfirmation(false);
+      setUploadError('');
 
       // Create new pre-consult record
       const preConsult = await createPreConsult(user.id, patientId);
@@ -332,13 +341,15 @@ export default function PatientProfile() {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            contentType: file.type,
-            upsert: false
+            contentType: file.type || 'application/octet-stream',
+            upsert: false,
+            duplex: 'half'
           });
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
-          throw new Error('Failed to upload document: ' + file.name);
+          setUploadError(`Failed to upload ${file.name}: ${uploadError.message}`);
+          return;
         }
 
         console.log('Upload successful:', uploadData);
@@ -364,16 +375,13 @@ export default function PatientProfile() {
       console.log('Pre-consult submitted with documents:', uploadedUrls);
 
       // Reset form and close modal
-      setUploadDocuments([]);
-      setShowDocumentUpload(false);
-
-      // Reload patient data to show new submission
       await loadPatientData();
+      handleCloseDocumentUpload();
 
       alert('Documents uploaded successfully!');
     } catch (error) {
       console.error('Error submitting documents:', error);
-      alert('Failed to upload documents. Please try again.');
+      setUploadError('Failed to upload documents. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -1132,12 +1140,12 @@ export default function PatientProfile() {
       />
 
       {showDocumentUpload && (
-        <div className="modal-overlay" onClick={() => setShowDocumentUpload(false)}>
+        <div className="modal-overlay" onClick={handleCloseDocumentUpload}>
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Upload Documents</h3>
               <button
-                onClick={() => setShowDocumentUpload(false)}
+                onClick={handleCloseDocumentUpload}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-gray-600" />
@@ -1160,6 +1168,12 @@ export default function PatientProfile() {
               />
             </label>
 
+            {uploadError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{uploadError}</p>
+              </div>
+            )}
+
             {uploadDocuments.length > 0 && (
               <div className="mt-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">
@@ -1181,7 +1195,7 @@ export default function PatientProfile() {
 
             <div className="flex gap-3 justify-end mt-8">
               <button
-                onClick={() => setShowDocumentUpload(false)}
+                onClick={handleCloseDocumentUpload}
                 className="btn-secondary"
                 disabled={isUploading}
               >

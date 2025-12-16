@@ -1153,12 +1153,11 @@ export default function PatientProfile() {
               <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
               <span className="text-sm text-gray-500">Images (JPG, PNG, GIF, WebP) or PDF files</span>
               <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/gif,image/webp,.pdf"
-                onChange={handleDocumentUpload}
-                className="hidden"
-              />
+  type="file"
+  multiple
+  onChange={handleDocumentUpload}
+  className="hidden"
+/>
             </label>
 
             {uploadDocuments.length > 0 && (

@@ -265,8 +265,9 @@ export default function PatientProfile() {
       
       // Reload patient data to show new submission
       await loadPatientData();
-      
-      alert('Documents uploaded successfully!');
+
+      // ✅ CHANGE REQUESTED: remove browser alert popup on success (no alert)
+      // alert('Documents uploaded successfully!');
     } catch (error) {
       console.error('Error submitting documents:', error);
       alert('Failed to upload documents. Please try again.');
@@ -449,16 +450,22 @@ export default function PatientProfile() {
                           Submitted
                         </span>
                       </div>
+
+                      {/* ✅ CHANGE REQUESTED: show overall_summary_markdown first, else other fallbacks */}
                       <p className="text-gray-900 text-sm line-clamp-2 mb-2">
-                        {typeof item.ai_summary === 'string' 
-                          ? item.ai_summary 
-                          : typeof item.ai_summary === 'object' && item.ai_summary?.summary
-                            ? item.ai_summary.summary
-                            : typeof item.ai_summary === 'object' && item.ai_summary?.analysis
-                              ? item.ai_summary.analysis
-                              : 'AI analysis completed'
-                        }
+                        {typeof item.ai_summary === 'string'
+                          ? item.ai_summary
+                          : typeof item.ai_summary === 'object'
+                            ? (
+                                item.ai_summary?.overall_summary_markdown ||
+                                item.ai_summary?.summary ||
+                                item.ai_summary?.analysis ||
+                                item.ai_summary?.timeline_of_medical_events?.[0]?.summary ||
+                                'AI analysis completed'
+                              )
+                            : 'AI analysis completed'}
                       </p>
+
                       {item.documents_uploaded && item.documents_uploaded.length > 0 && (
                         <div className="flex items-center text-xs text-[#024CDB] bg-blue-50 px-2 py-1 rounded w-fit">
                           📎 {item.documents_uploaded.length} document{item.documents_uploaded.length !== 1 ? 's' : ''}
@@ -768,6 +775,16 @@ export default function PatientProfile() {
                         <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
                       ) : typeof selectedItem.ai_summary === 'object' ? (
                         <div className="space-y-4">
+                          {/* ✅ CHANGE REQUESTED: render overall_summary_markdown first */}
+                          {selectedItem.ai_summary.overall_summary_markdown && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Overall Summary</p>
+                              <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">
+                                {selectedItem.ai_summary.overall_summary_markdown}
+                              </p>
+                            </div>
+                          )}
+
                           {selectedItem.ai_summary.summary && (
                             <div>
                               <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Summary</p>
@@ -877,6 +894,22 @@ export default function PatientProfile() {
                               </span>
                             </div>
                           )}
+
+                          {/* ✅ CHANGE REQUESTED: final fallback to show raw JSON if schema is unknown */}
+                          {!selectedItem.ai_summary.overall_summary_markdown &&
+                            !selectedItem.ai_summary.summary &&
+                            !selectedItem.ai_summary.analysis &&
+                            !selectedItem.ai_summary.key_findings &&
+                            !selectedItem.ai_summary.recommendations &&
+                            !selectedItem.ai_summary.medical_history &&
+                            !selectedItem.ai_summary.symptoms &&
+                            !selectedItem.ai_summary.medications &&
+                            !selectedItem.ai_summary.allergies &&
+                            !selectedItem.ai_summary.urgency && (
+                              <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words">
+                                {JSON.stringify(selectedItem.ai_summary, null, 2)}
+                              </pre>
+                            )}
                         </div>
                       ) : (
                         <p className="text-gray-500 text-sm">AI summary not available</p>

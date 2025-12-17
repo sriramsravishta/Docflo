@@ -37,6 +37,7 @@ export default function PatientProfile() {
   const [pastSummaries, setPastSummaries] = useState<any[]>([]);
   const [selectedSummary, setSelectedSummary] = useState<any>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'summary' | 'past-summaries'>('summary');
 
   const [editData, setEditData] = useState({
     name: '',
@@ -573,36 +574,254 @@ export default function PatientProfile() {
         </div>
 
         {/* Summary Section */}
-        <div className="space-y-6">
-          {/* Latest Summary */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Summary</h2>
-            {latestSummary ? (
-              renderSummaryContent(latestSummary)
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No summary available yet</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
+              <button
+                onClick={() => setActiveTab('summary')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'summary'
+                    ? 'border-[#024CDB] text-[#024CDB]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Summary
+              </button>
+              <button
+                onClick={() => setActiveTab('past-summaries')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'past-summaries'
+                    ? 'border-[#024CDB] text-[#024CDB]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Past Summaries
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'summary' && (
+              <div>
+                {latestSummary ? (
+                  renderSummaryContent(latestSummary)
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No summary available yet</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'past-summaries' && (
+              <div>
+                {pastSummaries.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pastSummaries.map((summary) => (
+                      <div
+                        key={summary.id}
+                        onClick={() => {
+                          setSelectedSummary(summary);
+                          setShowSummaryModal(true);
+                        }}
+                        className="card"
+                      >
+                        <div className="flex items-center text-sm text-gray-500 mb-2">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {formatDate(summary.created_at)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No past summaries available</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Past Summaries */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Past Summaries</h2>
-            {pastSummaries.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pastSummaries.map((summary) => (
-                  <div
-                    key={summary.id}
-                    onClick={() => {
-                      setSelectedSummary(summary);
-                      setShowSummaryModal(true);
-                    }}
-                    className="card"
-                  >
-                    <div className="flex items-center text-sm text-gray-500 mb-2">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {formatDate(summary.created_at)}
+      {/* Edit Patient Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Patient"
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={editData.name}
+              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              className="input-field"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Case (optional)
+            </label>
+            <input
+              type="text"
+              value={editData.case}
+              onChange={(e) => setEditData({ ...editData, case: e.target.value })}
+              className="input-field"
+              placeholder="e.g., Hypertension, Diabetes"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={editData.phone}
+              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+              className="input-field"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Age <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={editData.age}
+                onChange={(e) => setEditData({ ...editData, age: e.target.value })}
+                className="input-field"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Gender <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editData.gender}
+                onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
+                className="input-field"
+                required
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 justify-end pt-4">
+            <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Document Upload Modal */}
+      <Modal
+        isOpen={showDocumentUpload}
+        onClose={handleCloseDocumentUpload}
+        title="Upload Documents"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Upload medical documents, prescriptions, or reports for this patient.
+          </p>
+          
+          <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+            <Upload className="w-12 h-12 text-gray-400 mb-2" />
+            <span className="text-gray-600">Click to upload files</span>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </label>
+          
+          {documentsToUpload.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">
+                {documentsToUpload.length} file(s) selected:
+              </p>
+              {documentsToUpload.map((file, idx) => (
+                <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
+                  <span className="mr-2">📎</span>
+                  <span className="flex-1">{file.name}</span>
+                  <span className="text-xs text-gray-500">
+                    {(file.size / 1024 / 1024).toFixed(1)} MB
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+              {uploadError}
+            </div>
+          )}
+
+          <div className="flex space-x-3 justify-end pt-4">
+            <button onClick={handleCloseDocumentUpload} className="btn-secondary">
+              Cancel
+            </button>
+            <button 
+              onClick={confirmDocumentSubmit} 
+              disabled={documentsToUpload.length === 0 || isUploading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {isUploading ? 'Uploading...' : 'Upload Documents'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Summary Modal */}
+      <Modal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        title={`Summary - ${selectedSummary ? formatDate(selectedSummary.created_at) : ''}`}
+      >
+        {selectedSummary && renderSummaryContent(selectedSummary)}
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmationType === 'send-link' ? 'Send Pre-consult Link' :
+          confirmationType === 'open-form' ? 'Open Pre-consult Form' :
+          'Upload Documents'
+        }
+        message={
+          confirmationType === 'send-link' ? 'Create and display a pre-consult link for this patient?' :
+          confirmationType === 'open-form' ? 'Open the pre-consult form in a new window?' :
+          'Upload documents for this patient?'
+        }
+      />
+    </div>
+  );
+}
                     </div>
                   </div>
                 ))}

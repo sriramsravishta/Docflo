@@ -305,3 +305,45 @@ export const getFollowUpById = async (id: string) => {
   if (error) throw error;
   return data;
 };
+
+export const createSummary = async (patientId: string, summaryData: any) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('summaries')
+    .insert({
+      patient_id: patientId,
+      doctor_id: user.id,
+      summary: summaryData,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getSummaries = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('summaries')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const getLatestSummary = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('summaries')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};

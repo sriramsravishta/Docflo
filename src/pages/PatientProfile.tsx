@@ -1,18 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Upload, ExternalLink, Send, Mic, Square, X, CheckCircle, AlertCircle, Clock, Pill, TrendingUp, FileText } from 'lucide-react';
+import {
+  CreditCard as Edit,
+  Upload,
+  ExternalLink,
+  Send,
+  Mic,
+  Square,
+  Clock,
+  Pill,
+  TrendingUp,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { 
-  getPatientById, 
-  updatePatient, 
-  createPreConsult, 
-  getPreConsults,
+import {
+  getPatientById,
+  updatePatient,
+  createPreConsult,
   getSummaries,
   getLatestSummary,
   createConsult,
-  updateConsult
+  updateConsult,
+  updatePreConsult
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,22 +33,30 @@ export default function PatientProfile() {
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   const [showEditModal, setShowEditModal] = useState(false);
+
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationType, setConfirmationType] = useState<'send-link' | 'open-form' | 'upload-docs'>('send-link');
+
   const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [latestSummary, setLatestSummary] = useState<any>(null);
-  const [pastSummaries, setPastSummaries] = useState<any[]>([]);
-  const [selectedSummary, setSelectedSummary] = useState<any>(null);
+
+  const [latestSummaryRow, setLatestSummaryRow] = useState<any>(null);
+  const [pastSummaryRows, setPastSummaryRows] = useState<any[]>([]);
+
+  const [selectedSummaryRow, setSelectedSummaryRow] = useState<any>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'summary' | 'past-summaries'>('summary');
 
   const [editData, setEditData] = useState({
@@ -61,10 +81,10 @@ export default function PatientProfile() {
       setPatient(data);
       setEditData({
         name: data.name,
-        age: data.age.toString(),
-        phone: data.phone,
+        age: data.age?.toString?.() ?? '',
+        phone: data.phone ?? '',
         case: data.case || '',
-        gender: data.gender,
+        gender: data.gender ?? 'Male',
       });
     } catch (error) {
       console.error('Error loading patient:', error);
@@ -79,11 +99,16 @@ export default function PatientProfile() {
         getLatestSummary(patientId!),
         getSummaries(patientId!)
       ]);
-      
-      setLatestSummary(latest);
-      setPastSummaries(all.slice(1)); // Exclude the latest one
+
+      setLatestSummaryRow(latest || null);
+
+      // If "all" is already sorted DESC, slice(1) works. If not, we still keep "latest" separate.
+      const rest = Array.isArray(all) ? all.filter((x: any) => x?.id !== latest?.id) : [];
+      setPastSummaryRows(rest);
     } catch (error) {
       console.error('Error loading summaries:', error);
+      setLatestSummaryRow(null);
+      setPastSummaryRows([]);
     }
   };
 
@@ -148,11 +173,11 @@ export default function PatientProfile() {
       setUploadError('');
 
       const preConsult = await createPreConsult(user!.id, patientId!);
-      const uploadedUrls = [];
+      const uploadedUrls: string[] = [];
 
       for (const file of documentsToUpload) {
         const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
-        
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
@@ -181,6 +206,9 @@ export default function PatientProfile() {
 
       handleCloseDocumentUpload();
       alert('Documents uploaded successfully!');
+
+      // refresh summaries/patient if your pipeline creates/updates summary rows later
+      await loadSummaries();
     } catch (error: any) {
       console.error('Error submitting documents:', error);
       setUploadError(error.message || 'Failed to upload documents');
@@ -191,16 +219,13 @@ export default function PatientProfile() {
 
   const handleStartStopRecording = async () => {
     if (!isRecording) {
-      // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const recorder = new MediaRecorder(stream);
         const chunks: Blob[] = [];
 
         recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
-          }
+          if (event.data.size > 0) chunks.push(event.data);
         };
 
         recorder.onstop = async () => {
@@ -214,16 +239,13 @@ export default function PatientProfile() {
         setIsRecording(true);
         setRecordingTime(0);
 
-        const interval = setInterval(() => {
-          setRecordingTime(prev => prev + 1);
-        }, 1000);
+        const interval = setInterval(() => setRecordingTime(prev => prev + 1), 1000);
         (window as any).recordingInterval = interval;
       } catch (error) {
         console.error('Error starting recording:', error);
         alert('Failed to start recording. Please check microphone permissions.');
       }
     } else {
-      // Stop recording
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
       }
@@ -235,7 +257,7 @@ export default function PatientProfile() {
   const handleRecordingComplete = async (audioBlob: Blob) => {
     try {
       const fileName = `consultation-${patientId}-${Date.now()}.webm`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('consultation-recordings')
         .upload(fileName, audioBlob, {
@@ -243,21 +265,14 @@ export default function PatientProfile() {
           upsert: false
         });
 
-      if (uploadError) {
-        throw new Error('Failed to upload recording');
-      }
+      if (uploadError) throw new Error('Failed to upload recording');
 
       const { data: urlData } = supabase.storage
         .from('consultation-recordings')
         .getPublicUrl(uploadData.path);
 
-      const consult = await createConsult(
-        user!.id,
-        patientId!,
-        urlData.publicUrl
-      );
+      const consult = await createConsult(user!.id, patientId!, urlData.publicUrl);
 
-      // Update with dummy transcript and AI summary
       await updateConsult(consult.id, {
         recording_transcript: 'Recording completed and saved.',
         consult_summary_ai: {
@@ -273,6 +288,9 @@ export default function PatientProfile() {
 
       setRecordingTime(0);
       alert('Recording saved successfully!');
+
+      // If your backend generates a new “final summary” after consult, refresh:
+      await loadSummaries();
     } catch (error) {
       console.error('Error saving recording:', error);
       alert('Failed to save recording');
@@ -296,15 +314,11 @@ export default function PatientProfile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }) + ' at ' + date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
+    return (
+      date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) +
+      ' at ' +
+      date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -313,62 +327,88 @@ export default function PatientProfile() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // -----------------------------
-  // UPDATED: Summary render fix
-  // -----------------------------
-  const normalizeSummaryPayload = (row: any) => {
-    if (!row) return null;
-
-    // Most common: summaries table has a jsonb column called "summary"
-    const raw = row.summary ?? row.ai_summary ?? row;
-
+  // ----------------------------
+  // Summary helpers (UPDATED)
+  // ----------------------------
+  const normalizeJson = (raw: any) => {
     if (!raw) return null;
-
-    // If stored as string JSON or markdown text
+    if (typeof raw === 'object') return raw;
     if (typeof raw === 'string') {
       const s = raw.trim();
       if (!s) return null;
-      try {
-        return JSON.parse(s);
-      } catch {
-        return s; // plain text
-      }
+      try { return JSON.parse(s); } catch { return raw; }
     }
-
-    // If already object
     return raw;
   };
 
-  // lightweight markdown-ish rendering without adding new deps
+  // In your summaries table, the JSONB is usually in row.summary
+  // but sometimes your code might already pass the JSON directly.
+  const getSummaryJsonFromRow = (row: any) => {
+    if (!row) return null;
+    const fromCol = normalizeJson(row.summary);
+    if (fromCol && typeof fromCol === 'object') return fromCol;
+    const maybeDirect = normalizeJson(row);
+    if (maybeDirect && typeof maybeDirect === 'object' && (maybeDirect.sections || maybeDirect.overview)) return maybeDirect;
+    return fromCol || maybeDirect || null;
+  };
+
+  const summaryJsonLatest = useMemo(() => getSummaryJsonFromRow(latestSummaryRow), [latestSummaryRow]);
+
+  const priorityBadge = (priority?: string) => {
+    const p = (priority || '').toLowerCase();
+    const cls =
+      p === 'high'
+        ? 'bg-red-50 text-red-700 border-red-200'
+        : p === 'medium'
+          ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : p === 'low'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : 'bg-gray-50 text-gray-700 border-gray-200';
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${cls}`}>
+        Priority: {priority || 'Unknown'}
+      </span>
+    );
+  };
+
+  const SectionShell = ({ title, icon, children, defaultOpen = true }: any) => (
+    <details className="border border-gray-200 rounded-lg bg-white" open={defaultOpen}>
+      <summary className="cursor-pointer select-none px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="text-sm font-semibold text-gray-900">{title}</span>
+        </div>
+        <span className="text-xs text-gray-500">Expand/Collapse</span>
+      </summary>
+      <div className="px-4 pb-4 pt-1">{children}</div>
+    </details>
+  );
+
+  // lightweight markdown-ish rendering (headings + bullets + bold)
   const renderMarkdownLite = (text: string) => {
     const lines = (text || '').split('\n');
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {lines.map((line, idx) => {
           const l = line.trimEnd();
-
-          if (l.startsWith('### ')) {
-            return <h4 key={idx} className="text-base font-semibold text-gray-900">{l.replace(/^###\s*/, '')}</h4>;
-          }
-          if (l.startsWith('## ')) {
-            return <h3 key={idx} className="text-lg font-semibold text-gray-900">{l.replace(/^##\s*/, '')}</h3>;
-          }
-          if (l.startsWith('# ')) {
-            return <h2 key={idx} className="text-xl font-semibold text-gray-900">{l.replace(/^#\s*/, '')}</h2>;
-          }
+          if (l.startsWith('### ')) return <h4 key={idx} className="text-sm font-semibold text-gray-900">{l.replace(/^###\s*/, '')}</h4>;
+          if (l.startsWith('## ')) return <h3 key={idx} className="text-base font-semibold text-gray-900">{l.replace(/^##\s*/, '')}</h3>;
+          if (l.startsWith('# ')) return <h2 key={idx} className="text-lg font-semibold text-gray-900">{l.replace(/^#\s*/, '')}</h2>;
 
           if (l.startsWith('- ')) {
             const content = l.replace(/^-+\s*/, '');
             return (
               <div key={idx} className="flex gap-2">
-                <div className="pt-2">•</div>
-                <p className="text-sm text-gray-900 leading-relaxed break-words">{content}</p>
+                <div className="pt-1 text-gray-400">•</div>
+                <p className="text-sm text-gray-800 leading-relaxed break-words">{content}</p>
               </div>
             );
           }
 
           if (!l.trim()) return <div key={idx} />;
 
+          // Bold segments **text**
           const parts: any[] = [];
           let rest = l;
           while (rest.includes('**')) {
@@ -384,7 +424,7 @@ export default function PatientProfile() {
           if (rest) parts.push(<span key={`${idx}-b-${parts.length}`}>{rest}</span>);
 
           return (
-            <p key={idx} className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
+            <p key={idx} className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
               {parts.length ? parts : l}
             </p>
           );
@@ -393,190 +433,533 @@ export default function PatientProfile() {
     );
   };
 
-  const renderSummaryContent = (summaryRow: any) => {
-    const data = normalizeSummaryPayload(summaryRow);
+  // Trend table: show multiple measurements over time
+  const TrendBlock = ({ trend }: any) => {
+    const name = trend?.parameter_name || 'Parameter';
+    const unit = trend?.unit || '';
+    const nr = trend?.normal_range || '';
+    const comment = trend?.overall_trend_comment || '';
+    const measurements = Array.isArray(trend?.measurements) ? trend.measurements : [];
 
-    if (!data) {
+    // sort by measurement_datetime if possible (safe)
+    const sorted = [...measurements].sort((a: any, b: any) => {
+      const ad = new Date(a?.measurement_datetime || 0).getTime();
+      const bd = new Date(b?.measurement_datetime || 0).getTime();
+      return ad - bd;
+    });
+
+    return (
+      <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{name}</p>
+            <p className="text-xs text-gray-600 mt-1">
+              {nr ? `Normal: ${nr}` : 'Normal: —'}{unit ? ` • Unit: ${unit}` : ''}
+            </p>
+            {comment ? <p className="text-xs text-gray-700 mt-2">{comment}</p> : null}
+          </div>
+        </div>
+
+        <div className="mt-3 overflow-x-auto">
+          <table className="min-w-full text-xs">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2 pr-4 font-medium">Time</th>
+                <th className="py-2 pr-4 font-medium">Value</th>
+                <th className="py-2 pr-4 font-medium">Interpretation</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800">
+              {sorted.length === 0 ? (
+                <tr>
+                  <td className="py-2 pr-4" colSpan={3}>No measurements</td>
+                </tr>
+              ) : (
+                sorted.map((m: any, idx: number) => (
+                  <tr key={idx} className="border-t border-gray-200">
+                    <td className="py-2 pr-4 whitespace-nowrap text-gray-600">{m?.measurement_datetime || '—'}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap">
+                      {m?.value_raw ?? (m?.value_numeric !== null && m?.value_numeric !== undefined ? String(m.value_numeric) : '—')}
+                      {unit ? ` ${unit}` : ''}
+                    </td>
+                    <td className="py-2 pr-4">{m?.clinical_interpretation || '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFinalSummary = (row: any) => {
+    const s = getSummaryJsonFromRow(row);
+    if (!s || typeof s !== 'object') {
       return <p className="text-gray-500">No summary available</p>;
     }
 
-    // If plain text (not JSON)
-    if (typeof data === 'string') {
-      return (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{data}</p>
-        </div>
-      );
-    }
+    const overview = s.overview || {};
+    const sections = s.sections || {};
+    const rollups = sections.clinical_rollups || {};
 
-    // Your DB format (like pre-consult)
-    const overall =
-      (typeof data.overall_summary_markdown === 'string' && data.overall_summary_markdown.trim())
-        ? data.overall_summary_markdown
-        : (typeof data.summary === 'string' && data.summary.trim())
-          ? data.summary
-          : (typeof data.analysis === 'string' && data.analysis.trim())
-            ? data.analysis
-            : '';
+    const oneLiner = overview.one_liner || '';
+    const priority = overview.priority || '';
+    const confidenceNotes = Array.isArray(overview.confidence_notes) ? overview.confidence_notes : [];
+    const doctorTodo = Array.isArray(overview.doctor_todo) ? overview.doctor_todo : [];
 
-    const diagnosticTrends = Array.isArray(data.diagnostic_trends) ? data.diagnostic_trends : [];
-    const meds = Array.isArray(data.medication_summary) ? data.medication_summary : [];
-    const timeline = Array.isArray(data.timeline_of_medical_events) ? data.timeline_of_medical_events : [];
-    const confidenceNotes = Array.isArray(data.confidence_notes) ? data.confidence_notes : [];
+    const pre = sections.preconsult_digest?.latest || {};
+    const consult = sections.consultation_digest?.latest || {};
+    const follow = sections.followup_digest?.latest || {};
+    const queries = sections.queries_digest || {};
+
+    const preOverall = pre.overall_summary_markdown || '';
+    const preMeds = Array.isArray(pre.medication_summary) ? pre.medication_summary : [];
+    const preTrends = Array.isArray(pre.diagnostic_trends) ? pre.diagnostic_trends : [];
+    const preTimeline = Array.isArray(pre.timeline_of_medical_events) ? pre.timeline_of_medical_events : [];
+
+    const problems = Array.isArray(rollups.problem_list) ? rollups.problem_list : [];
+    const currentMeds = Array.isArray(rollups.current_medications) ? rollups.current_medications : [];
+    const keyTrends = Array.isArray(rollups.key_trends) ? rollups.key_trends : [];
+    const riskFlags = Array.isArray(rollups.risk_flags) ? rollups.risk_flags : [];
+    const nextVisit = Array.isArray(rollups.next_visit_focus) ? rollups.next_visit_focus : [];
+
+    const latestThreads = Array.isArray(queries.latest_threads) ? queries.latest_threads : [];
+    const openCount = typeof queries.open_count === 'number' ? queries.open_count : undefined;
 
     return (
-      <div className="space-y-6">
-        {/* Overall Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
-            <FileText className="w-4 h-4 mr-2" />
-            Summary
-          </h4>
-          <div className="text-blue-900">
-            {overall
-              ? renderMarkdownLite(overall)
-              : <p className="text-sm text-blue-800">AI summary not available</p>
-            }
+      <div className="space-y-4">
+        {/* Header overview (minimal color) */}
+        <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">At-a-glance</p>
+              {oneLiner ? (
+                <p className="text-sm text-gray-800 mt-2 leading-relaxed">{oneLiner}</p>
+              ) : (
+                <p className="text-sm text-gray-500 mt-2">No one-liner available</p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {priority ? priorityBadge(priority) : null}
+                {s.schema_version ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border border-gray-200 bg-white text-gray-700">
+                    {s.schema_version}
+                  </span>
+                ) : null}
+                {s.generated_at ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border border-gray-200 bg-white text-gray-600">
+                    Generated: {String(s.generated_at)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            {(doctorTodo.length > 0 || confidenceNotes.length > 0) && (
+              <div className="w-full sm:w-[340px]">
+                <div className="border border-gray-200 rounded-lg bg-white p-3">
+                  <p className="text-xs font-semibold text-gray-900">Doctor Focus</p>
+
+                  {doctorTodo.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[11px] text-gray-500 font-medium">Next visit focus</p>
+                      <ul className="mt-1 space-y-1">
+                        {doctorTodo.slice(0, 5).map((t: string, idx: number) => (
+                          <li key={idx} className="text-xs text-gray-800">• {t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {confidenceNotes.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[11px] text-gray-500 font-medium">Needs confirmation</p>
+                      <ul className="mt-1 space-y-1">
+                        {confidenceNotes.slice(0, 4).map((n: string, idx: number) => (
+                          <li key={idx} className="text-xs text-gray-700">• {n}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Confidence Notes */}
-        {confidenceNotes.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-900 mb-2 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              Confidence Notes
-            </h4>
-            <ul className="list-disc list-inside space-y-1 text-yellow-900 text-sm">
-              {confidenceNotes.map((n: string, idx: number) => (
-                <li key={idx}>{n}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Current Medications */}
-        {meds.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <h4 className="font-semibold text-indigo-900 mb-3 flex items-center">
-              <Pill className="w-4 h-4 mr-2" />
-              Current Medications
-            </h4>
-            <div className="grid gap-3">
-              {meds.map((m: any, idx: number) => (
-                <div key={idx} className="bg-white rounded-lg p-3 border border-indigo-200">
-                  <div className="font-medium text-indigo-900">
-                    {m.drug_name || m.name || `Medication ${idx + 1}`}
-                  </div>
-                  <div className="text-sm text-indigo-700 mt-1">
-                    {[
-                      m.frequency && `Frequency: ${m.frequency}`,
-                      m.duration_or_quantity && `Duration/Qty: ${m.duration_or_quantity}`
-                    ].filter(Boolean).join(' • ')}
-                  </div>
-                  {(m.dose || m.route) && (
-                    <div className="text-sm text-indigo-700">
-                      {[
-                        m.dose && `Dose: ${m.dose}`,
-                        m.route && `Route: ${m.route}`
-                      ].filter(Boolean).join(' • ')}
-                    </div>
-                  )}
-                  {m.indication && (
-                    <div className="text-xs text-indigo-700 mt-2">{m.indication}</div>
-                  )}
-                  {m.additional_notes && (
-                    <div className="text-xs text-indigo-600 mt-2">{m.additional_notes}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Diagnostic Trends */}
-        {diagnosticTrends.length > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Diagnostic Trends
-            </h4>
-            <div className="space-y-3">
-              {diagnosticTrends.map((t: any, idx: number) => {
-                const name = t.parameter_name || `Trend ${idx + 1}`;
-                const comment = t.overall_trend_comment || '';
-                const first = Array.isArray(t.measurements) && t.measurements.length > 0 ? t.measurements[0] : null;
-                const value = first?.value_raw ?? first?.value_numeric ?? '';
-                const dt = first?.measurement_datetime ?? '';
-                const unit = t.unit ?? '';
-                const normal = t.normal_range ?? '';
-
-                return (
-                  <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{name}</p>
-                        {normal && <p className="text-xs text-gray-500 mt-1">Normal: {normal}</p>}
-                        {comment && <p className="text-xs text-gray-600 mt-1">{comment}</p>}
-                      </div>
-                      {(value || dt) && (
-                        <div className="text-right">
-                          {value !== '' && (
-                            <p className="text-sm font-semibold text-gray-900">
-                              {value}{unit ? ` ${unit}` : ''}
-                            </p>
-                          )}
-                          {dt && <p className="text-xs text-gray-500 mt-1">{dt}</p>}
+        {/* Collapsibles */}
+        <div className="space-y-3">
+          <SectionShell
+            title="Clinical Rollup"
+            icon={<TrendingUp className="w-4 h-4 text-gray-600" />}
+            defaultOpen
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Problem List</p>
+                {problems.length === 0 ? (
+                  <p className="text-sm text-gray-500">No problems listed</p>
+                ) : (
+                  <div className="space-y-2">
+                    {problems.map((p: any, idx: number) => (
+                      <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-gray-900">{p?.name || 'Problem'}</p>
+                          <span className="text-xs text-gray-600 border border-gray-200 bg-white rounded-full px-2 py-0.5">
+                            {p?.status || '—'}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        {Array.isArray(p?.evidence) && p.evidence.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {p.evidence.slice(0, 4).map((e: string, i: number) => (
+                              <li key={i} className="text-xs text-gray-700">• {e}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                )}
+              </div>
 
-        {/* Timeline */}
-        {timeline.length > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">Timeline</h4>
-            <div className="space-y-3">
-              {timeline.map((e: any, idx: number) => (
-                <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {e.event_type || `Event ${idx + 1}`}
-                      </p>
-                      {e.cardiac_focus && <p className="text-xs text-gray-600 mt-1">{e.cardiac_focus}</p>}
-                      {e.location && <p className="text-xs text-gray-500 mt-1">{e.location}</p>}
-                    </div>
-                    {e.event_datetime && (
-                      <p className="text-xs text-gray-500 whitespace-nowrap">{e.event_datetime}</p>
-                    )}
+              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Current Medications (merged)</p>
+                {currentMeds.length === 0 ? (
+                  <p className="text-sm text-gray-500">No medications available</p>
+                ) : (
+                  <div className="space-y-2">
+                    {currentMeds.map((m: any, idx: number) => (
+                      <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <p className="text-sm font-semibold text-gray-900">{m?.name || 'Medication'}</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {m?.status ? `Status: ${m.status}` : 'Status: —'}
+                          {m?.source ? ` • Source: ${m.source}` : ''}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                  {e.summary && (
-                    <p className="text-xs text-gray-700 mt-2 whitespace-pre-wrap">{e.summary}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Key Trends (latest)</p>
+                {keyTrends.length === 0 ? (
+                  <p className="text-sm text-gray-500">No key trends</p>
+                ) : (
+                  <div className="space-y-2">
+                    {keyTrends.map((t: any, idx: number) => (
+                      <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <p className="text-sm font-semibold text-gray-900">{t?.parameter_name || 'Trend'}</p>
+                        <p className="text-xs text-gray-700 mt-1">
+                          {t?.latest_value || '—'}{t?.latest_when ? ` • ${t.latest_when}` : ''}
+                        </p>
+                        {t?.trend_comment ? <p className="text-xs text-gray-600 mt-1">{t.trend_comment}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Risk Flags</p>
+                {riskFlags.length === 0 ? (
+                  <p className="text-sm text-gray-500">No risk flags</p>
+                ) : (
+                  <div className="space-y-2">
+                    {riskFlags.map((r: any, idx: number) => {
+                      const sev = (r?.severity || '').toLowerCase();
+                      const sevCls =
+                        sev === 'high'
+                          ? 'border-red-200 bg-red-50 text-red-800'
+                          : sev === 'medium'
+                            ? 'border-amber-200 bg-amber-50 text-amber-800'
+                            : 'border-gray-200 bg-gray-50 text-gray-800';
+
+                      return (
+                        <div key={idx} className={`border rounded-lg p-3 ${sevCls}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold">{r?.label || 'Flag'}</p>
+                            <span className="text-xs border border-white/40 bg-white/60 rounded-full px-2 py-0.5">
+                              {r?.severity || '—'}
+                            </span>
+                          </div>
+                          {r?.why ? <p className="text-xs mt-1">{r.why}</p> : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {nextVisit.length > 0 && (
+              <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Next Visit Focus</p>
+                <ul className="space-y-1">
+                  {nextVisit.slice(0, 8).map((x: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-800">• {x}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </SectionShell>
+
+          <SectionShell
+            title="Pre-consult AI Summary"
+            icon={<FileText className="w-4 h-4 text-gray-600" />}
+            defaultOpen
+          >
+            {preOverall ? (
+              <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+                {renderMarkdownLite(preOverall)}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No pre-consult overall summary available</p>
+            )}
+
+            {preMeds.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Medication Summary (from documents)</p>
+                <div className="space-y-2">
+                  {preMeds.map((m: any, idx: number) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg bg-white p-3">
+                      <p className="text-sm font-semibold text-gray-900">{m?.drug_name || m?.name || `Medication ${idx + 1}`}</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {[
+                          m?.dose && `Dose: ${m.dose}`,
+                          m?.route && `Route: ${m.route}`,
+                          m?.frequency && `Freq: ${m.frequency}`,
+                          m?.duration_or_quantity && `Duration/Qty: ${m.duration_or_quantity}`
+                        ].filter(Boolean).join(' • ')}
+                      </p>
+                      {m?.indication ? <p className="text-xs text-gray-700 mt-2">{m.indication}</p> : null}
+                      {m?.additional_notes ? <p className="text-xs text-gray-500 mt-2">{m.additional_notes}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {preTrends.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Diagnostic Trends (over time)</p>
+                <div className="space-y-3">
+                  {preTrends.map((t: any, idx: number) => (
+                    <TrendBlock key={idx} trend={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {preTimeline.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-gray-900 mb-2">Timeline of Medical Events</p>
+                <div className="space-y-2">
+                  {preTimeline.map((e: any, idx: number) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg bg-white p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{e?.event_type || `Event ${idx + 1}`}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {e?.location ? e.location : '—'}
+                            {e?.cardiac_focus ? ` • ${e.cardiac_focus}` : ''}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 whitespace-nowrap">{e?.event_datetime || '—'}</p>
+                      </div>
+                      {e?.summary ? <p className="text-xs text-gray-800 mt-2 whitespace-pre-wrap">{e.summary}</p> : null}
+                      {e?.important_findings ? (
+                        <p className="text-xs text-gray-600 mt-2 whitespace-pre-wrap">{e.important_findings}</p>
+                      ) : null}
+                      {e?.source_reference ? (
+                        <p className="text-[11px] text-gray-500 mt-2">Source: {e.source_reference}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </SectionShell>
+
+          <SectionShell
+            title="Consultation Summary"
+            icon={<Mic className="w-4 h-4 text-gray-600" />}
+            defaultOpen={false}
+          >
+            {!consult || Object.keys(consult).length === 0 ? (
+              <p className="text-sm text-gray-500">No consultation summary available</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+                  <p className="text-xs text-gray-500">When</p>
+                  <p className="text-sm text-gray-900 font-semibold">{consult?.when || '—'}</p>
+
+                  {Array.isArray(consult?.diagnosis) && consult.diagnosis.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-900">Diagnosis</p>
+                      <ul className="mt-1 space-y-1">
+                        {consult.diagnosis.map((d: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-800">• {d}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                  {e.important_findings && (
-                    <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{e.important_findings}</p>
+
+                  {consult?.history && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-900">History</p>
+                      <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap">{consult.history}</p>
+                    </div>
+                  )}
+
+                  {Array.isArray(consult?.chief_complaints) && consult.chief_complaints.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-900">Chief Complaints</p>
+                      <ul className="mt-1 space-y-1">
+                        {consult.chief_complaints.map((c: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-800">• {c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {Array.isArray(consult?.treatment_plan) && consult.treatment_plan.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-900">Treatment Plan</p>
+                      <ul className="mt-1 space-y-1">
+                        {consult.treatment_plan.map((t: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-800">• {t}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Raw JSON */}
-        <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <summary className="cursor-pointer text-sm font-medium text-gray-700">
-            View full JSON
-          </summary>
-          <pre className="mt-3 text-xs text-gray-700 overflow-auto whitespace-pre-wrap">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </details>
+                {Array.isArray(consult?.medications) && consult.medications.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg bg-white p-4">
+                    <p className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <Pill className="w-4 h-4 text-gray-600" />
+                      Medications (from consult)
+                    </p>
+                    <div className="space-y-2">
+                      {consult.medications.map((m: any, idx: number) => (
+                        <div key={idx} className="border border-gray-200 rounded-lg bg-gray-50 p-3">
+                          <p className="text-sm font-semibold text-gray-900">{m?.name || `Medication ${idx + 1}`}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {[
+                              m?.frequency && `Freq: ${m.frequency}`,
+                              m?.duration && `Duration: ${m.duration}`,
+                              m?.timing && `Timing: ${m.timing}`
+                            ].filter(Boolean).join(' • ')}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {consult?.followup_instructions && Array.isArray(consult.followup_instructions) && consult.followup_instructions.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg bg-white p-4">
+                    <p className="text-xs font-semibold text-gray-900 mb-2">Follow-up Instructions</p>
+                    <ul className="space-y-1">
+                      {consult.followup_instructions.map((x: string, idx: number) => (
+                        <li key={idx} className="text-sm text-gray-800">• {x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </SectionShell>
+
+          <SectionShell
+            title="Follow-up Summary"
+            icon={<Clock className="w-4 h-4 text-gray-600" />}
+            defaultOpen={false}
+          >
+            {!follow || Object.keys(follow).length === 0 ? (
+              <p className="text-sm text-gray-500">No follow-up summary available</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+                  <p className="text-xs text-gray-500">When</p>
+                  <p className="text-sm text-gray-900 font-semibold">{follow?.when || '—'}</p>
+
+                  {follow?.summary_markdown ? (
+                    <div className="mt-3">{renderMarkdownLite(follow.summary_markdown)}</div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-2">No follow-up text</p>
+                  )}
+                </div>
+
+                {Array.isArray(follow?.red_flags) && follow.red_flags.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg bg-white p-4">
+                    <p className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-gray-600" />
+                      Red Flags
+                    </p>
+                    <ul className="space-y-1">
+                      {follow.red_flags.map((x: string, idx: number) => (
+                        <li key={idx} className="text-sm text-gray-800">• {x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </SectionShell>
+
+          <SectionShell
+            title="Queries Summary"
+            icon={<Send className="w-4 h-4 text-gray-600" />}
+            defaultOpen={false}
+          >
+            <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+              <p className="text-sm text-gray-900 font-semibold">
+                {typeof openCount === 'number' ? `${openCount} open queries` : 'Queries'}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">Latest threads (tap a past summary card to open full snapshot)</p>
+
+              {latestThreads.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-3">No queries available</p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {latestThreads.slice(0, 5).map((q: any, idx: number) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg bg-white p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{q?.topic || 'Query'}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {q?.when ? q.when : '—'}
+                            {q?.status ? ` • ${q.status}` : ''}
+                            {q?.priority ? ` • ${q.priority}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {q?.thread_summary_markdown ? (
+                        <div className="mt-2">{renderMarkdownLite(q.thread_summary_markdown)}</div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </SectionShell>
+
+          {/* Raw JSON (doctor / debug) */}
+          <details className="border border-gray-200 rounded-lg bg-white">
+            <summary className="cursor-pointer select-none px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-900">View full JSON</span>
+              <span className="text-xs text-gray-500">Expand/Collapse</span>
+            </summary>
+            <div className="px-4 pb-4">
+              <pre className="text-xs text-gray-700 overflow-auto whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3">
+                {JSON.stringify(s, null, 2)}
+              </pre>
+            </div>
+          </details>
+        </div>
       </div>
     );
   };
@@ -626,7 +1009,7 @@ export default function PatientProfile() {
                   </div>
                   {patient.case && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
                         {patient.case}
                       </span>
                     </div>
@@ -659,7 +1042,7 @@ export default function PatientProfile() {
                 <Upload className="w-4 h-4" />
                 <span>Upload Documents</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   setConfirmationType('open-form');
@@ -670,7 +1053,7 @@ export default function PatientProfile() {
                 <ExternalLink className="w-4 h-4" />
                 <span>Open Form</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   setConfirmationType('send-link');
@@ -685,8 +1068,8 @@ export default function PatientProfile() {
               <button
                 onClick={handleStartStopRecording}
                 className={`flex items-center justify-center space-x-2 font-medium py-2 px-4 rounded-lg transition-colors ${
-                  isRecording 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  isRecording
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
                     : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
                 }`}
               >
@@ -738,8 +1121,8 @@ export default function PatientProfile() {
           <div className="p-6">
             {activeTab === 'summary' && (
               <div>
-                {latestSummary ? (
-                  renderSummaryContent(latestSummary)
+                {latestSummaryRow ? (
+                  renderFinalSummary(latestSummaryRow)
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No summary available yet</p>
@@ -750,21 +1133,22 @@ export default function PatientProfile() {
 
             {activeTab === 'past-summaries' && (
               <div>
-                {pastSummaries.length > 0 ? (
+                {pastSummaryRows.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {pastSummaries.map((summary) => (
+                    {pastSummaryRows.map((row: any) => (
                       <div
-                        key={summary.id}
+                        key={row.id}
                         onClick={() => {
-                          setSelectedSummary(summary);
+                          setSelectedSummaryRow(row);
                           setShowSummaryModal(true);
                         }}
-                        className="card"
+                        className="border border-gray-200 rounded-lg bg-white p-4 hover:shadow-sm transition cursor-pointer"
                       >
-                        <div className="flex items-center text-sm text-gray-500 mb-2">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {formatDate(summary.created_at)}
+                        <div className="flex items-center text-sm text-gray-600 mb-1">
+                          <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                          {formatDate(row.created_at)}
                         </div>
+                        <p className="text-xs text-gray-500">Tap to open full snapshot</p>
                       </div>
                     ))}
                   </div>
@@ -877,7 +1261,7 @@ export default function PatientProfile() {
           <p className="text-gray-600">
             Upload medical documents, prescriptions, or reports for this patient.
           </p>
-          
+
           <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-12 h-12 text-gray-400 mb-2" />
             <span className="text-gray-600">Click to upload files</span>
@@ -888,7 +1272,7 @@ export default function PatientProfile() {
               className="hidden"
             />
           </label>
-          
+
           {documentsToUpload.length > 0 && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700">
@@ -916,8 +1300,8 @@ export default function PatientProfile() {
             <button onClick={handleCloseDocumentUpload} className="btn-secondary">
               Cancel
             </button>
-            <button 
-              onClick={confirmDocumentSubmit} 
+            <button
+              onClick={confirmDocumentSubmit}
               disabled={documentsToUpload.length === 0 || isUploading}
               className="btn-primary disabled:opacity-50"
             >
@@ -927,13 +1311,13 @@ export default function PatientProfile() {
         </div>
       </Modal>
 
-      {/* Summary Modal */}
+      {/* Summary Modal (popup) */}
       <Modal
         isOpen={showSummaryModal}
         onClose={() => setShowSummaryModal(false)}
-        title={`Summary - ${selectedSummary ? formatDate(selectedSummary.created_at) : ''}`}
+        title={`Summary - ${selectedSummaryRow ? formatDate(selectedSummaryRow.created_at) : ''}`}
       >
-        {selectedSummary && renderSummaryContent(selectedSummary)}
+        {selectedSummaryRow ? renderFinalSummary(selectedSummaryRow) : null}
       </Modal>
 
       {/* Confirmation Modal */}

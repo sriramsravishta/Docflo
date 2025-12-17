@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Upload, ExternalLink, Send, Mic, Square, X, CheckCircle, AlertCircle, Clock, Pill, TrendingUp, FileText } from 'lucide-react';
+import {
+  Pencil,
+  Upload,
+  ExternalLink,
+  Send,
+  Mic,
+  Square,
+  AlertCircle,
+  Clock,
+  Pill,
+  TrendingUp,
+  FileText,
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { 
-  getPatientById, 
-  updatePatient, 
-  createPreConsult, 
-  getPreConsults,
+import {
+  getPatientById,
+  updatePatient,
+  createPreConsult,
   getSummaries,
   getLatestSummary,
   createConsult,
-  updateConsult
+  updateConsult,
+  updatePreConsult,
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,57 +85,17 @@ export default function PatientProfile() {
     }
   };
 
-  // -----------------------
-  // FIX: Summary payload normalizer (NEW)
-  // -----------------------
-  const normalizeSummaryPayload = (row: any) => {
-    if (!row) return null;
-
-    // Most likely: row.summary is jsonb OR stringified JSON
-    const raw = row.summary ?? row.ai_summary ?? row.payload ?? row.data ?? null;
-    if (raw == null) return null;
-
-    // If it's already an object (jsonb), return it
-    if (typeof raw === 'object') return raw;
-
-    // If it's a string, try parse JSON; else treat as plain text
-    if (typeof raw === 'string') {
-      const s = raw.trim();
-      if (!s) return null;
-      try {
-        return JSON.parse(s);
-      } catch {
-        return { summary: s };
-      }
-    }
-
-    return null;
-  };
-
-  // -----------------------
-  // FIX: Load summaries correctly (UPDATED)
-  // -----------------------
   const loadSummaries = async () => {
     try {
-      const [latest, all] = await Promise.all([
-        getLatestSummary(patientId!),
-        getSummaries(patientId!)
-      ]);
+      const [latest, all] = await Promise.all([getLatestSummary(patientId!), getSummaries(patientId!)]);
 
-      // Set latest as-is
       setLatestSummary(latest || null);
 
-      // Do NOT blindly slice(1). Filter out latest safely by id.
       const latestId = latest?.id;
-      const past = Array.isArray(all)
-        ? all.filter((s: any) => !latestId || s?.id !== latestId)
-        : [];
-
-      setPastSummaries(past);
+      const filtered = Array.isArray(all) ? all.filter((x: any) => x?.id && x.id !== latestId) : [];
+      setPastSummaries(filtered);
     } catch (error) {
       console.error('Error loading summaries:', error);
-      setLatestSummary(null);
-      setPastSummaries([]);
     }
   };
 
@@ -188,27 +160,25 @@ export default function PatientProfile() {
       setUploadError('');
 
       const preConsult = await createPreConsult(user!.id, patientId!);
-      const uploadedUrls = [];
+      const uploadedUrls: string[] = [];
 
       for (const file of documentsToUpload) {
         const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
-        
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
             contentType: file.type || 'application/octet-stream',
             upsert: false,
-            duplex: 'half'
-          });
+            duplex: 'half',
+          } as any);
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
           throw new Error(`Failed to upload document: ${file.name}`);
         }
 
-        const { data: urlData } = supabase.storage
-          .from('pre-consultation-documents')
-          .getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
 
         uploadedUrls.push(urlData.publicUrl);
       }
@@ -216,7 +186,7 @@ export default function PatientProfile() {
       await updatePreConsult(preConsult.id, {
         status: 'Submitted',
         documents_uploaded: uploadedUrls,
-        ai_summary: null
+        ai_summary: null,
       });
 
       handleCloseDocumentUpload();
@@ -246,7 +216,7 @@ export default function PatientProfile() {
         recorder.onstop = async () => {
           const audioBlob = new Blob(chunks, { type: 'audio/webm' });
           await handleRecordingComplete(audioBlob);
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach((track) => track.stop());
         };
 
         setMediaRecorder(recorder);
@@ -255,7 +225,7 @@ export default function PatientProfile() {
         setRecordingTime(0);
 
         const interval = setInterval(() => {
-          setRecordingTime(prev => prev + 1);
+          setRecordingTime((prev) => prev + 1);
         }, 1000);
         (window as any).recordingInterval = interval;
       } catch (error) {
@@ -275,27 +245,21 @@ export default function PatientProfile() {
   const handleRecordingComplete = async (audioBlob: Blob) => {
     try {
       const fileName = `consultation-${patientId}-${Date.now()}.webm`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('consultation-recordings')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
-          upsert: false
+          upsert: false,
         });
 
       if (uploadError) {
         throw new Error('Failed to upload recording');
       }
 
-      const { data: urlData } = supabase.storage
-        .from('consultation-recordings')
-        .getPublicUrl(uploadData.path);
+      const { data: urlData } = supabase.storage.from('consultation-recordings').getPublicUrl(uploadData.path);
 
-      const consult = await createConsult(
-        user!.id,
-        patientId!,
-        urlData.publicUrl
-      );
+      const consult = await createConsult(user!.id, patientId!, urlData.publicUrl);
 
       // Update with dummy transcript and AI summary
       await updateConsult(consult.id, {
@@ -307,8 +271,8 @@ export default function PatientProfile() {
           treatment_suggested: 'Review recording for treatment plan',
           medications: [],
           key_personal_insights: 'Recording available for review',
-          followup_recommendations: 'Analyze recording and provide follow-up'
-        }
+          followup_recommendations: 'Analyze recording and provide follow-up',
+        },
       });
 
       setRecordingTime(0);
@@ -336,15 +300,19 @@ export default function PatientProfile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }) + ' at ' + date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
+    return (
+      date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }) +
+      ' at ' +
+      date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -354,189 +322,256 @@ export default function PatientProfile() {
   };
 
   // -----------------------
-  // FIX: Render summary from normalized payload (UPDATED)
+  // Summary rendering helpers
   // -----------------------
-  const renderSummaryContent = (row: any) => {
-    const summaryData = normalizeSummaryPayload(row);
+  const normalizeSummaryPayload = (row: any) => {
+    if (!row) return null;
 
-    if (!summaryData) {
+    // expected: row.summary (jsonb) OR row.ai_summary (jsonb) OR other json column
+    const candidate =
+      row.summary ??
+      row.ai_summary ??
+      row.summary_json ??
+      row.summary_data ??
+      row.payload ??
+      row.data ??
+      null;
+
+    if (!candidate) return null;
+
+    if (typeof candidate === 'object') return candidate;
+
+    if (typeof candidate === 'string') {
+      const s = candidate.trim();
+      if (!s) return null;
+      try {
+        return JSON.parse(s);
+      } catch {
+        return { overall_summary_markdown: s };
+      }
+    }
+
+    return null;
+  };
+
+  // lightweight markdown-ish rendering without adding new deps
+  const renderMarkdownLite = (text: string) => {
+    const lines = (text || '').split('\n');
+    return (
+      <div className="space-y-3">
+        {lines.map((line, idx) => {
+          const l = line.trimEnd();
+
+          // Headings
+          if (l.startsWith('### ')) {
+            return (
+              <h4 key={idx} className="text-base font-semibold text-gray-900">
+                {l.replace(/^###\s*/, '')}
+              </h4>
+            );
+          }
+          if (l.startsWith('## ')) {
+            return (
+              <h3 key={idx} className="text-lg font-semibold text-gray-900">
+                {l.replace(/^##\s*/, '')}
+              </h3>
+            );
+          }
+          if (l.startsWith('# ')) {
+            return (
+              <h2 key={idx} className="text-xl font-semibold text-gray-900">
+                {l.replace(/^#\s*/, '')}
+              </h2>
+            );
+          }
+
+          // Bullets
+          if (l.startsWith('- ')) {
+            const content = l.replace(/^-+\s*/, '');
+            return (
+              <div key={idx} className="flex gap-2">
+                <div className="pt-2">•</div>
+                <p className="text-sm text-gray-900 leading-relaxed break-words">{content}</p>
+              </div>
+            );
+          }
+
+          // Empty
+          if (!l.trim()) return <div key={idx} />;
+
+          // Bold segments **text**
+          const parts: any[] = [];
+          let rest = l;
+          while (rest.includes('**')) {
+            const start = rest.indexOf('**');
+            const end = rest.indexOf('**', start + 2);
+            if (end === -1) break;
+            const before = rest.slice(0, start);
+            const bold = rest.slice(start + 2, end);
+            if (before) parts.push(<span key={`${idx}-b-${parts.length}`}>{before}</span>);
+            parts.push(
+              <strong key={`${idx}-b-${parts.length}`} className="font-semibold">
+                {bold}
+              </strong>,
+            );
+            rest = rest.slice(end + 2);
+          }
+          if (rest) parts.push(<span key={`${idx}-b-${parts.length}`}>{rest}</span>);
+
+          return (
+            <p key={idx} className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
+              {parts.length ? parts : l}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderSummaryContent = (row: any) => {
+    const s = normalizeSummaryPayload(row);
+
+    if (!s) {
       return <p className="text-gray-500">No summary available</p>;
     }
 
-    // Keep your existing UI sections, but allow more key variants safely
-    const mainSummaryText =
-      summaryData.overall_summary_markdown ||
-      summaryData.summary ||
-      summaryData.overall_summary ||
-      '';
-
-    const analysisText =
-      summaryData.analysis ||
-      summaryData.overall_analysis ||
-      '';
-
-    const keyFindings =
-      summaryData.key_findings ||
-      summaryData.key_risks ||
-      summaryData.important_findings ||
-      null;
-
-    const recommendations =
-      summaryData.recommendations ||
-      summaryData.next_steps ||
-      null;
-
-    const medicalHistory =
-      summaryData.medical_history ||
-      summaryData.background ||
-      null;
-
-    const symptoms =
-      summaryData.symptoms ||
-      summaryData.chief_complaints ||
-      null;
-
-    const meds =
-      summaryData.medications ||
-      summaryData.medication_summary ||
-      [];
-
-    const allergies =
-      summaryData.allergies ||
-      null;
-
-    const urgency =
-      summaryData.urgency ||
-      summaryData.priority ||
-      null;
+    const overall = typeof s.overall_summary_markdown === 'string' ? s.overall_summary_markdown : '';
+    const meds = Array.isArray(s.medication_summary) ? s.medication_summary : [];
+    const trends = Array.isArray(s.diagnostic_trends) ? s.diagnostic_trends : [];
+    const timeline = Array.isArray(s.timeline_of_medical_events) ? s.timeline_of_medical_events : [];
+    const confidence = Array.isArray(s.confidence_notes) ? s.confidence_notes : [];
 
     return (
       <div className="space-y-6">
-        {/* Main Summary */}
-        {mainSummaryText && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
-              <FileText className="w-4 h-4 mr-2" />
-              Summary
-            </h4>
-            <p className="text-blue-800 whitespace-pre-wrap">{mainSummaryText}</p>
-          </div>
-        )}
+        {/* SUMMARY */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+            <FileText className="w-4 h-4 mr-2" />
+            Summary
+          </h4>
+          {overall ? <div className="text-blue-900">{renderMarkdownLite(overall)}</div> : <p className="text-blue-800">No overall summary available</p>}
+        </div>
 
-        {/* Analysis */}
-        {analysisText && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
-            <p className="text-gray-700 whitespace-pre-wrap">{analysisText}</p>
-          </div>
-        )}
-
-        {/* Key Findings */}
-        {keyFindings && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-900 mb-2 flex items-center">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Key Findings
-            </h4>
-            {Array.isArray(keyFindings) ? (
-              <ul className="list-disc list-inside space-y-1 text-yellow-800">
-                {keyFindings.map((finding: string, idx: number) => (
-                  <li key={idx}>{finding}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-yellow-800 whitespace-pre-wrap">{keyFindings}</p>
-            )}
-          </div>
-        )}
-
-        {/* Recommendations */}
-        {recommendations && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-semibold text-green-900 mb-2">Recommendations</h4>
-            {Array.isArray(recommendations) ? (
-              <ul className="list-disc list-inside space-y-1 text-green-800">
-                {recommendations.map((rec: string, idx: number) => (
-                  <li key={idx}>{rec}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-green-800 whitespace-pre-wrap">{recommendations}</p>
-            )}
-          </div>
-        )}
-
-        {/* Medical History */}
-        {medicalHistory && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h4 className="font-semibold text-purple-900 mb-2">Medical History</h4>
-            <p className="text-purple-800 whitespace-pre-wrap">{medicalHistory}</p>
-          </div>
-        )}
-
-        {/* Current Symptoms */}
-        {symptoms && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h4 className="font-semibold text-red-900 mb-2">Current Symptoms</h4>
-            {Array.isArray(symptoms) ? (
-              <ul className="list-disc list-inside space-y-1 text-red-800">
-                {symptoms.map((symptom: string, idx: number) => (
-                  <li key={idx}>{symptom}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-red-800 whitespace-pre-wrap">{symptoms}</p>
-            )}
-          </div>
-        )}
-
-        {/* Current Medications */}
-        {Array.isArray(meds) && meds.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <h4 className="font-semibold text-indigo-900 mb-3 flex items-center">
+        {/* CURRENT MEDICATIONS */}
+        {meds.length > 0 && (
+          <div className="bg-white border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
               <Pill className="w-4 h-4 mr-2" />
               Current Medications
             </h4>
-            <div className="grid gap-3">
-              {meds.map((med: any, idx: number) => (
-                <div key={idx} className="bg-white rounded-lg p-3 border border-indigo-200">
-                  <div className="font-medium text-indigo-900">
-                    {med?.name || med?.drug_name || med || `Medication ${idx + 1}`}
+
+            <div className="space-y-3">
+              {meds.map((m: any, idx: number) => (
+                <div key={idx} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-base font-semibold text-gray-900">{m.drug_name || `Medication ${idx + 1}`}</p>
+
+                  <div className="text-sm text-[#024CDB] mt-2 space-y-1">
+                    {m.frequency && <div>Frequency: {m.frequency}</div>}
+                    {m.duration_or_quantity && <div>Duration/Qty: {m.duration_or_quantity}</div>}
+                    {m.dose && <div>Dose: {m.dose}</div>}
+                    {m.route && <div>Route: {m.route}</div>}
                   </div>
-                  {med?.dosage && <div className="text-sm text-indigo-700">Dosage: {med.dosage}</div>}
-                  {med?.frequency && <div className="text-sm text-indigo-700">Frequency: {med.frequency}</div>}
-                  {med?.duration_or_quantity && <div className="text-sm text-indigo-700">Duration/Qty: {med.duration_or_quantity}</div>}
+
+                  {m.additional_notes && <p className="text-sm text-gray-600 mt-3 whitespace-pre-wrap">{m.additional_notes}</p>}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Allergies */}
-        {allergies && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <h4 className="font-semibold text-orange-900 mb-2 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              Allergies
+        {/* DIAGNOSTIC TRENDS */}
+        {trends.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Diagnostic Trends
             </h4>
-            <p className="text-orange-800 whitespace-pre-wrap">{allergies}</p>
+
+            <div className="space-y-3">
+              {trends.map((t: any, idx: number) => {
+                const first = Array.isArray(t.measurements) && t.measurements.length > 0 ? t.measurements[0] : null;
+                const value = first?.value_raw ?? first?.value_numeric ?? '';
+                const dt = first?.measurement_datetime ?? '';
+                const unit = t.unit ?? '';
+                return (
+                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{t.parameter_name || `Trend ${idx + 1}`}</p>
+                        {t.overall_trend_comment && <p className="text-xs text-gray-600 mt-1">{t.overall_trend_comment}</p>}
+                        {t.normal_range && <p className="text-xs text-gray-500 mt-1">Normal: {t.normal_range}</p>}
+                      </div>
+
+                      {(value || dt) && (
+                        <div className="text-right">
+                          {value !== '' && (
+                            <p className="text-sm font-semibold text-gray-900">
+                              {value}
+                              {unit ? ` ${unit}` : ''}
+                            </p>
+                          )}
+                          {dt && <p className="text-xs text-gray-500 mt-1">{dt}</p>}
+                        </div>
+                      )}
+                    </div>
+
+                    {first?.clinical_interpretation && <p className="text-xs text-gray-600 mt-2">Interpretation: {first.clinical_interpretation}</p>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* Urgency Level */}
-        {urgency && (
-          <div className="flex items-center justify-center">
-            <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-              String(urgency).toLowerCase() === 'high' 
-                ? 'bg-red-100 text-red-700'
-                : String(urgency).toLowerCase() === 'medium'
-                ? 'bg-orange-100 text-orange-700'
-                : 'bg-green-100 text-green-700'
-            }`}>
-              Priority: {urgency}
-            </span>
+        {/* TIMELINE */}
+        {timeline.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <Clock className="w-4 h-4 mr-2" />
+              Timeline
+            </h4>
+
+            <div className="space-y-3">
+              {timeline.map((e: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{e.event_type || `Event ${idx + 1}`}</p>
+                      {e.location && <p className="text-xs text-gray-600 mt-1">{e.location}</p>}
+                      {e.cardiac_focus && <p className="text-xs text-gray-600 mt-1">{e.cardiac_focus}</p>}
+                    </div>
+                    {e.event_datetime && <p className="text-xs text-gray-500 whitespace-nowrap">{e.event_datetime}</p>}
+                  </div>
+
+                  {e.summary && <p className="text-xs text-gray-700 mt-2 whitespace-pre-wrap">{e.summary}</p>}
+                  {e.important_findings && <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{e.important_findings}</p>}
+                  {e.source_reference && <p className="text-xs text-gray-400 mt-2">Source: {e.source_reference}</p>}
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* CONFIDENCE NOTES */}
+        {confidence.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="font-semibold text-yellow-900 mb-2 flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Confidence Notes
+            </h4>
+            <ul className="list-disc list-inside space-y-1 text-yellow-900 text-sm">
+              {confidence.map((c: string, idx: number) => (
+                <li key={idx}>{c}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* RAW JSON */}
+        <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <summary className="cursor-pointer text-sm font-medium text-gray-700">View full JSON</summary>
+          <pre className="mt-3 text-xs text-gray-700 overflow-auto whitespace-pre-wrap">{JSON.stringify(s, null, 2)}</pre>
+        </details>
       </div>
     );
   };
@@ -591,18 +626,10 @@ export default function PatientProfile() {
                       </span>
                     </div>
                   )}
-                  {patient.last_visit_at && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      Last visit: {formatDate(patient.last_visit_at)}
-                    </p>
-                  )}
+                  {patient.last_visit_at && <p className="text-sm text-gray-500 mt-2">Last visit: {formatDate(patient.last_visit_at)}</p>}
                 </div>
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit patient"
-                >
-                  <Edit className="w-5 h-5 text-gray-600" />
+                <button onClick={() => setShowEditModal(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Edit patient">
+                  <Pencil className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
             </div>
@@ -619,7 +646,7 @@ export default function PatientProfile() {
                 <Upload className="w-4 h-4" />
                 <span>Upload Documents</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   setConfirmationType('open-form');
@@ -630,7 +657,7 @@ export default function PatientProfile() {
                 <ExternalLink className="w-4 h-4" />
                 <span>Open Form</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   setConfirmationType('send-link');
@@ -645,9 +672,7 @@ export default function PatientProfile() {
               <button
                 onClick={handleStartStopRecording}
                 className={`flex items-center justify-center space-x-2 font-medium py-2 px-4 rounded-lg transition-colors ${
-                  isRecording 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                  isRecording ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
                 }`}
               >
                 {isRecording ? (
@@ -740,29 +765,23 @@ export default function PatientProfile() {
       </div>
 
       {/* Edit Patient Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Patient"
-      >
-        <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleEditPatient();
+          }}
+          className="space-y-4"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={editData.name}
-              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-              className="input-field"
-              required
-            />
+            <input type="text" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="input-field" required />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Case (optional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Case (optional)</label>
             <input
               type="text"
               value={editData.case}
@@ -776,13 +795,7 @@ export default function PatientProfile() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone <span className="text-red-500">*</span>
             </label>
-            <input
-              type="tel"
-              value={editData.phone}
-              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-              className="input-field"
-              required
-            />
+            <input type="tel" value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} className="input-field" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -790,25 +803,14 @@ export default function PatientProfile() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                value={editData.age}
-                onChange={(e) => setEditData({ ...editData, age: e.target.value })}
-                className="input-field"
-                required
-              />
+              <input type="number" value={editData.age} onChange={(e) => setEditData({ ...editData, age: e.target.value })} className="input-field" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Gender <span className="text-red-500">*</span>
               </label>
-              <select
-                value={editData.gender}
-                onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
-                className="input-field"
-                required
-              >
+              <select value={editData.gender} onChange={(e) => setEditData({ ...editData, gender: e.target.value })} className="input-field" required>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -828,59 +830,36 @@ export default function PatientProfile() {
       </Modal>
 
       {/* Document Upload Modal */}
-      <Modal
-        isOpen={showDocumentUpload}
-        onClose={handleCloseDocumentUpload}
-        title="Upload Documents"
-      >
+      <Modal isOpen={showDocumentUpload} onClose={handleCloseDocumentUpload} title="Upload Documents">
         <div className="space-y-4">
-          <p className="text-gray-600">
-            Upload medical documents, prescriptions, or reports for this patient.
-          </p>
-          
+          <p className="text-gray-600">Upload medical documents, prescriptions, or reports for this patient.</p>
+
           <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-12 h-12 text-gray-400 mb-2" />
             <span className="text-gray-600">Click to upload files</span>
-            <input
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+            <input type="file" multiple onChange={handleFileSelect} className="hidden" />
           </label>
-          
+
           {documentsToUpload.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                {documentsToUpload.length} file(s) selected:
-              </p>
+              <p className="text-sm font-medium text-gray-700">{documentsToUpload.length} file(s) selected:</p>
               {documentsToUpload.map((file, idx) => (
                 <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
                   <span className="mr-2">📎</span>
                   <span className="flex-1">{file.name}</span>
-                  <span className="text-xs text-gray-500">
-                    {(file.size / 1024 / 1024).toFixed(1)} MB
-                  </span>
+                  <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                 </div>
               ))}
             </div>
           )}
 
-          {uploadError && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-              {uploadError}
-            </div>
-          )}
+          {uploadError && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{uploadError}</div>}
 
           <div className="flex space-x-3 justify-end pt-4">
             <button onClick={handleCloseDocumentUpload} className="btn-secondary">
               Cancel
             </button>
-            <button 
-              onClick={confirmDocumentSubmit} 
-              disabled={documentsToUpload.length === 0 || isUploading}
-              className="btn-primary disabled:opacity-50"
-            >
+            <button onClick={confirmDocumentSubmit} disabled={documentsToUpload.length === 0 || isUploading} className="btn-primary disabled:opacity-50">
               {isUploading ? 'Uploading...' : 'Upload Documents'}
             </button>
           </div>
@@ -888,11 +867,7 @@ export default function PatientProfile() {
       </Modal>
 
       {/* Summary Modal */}
-      <Modal
-        isOpen={showSummaryModal}
-        onClose={() => setShowSummaryModal(false)}
-        title={`Summary - ${selectedSummary ? formatDate(selectedSummary.created_at) : ''}`}
-      >
+      <Modal isOpen={showSummaryModal} onClose={() => setShowSummaryModal(false)} title={`Summary - ${selectedSummary ? formatDate(selectedSummary.created_at) : ''}`}>
         {selectedSummary && renderSummaryContent(selectedSummary)}
       </Modal>
 
@@ -901,15 +876,13 @@ export default function PatientProfile() {
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmAction}
-        title={
-          confirmationType === 'send-link' ? 'Send Pre-consult Link' :
-          confirmationType === 'open-form' ? 'Open Pre-consult Form' :
-          'Upload Documents'
-        }
+        title={confirmationType === 'send-link' ? 'Send Pre-consult Link' : confirmationType === 'open-form' ? 'Open Pre-consult Form' : 'Upload Documents'}
         message={
-          confirmationType === 'send-link' ? 'Create and display a pre-consult link for this patient?' :
-          confirmationType === 'open-form' ? 'Open the pre-consult form in a new window?' :
-          'Upload documents for this patient?'
+          confirmationType === 'send-link'
+            ? 'Create and display a pre-consult link for this patient?'
+            : confirmationType === 'open-form'
+            ? 'Open the pre-consult form in a new window?'
+            : 'Upload documents for this patient?'
         }
       />
     </div>

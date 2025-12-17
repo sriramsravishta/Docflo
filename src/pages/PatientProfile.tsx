@@ -73,17 +73,57 @@ export default function PatientProfile() {
     }
   };
 
+  // -----------------------
+  // FIX: Summary payload normalizer (NEW)
+  // -----------------------
+  const normalizeSummaryPayload = (row: any) => {
+    if (!row) return null;
+
+    // Most likely: row.summary is jsonb OR stringified JSON
+    const raw = row.summary ?? row.ai_summary ?? row.payload ?? row.data ?? null;
+    if (raw == null) return null;
+
+    // If it's already an object (jsonb), return it
+    if (typeof raw === 'object') return raw;
+
+    // If it's a string, try parse JSON; else treat as plain text
+    if (typeof raw === 'string') {
+      const s = raw.trim();
+      if (!s) return null;
+      try {
+        return JSON.parse(s);
+      } catch {
+        return { summary: s };
+      }
+    }
+
+    return null;
+  };
+
+  // -----------------------
+  // FIX: Load summaries correctly (UPDATED)
+  // -----------------------
   const loadSummaries = async () => {
     try {
       const [latest, all] = await Promise.all([
         getLatestSummary(patientId!),
         getSummaries(patientId!)
       ]);
-      
-      setLatestSummary(latest);
-      setPastSummaries(all.slice(1)); // Exclude the latest one
+
+      // Set latest as-is
+      setLatestSummary(latest || null);
+
+      // Do NOT blindly slice(1). Filter out latest safely by id.
+      const latestId = latest?.id;
+      const past = Array.isArray(all)
+        ? all.filter((s: any) => !latestId || s?.id !== latestId)
+        : [];
+
+      setPastSummaries(past);
     } catch (error) {
       console.error('Error loading summaries:', error);
+      setLatestSummary(null);
+      setPastSummaries([]);
     }
   };
 
@@ -313,106 +353,159 @@ export default function PatientProfile() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const renderSummaryContent = (summary: any) => {
-    if (!summary || !summary.summary) {
+  // -----------------------
+  // FIX: Render summary from normalized payload (UPDATED)
+  // -----------------------
+  const renderSummaryContent = (row: any) => {
+    const summaryData = normalizeSummaryPayload(row);
+
+    if (!summaryData) {
       return <p className="text-gray-500">No summary available</p>;
     }
 
-    const summaryData = summary.summary;
+    // Keep your existing UI sections, but allow more key variants safely
+    const mainSummaryText =
+      summaryData.overall_summary_markdown ||
+      summaryData.summary ||
+      summaryData.overall_summary ||
+      '';
+
+    const analysisText =
+      summaryData.analysis ||
+      summaryData.overall_analysis ||
+      '';
+
+    const keyFindings =
+      summaryData.key_findings ||
+      summaryData.key_risks ||
+      summaryData.important_findings ||
+      null;
+
+    const recommendations =
+      summaryData.recommendations ||
+      summaryData.next_steps ||
+      null;
+
+    const medicalHistory =
+      summaryData.medical_history ||
+      summaryData.background ||
+      null;
+
+    const symptoms =
+      summaryData.symptoms ||
+      summaryData.chief_complaints ||
+      null;
+
+    const meds =
+      summaryData.medications ||
+      summaryData.medication_summary ||
+      [];
+
+    const allergies =
+      summaryData.allergies ||
+      null;
+
+    const urgency =
+      summaryData.urgency ||
+      summaryData.priority ||
+      null;
 
     return (
       <div className="space-y-6">
         {/* Main Summary */}
-        {summaryData.summary && (
+        {mainSummaryText && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
               <FileText className="w-4 h-4 mr-2" />
               Summary
             </h4>
-            <p className="text-blue-800">{summaryData.summary}</p>
+            <p className="text-blue-800 whitespace-pre-wrap">{mainSummaryText}</p>
           </div>
         )}
 
         {/* Analysis */}
-        {summaryData.analysis && (
+        {analysisText && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
-            <p className="text-gray-700">{summaryData.analysis}</p>
+            <p className="text-gray-700 whitespace-pre-wrap">{analysisText}</p>
           </div>
         )}
 
         {/* Key Findings */}
-        {summaryData.key_findings && (
+        {keyFindings && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="font-semibold text-yellow-900 mb-2 flex items-center">
               <TrendingUp className="w-4 h-4 mr-2" />
               Key Findings
             </h4>
-            {Array.isArray(summaryData.key_findings) ? (
+            {Array.isArray(keyFindings) ? (
               <ul className="list-disc list-inside space-y-1 text-yellow-800">
-                {summaryData.key_findings.map((finding: string, idx: number) => (
+                {keyFindings.map((finding: string, idx: number) => (
                   <li key={idx}>{finding}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-yellow-800">{summaryData.key_findings}</p>
+              <p className="text-yellow-800 whitespace-pre-wrap">{keyFindings}</p>
             )}
           </div>
         )}
 
         {/* Recommendations */}
-        {summaryData.recommendations && (
+        {recommendations && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <h4 className="font-semibold text-green-900 mb-2">Recommendations</h4>
-            {Array.isArray(summaryData.recommendations) ? (
+            {Array.isArray(recommendations) ? (
               <ul className="list-disc list-inside space-y-1 text-green-800">
-                {summaryData.recommendations.map((rec: string, idx: number) => (
+                {recommendations.map((rec: string, idx: number) => (
                   <li key={idx}>{rec}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-green-800">{summaryData.recommendations}</p>
+              <p className="text-green-800 whitespace-pre-wrap">{recommendations}</p>
             )}
           </div>
         )}
 
         {/* Medical History */}
-        {summaryData.medical_history && (
+        {medicalHistory && (
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <h4 className="font-semibold text-purple-900 mb-2">Medical History</h4>
-            <p className="text-purple-800">{summaryData.medical_history}</p>
+            <p className="text-purple-800 whitespace-pre-wrap">{medicalHistory}</p>
           </div>
         )}
 
         {/* Current Symptoms */}
-        {summaryData.symptoms && (
+        {symptoms && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h4 className="font-semibold text-red-900 mb-2">Current Symptoms</h4>
-            {Array.isArray(summaryData.symptoms) ? (
+            {Array.isArray(symptoms) ? (
               <ul className="list-disc list-inside space-y-1 text-red-800">
-                {summaryData.symptoms.map((symptom: string, idx: number) => (
+                {symptoms.map((symptom: string, idx: number) => (
                   <li key={idx}>{symptom}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-red-800">{summaryData.symptoms}</p>
+              <p className="text-red-800 whitespace-pre-wrap">{symptoms}</p>
             )}
           </div>
         )}
 
         {/* Current Medications */}
-        {summaryData.medications && summaryData.medications.length > 0 && (
+        {Array.isArray(meds) && meds.length > 0 && (
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
             <h4 className="font-semibold text-indigo-900 mb-3 flex items-center">
               <Pill className="w-4 h-4 mr-2" />
               Current Medications
             </h4>
             <div className="grid gap-3">
-              {summaryData.medications.map((med: any, idx: number) => (
+              {meds.map((med: any, idx: number) => (
                 <div key={idx} className="bg-white rounded-lg p-3 border border-indigo-200">
-                  <div className="font-medium text-indigo-900">{med.name || med}</div>
-                  {med.dosage && <div className="text-sm text-indigo-700">Dosage: {med.dosage}</div>}
-                  {med.frequency && <div className="text-sm text-indigo-700">Frequency: {med.frequency}</div>}
+                  <div className="font-medium text-indigo-900">
+                    {med?.name || med?.drug_name || med || `Medication ${idx + 1}`}
+                  </div>
+                  {med?.dosage && <div className="text-sm text-indigo-700">Dosage: {med.dosage}</div>}
+                  {med?.frequency && <div className="text-sm text-indigo-700">Frequency: {med.frequency}</div>}
+                  {med?.duration_or_quantity && <div className="text-sm text-indigo-700">Duration/Qty: {med.duration_or_quantity}</div>}
                 </div>
               ))}
             </div>
@@ -420,27 +513,27 @@ export default function PatientProfile() {
         )}
 
         {/* Allergies */}
-        {summaryData.allergies && (
+        {allergies && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <h4 className="font-semibold text-orange-900 mb-2 flex items-center">
               <AlertCircle className="w-4 h-4 mr-2" />
               Allergies
             </h4>
-            <p className="text-orange-800">{summaryData.allergies}</p>
+            <p className="text-orange-800 whitespace-pre-wrap">{allergies}</p>
           </div>
         )}
 
         {/* Urgency Level */}
-        {summaryData.urgency && (
+        {urgency && (
           <div className="flex items-center justify-center">
             <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-              summaryData.urgency.toLowerCase() === 'high' 
+              String(urgency).toLowerCase() === 'high' 
                 ? 'bg-red-100 text-red-700'
-                : summaryData.urgency.toLowerCase() === 'medium'
+                : String(urgency).toLowerCase() === 'medium'
                 ? 'bg-orange-100 text-orange-700'
                 : 'bg-green-100 text-green-700'
             }`}>
-              Priority: {summaryData.urgency}
+              Priority: {urgency}
             </span>
           </div>
         )}

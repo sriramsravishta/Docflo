@@ -629,7 +629,7 @@ export default function PatientProfile() {
         content += `
           <div class="medication">
             <strong>${index + 1}. ${med.name}</strong><br>
-            <strong>Dose:</strong> ${med.frequency} • <strong>Duration:</strong> ${med.duration}<br>
+            <strong>Dose:</strong> ${med.dosage} • <strong>Duration:</strong> ${med.duration}<br>
             ${med.timing ? `<strong>Timing:</strong> ${med.timing}` : ''}
           </div>
         `;

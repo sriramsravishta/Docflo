@@ -285,7 +285,7 @@ export default function PatientProfile() {
       try {
         // Wait for recording to complete
         const finalChunks = await recordingPromise;
-        let recordingFileUrl = '';
+        let recordingFileUrl = null;
 
         if (finalChunks.length > 0) {
           // Create audio blob from chunks
@@ -316,14 +316,13 @@ export default function PatientProfile() {
 
           recordingFileUrl = urlData.publicUrl;
           console.log('Public URL:', recordingFileUrl);
-        } else {
-          console.warn('No audio chunks recorded');
         }
 
-        // Create consultation record with the public URL
-        const consult = await createConsult(user!.id, patientId!, 'dummy-recording-url');
+        // ONLY create consultation record AFTER audio upload completes
+        // Create consultation record with the actual recording URL (or null if no recording)
+        const consult = await createConsult(user!.id, patientId!, recordingFileUrl || '');
         
-        console.log('Consultation created with recording URL:', recordingFileUrl);
+        console.log('Consultation created with recording URL:', recordingFileUrl || 'No recording');
         
         await updateConsult(consult.id, {
           recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',

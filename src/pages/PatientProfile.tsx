@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Upload, ExternalLink, Send, Mic, Square, Play, Pause, Download, MessageSquare, X } from 'lucide-react';
+import { CreditCard as Edit, Upload, ExternalLink, Send, Mic, Square, Play, Pause, Download, MessageSquare, X, ChevronDown, ChevronRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -46,6 +46,18 @@ export default function PatientProfile() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   
   // Form states
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    diagnosis: true,
+    chiefComplaints: true,
+    treatmentSuggested: true,
+    medications: false,
+    investigations: false,
+    history: false,
+    followupRecommendations: false,
+    keyPersonalInsights: false,
+    flagsForReview: false
+  });
+  
   const [editForm, setEditForm] = useState({
     name: '',
     age: '',
@@ -964,9 +976,155 @@ export default function PatientProfile() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Consultation - {formatDate(selectedConsult.created_at)}
-              </h2>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
+                <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Send via WhatsApp</span>
+                </button>
+                <button
+                  onClick={() => setSelectedConsult(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </div>
+            
+            {selectedConsult.consult_summary_final ? (
+              <>
+                {/* Summary chips */}
+                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedConsult.consult_summary_final.chief_complaints && (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                        {Array.isArray(selectedConsult.consult_summary_final.chief_complaints) 
+                          ? selectedConsult.consult_summary_final.chief_complaints.length 
+                          : 1} Complaints
+                      </span>
+                    )}
+                    {selectedConsult.consult_summary_final.medications && (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                        {selectedConsult.consult_summary_final.medications.length} Medications
+                      </span>
+                    )}
+                    {selectedConsult.consult_summary_final.investigations?.ordered && (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                        {selectedConsult.consult_summary_final.investigations.ordered.length} Investigations
+                      </span>
+                    )}
+                    {selectedConsult.consult_summary_final.flags_for_review && selectedConsult.consult_summary_final.flags_for_review.length > 0 && (
+                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
+                        {selectedConsult.consult_summary_final.flags_for_review.length} Flags
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Accordion sections */}
+                <div className="divide-y divide-gray-200">
+                  {selectedConsult.consult_summary_final.diagnosis && renderAccordionSection(
+                    "Diagnosis", 
+                    "diagnosis", 
+                    renderDiagnosis(selectedConsult.consult_summary_final.diagnosis)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.chief_complaints && renderAccordionSection(
+                    "Chief Complaints", 
+                    "chiefComplaints", 
+                    renderArrayContent(selectedConsult.consult_summary_final.chief_complaints)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.treatment_suggested && renderAccordionSection(
+                    "Treatment Suggested", 
+                    "treatmentSuggested", 
+                    renderTreatmentSuggested(selectedConsult.consult_summary_final.treatment_suggested)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.medications && selectedConsult.consult_summary_final.medications.length > 0 && renderAccordionSection(
+                    "Medications", 
+                    "medications", 
+                    renderMedications(selectedConsult.consult_summary_final.medications)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.investigations && renderAccordionSection(
+                    "Investigations", 
+                    "investigations", 
+                    renderInvestigations(selectedConsult.consult_summary_final.investigations)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.history && renderAccordionSection(
+                    "History", 
+                    "history", 
+                    renderArrayContent(selectedConsult.consult_summary_final.history)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.followup_recommendations && renderAccordionSection(
+                    "Follow-up Recommendations", 
+                    "followupRecommendations", 
+                    renderArrayContent(selectedConsult.consult_summary_final.followup_recommendations)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.key_personal_insights && renderAccordionSection(
+                    "Key Personal Insights", 
+                    "keyPersonalInsights", 
+                    renderArrayContent(selectedConsult.consult_summary_final.key_personal_insights)
+                  )}
+                  
+                  {selectedConsult.consult_summary_final.flags_for_review && selectedConsult.consult_summary_final.flags_for_review.length > 0 && renderAccordionSection(
+                    "Flags for Review", 
+                    "flagsForReview", 
+                    <div className="space-y-2">
+                      {selectedConsult.consult_summary_final.flags_for_review.map((flag: string, idx: number) => (
+                        <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
+                          <span className="text-red-800 font-medium">⚠ {flag}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                Consultation summary not available yet.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmationType === 'preConsult' ? 'Send Pre-Consult Link' :
+          confirmationType === 'followUp' ? 'Send Follow-Up Link' :
+          'Upload Documents'
+        }
+        message={
+          confirmationType === 'preConsult' ? 'Create and send pre-consultation form link to patient?' :
+          confirmationType === 'followUp' ? 'Create and send follow-up form link to patient?' :
+          'Upload selected documents for this patient?'
+        }
+      />
+    </div>
+  );
+}
               <button
                 onClick={() => setSelectedConsult(null)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

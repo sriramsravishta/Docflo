@@ -713,9 +713,19 @@ export default function PatientProfile() {
       return <p className="text-gray-800">{diagnosis}</p>;
     }
     
+    // Check if diagnosis is an object but has no valid content
+    if (typeof diagnosis === 'object' && diagnosis !== null) {
+      const hasProvisional = diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
+      const hasKeyFindings = diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
+      
+      if (!hasProvisional && !hasKeyFindings) {
+        return <p className="text-gray-800">No detailed diagnosis available</p>;
+      }
+    }
+    
     return (
       <div className="space-y-3">
-        {diagnosis.provisional && diagnosis.provisional.length > 0 && (
+        {diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0 && (
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
             <ul className="list-disc list-inside space-y-1">
@@ -725,7 +735,7 @@ export default function PatientProfile() {
             </ul>
           </div>
         )}
-        {diagnosis.key_findings && diagnosis.key_findings.length > 0 && (
+        {diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0 && (
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
             <ul className="list-disc list-inside space-y-1">

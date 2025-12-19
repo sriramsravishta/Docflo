@@ -1006,7 +1006,7 @@ export default function PatientProfile() {
                         {selectedConsult.consult_summary_final.medications.map((med: any, index: number) => (
                           <div key={index} className="bg-gray-50 rounded-lg p-3">
                             <p className="font-medium">{med.name}</p>
-                            <p className="text-sm text-gray-600">{med.frequency} • {med.duration}</p>
+                            <p className="text-sm text-gray-600">{med.dosage} • {med.duration}</p>
                           </div>
                         ))}
                       </div>

@@ -650,6 +650,23 @@ export default function PatientProfile() {
     return content;
   };
 
+  const handleSendWhatsApp = () => {
+    if (!selectedConsult || !patient) return;
+    
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const consultDate = formatDate(selectedConsult.created_at);
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
+    
+    // Format phone number for WhatsApp (remove any non-digits and add country code if needed)
+    let phoneNumber = patient.phone.replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
+      phoneNumber = '91' + phoneNumber; // Add India country code if missing
+    }
+    
+    // Open WhatsApp with pre-filled message
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   if (loading) {
     return (

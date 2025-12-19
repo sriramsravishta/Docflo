@@ -162,12 +162,11 @@ export default function PatientProfile() {
       setIsUploading(true);
       setUploadError('');
       
-      // Create pre-consult record first
-      const preConsult = await createPreConsult(user!.id, patientId!);
+      // Upload ALL files first before creating any DB records
       const uploadedUrls = [];
       
       for (const file of documentsToUpload) {
-        const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
+        const fileName = `${patientId}-${Date.now()}-${file.name}`;
         
         console.log('Uploading file:', fileName, 'Size:', file.size);
 
@@ -196,7 +195,8 @@ export default function PatientProfile() {
         uploadedUrls.push(publicUrl);
       }
 
-      // Update pre-consult record with uploaded document URLs
+      // ONLY AFTER all uploads complete, create DB record with URLs
+      const preConsult = await createPreConsult(user!.id, patientId!);
       await updatePreConsult(preConsult.id, {
         documents_uploaded: uploadedUrls,
         status: 'Draft'
@@ -204,6 +204,7 @@ export default function PatientProfile() {
 
       console.log('Pre-consult updated with documents:', uploadedUrls);
       alert('Documents uploaded successfully');
+      setShowConfirmation(false);
       handleCloseDocumentUpload();
     } catch (error) {
       console.error('Error uploading documents:', error);
@@ -532,11 +533,136 @@ export default function PatientProfile() {
   const handleDownloadPDF = () => {
     if (!selectedConsult) return;
     
-    // Generate formatted PDF content
-    const pdfContent = generatePDFContent(selectedConsult);
+    // Generate formatted PDF content as HTML
+    const htmlContent = generatePDFHTMLContent(selectedConsult);
     
-    // Create blob and download
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    // Create a simple PDF-like document using HTML and print styles
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Consultation Summary</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+            h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            h2 { color: #666; margin-top: 20px; }
+            .header { margin-bottom: 30px; }
+            .section { margin-bottom: 20px; }
+            .medication { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; }
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const generatePDFHTMLContent = (consult: any) => {
+    const summary = consult.consult_summary_final;
+    if (!summary) return '<p>No consultation summary available.</p>';
+    
+    let content = `
+      <div class="header">
+        <h1>CONSULTATION SUMMARY</h1>
+        <p><strong>Patient:</strong> ${patient?.name}</p>
+        <p><strong>Date:</strong> ${formatDate(consult.created_at)}</p>
+        <p><strong>Doctor:</strong> ${user?.user_metadata?.name || user?.email || 'Doctor'}</p>
+      </div>
+    `;
+    
+    if (summary.diagnosis) {
+      content += `
+        <div class="section">
+          <h2>DIAGNOSIS</h2>
+          <p>${summary.diagnosis}</p>
+        </div>
+      `;
+    }
+    
+    if (summary.history) {
+      content += `
+        <div class="section">
+          <h2>HISTORY</h2>
+          <p>${summary.history}</p>
+        </div>
+      `;
+    }
+    
+    if (summary.chief_complaints) {
+      content += `
+        <div class="section">
+          <h2>CHIEF COMPLAINTS</h2>
+          <p>${summary.chief_complaints}</p>
+        </div>
+      `;
+    }
+    
+    if (summary.treatment_suggested) {
+      content += `
+        <div class="section">
+          <h2>TREATMENT SUGGESTED</h2>
+          <p>${summary.treatment_suggested}</p>
+        </div>
+      `;
+    }
+    
+    if (summary.medications && summary.medications.length > 0) {
+      content += `
+        <div class="section">
+          <h2>MEDICATIONS</h2>
+      `;
+      summary.medications.forEach((med: any, index: number) => {
+        content += `
+          <div class="medication">
+            <strong>${index + 1}. ${med.name}</strong><br>
+            <strong>Dose:</strong> ${med.frequency} • <strong>Duration:</strong> ${med.duration}<br>
+            ${med.timing ? `<strong>Timing:</strong> ${med.timing}` : ''}
+          </div>
+        `;
+      });
+      content += `</div>`;
+    }
+    
+    if (summary.followup_recommendations) {
+      content += `
+        <div class="section">
+          <h2>FOLLOW-UP RECOMMENDATIONS</h2>
+          <p>${summary.followup_recommendations}</p>
+        </div>
+      `;
+    }
+    
+    return content;
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!selectedConsult || !patient) return;
+    
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const consultDate = formatDate(selectedConsult.created_at);
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
+    
+    // Open WhatsApp with pre-filled message
+    const phoneNumber = patient.phone.replace(/[^\d]/g, ''); // Remove non-digits
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -673,7 +799,7 @@ export default function PatientProfile() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <button
               onClick={handleUploadDocuments}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
             >
               <Upload className="w-4 h-4" />
               <span className="text-sm font-medium">Upload</span>
@@ -681,7 +807,7 @@ export default function PatientProfile() {
             
             <button
               onClick={handleOpenForm}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
             >
               <ExternalLink className="w-4 h-4" />
               <span className="text-sm font-medium">Form</span>
@@ -689,7 +815,7 @@ export default function PatientProfile() {
             
             <button
               onClick={handleSendPreConsultLink}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
             >
               <Send className="w-4 h-4" />
               <span className="text-sm font-medium">Link</span>

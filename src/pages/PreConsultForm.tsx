@@ -65,7 +65,7 @@ export default function PreConsultForm() {
       setIsUploading(true);
       setShowConfirmation(false);
 
-      // Upload each file to Supabase Storage
+      // Upload ALL files to Supabase Storage FIRST
       const uploadedUrls = [];
       
       for (const file of documents) {
@@ -98,8 +98,7 @@ export default function PreConsultForm() {
         uploadedUrls.push(publicUrl);
       }
 
-      // Update pre-consult record with uploaded document URLs
-      // Leave ai_summary empty for n8n workflow to fill
+      // ONLY AFTER all uploads complete, update DB with URLs
       await updatePreConsult(preConsultId, {
         status: 'Submitted',
         documents_uploaded: uploadedUrls,

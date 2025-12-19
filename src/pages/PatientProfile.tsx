@@ -368,7 +368,9 @@ export default function PatientProfile() {
   };
 
   const renderTimelineTab = () => {
-    const timeline = latestSummary?.summary?.timeline_of_medical_events || [];
+    const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events) 
+      ? latestSummary.summary.timeline_of_medical_events 
+      : [];
     
     if (timeline.length === 0) {
       return (

@@ -679,6 +679,188 @@ export default function PatientProfile() {
     window.open(whatsappUrl, '_blank');
   };
 
+  // Helper function to render accordion sections
+  const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
+    const isExpanded = expandedSections[key];
+    
+    return (
+      <div className="border-b border-gray-200 last:border-b-0">
+        <button
+          onClick={() => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }))}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+        >
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          {isExpanded ? (
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-500" />
+          )}
+        </button>
+        {isExpanded && (
+          <div className="px-4 pb-4">
+            {content}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper function to render diagnosis
+  const renderDiagnosis = (diagnosis: any) => {
+    if (typeof diagnosis === 'string') {
+      return <p className="text-gray-800">{diagnosis}</p>;
+    }
+    
+    return (
+      <div className="space-y-3">
+        {diagnosis.provisional && diagnosis.provisional.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {diagnosis.provisional.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {diagnosis.key_findings && diagnosis.key_findings.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {diagnosis.key_findings.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper function to render array content
+  const renderArrayContent = (content: any) => {
+    if (typeof content === 'string') {
+      return <p className="text-gray-800">{content}</p>;
+    }
+    
+    if (Array.isArray(content)) {
+      return (
+        <ul className="list-disc list-inside space-y-1">
+          {content.map((item: string, idx: number) => (
+            <li key={idx} className="text-gray-800">{item}</li>
+          ))}
+        </ul>
+      );
+    }
+    
+    return <p className="text-gray-800">{JSON.stringify(content)}</p>;
+  };
+
+  // Helper function to render treatment suggested
+  const renderTreatmentSuggested = (treatment: any) => {
+    if (typeof treatment === 'string') {
+      return <p className="text-gray-800">{treatment}</p>;
+    }
+    
+    return (
+      <div className="space-y-3">
+        {treatment.immediate_plan && treatment.immediate_plan.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {treatment.immediate_plan.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {treatment.contingent_plan && treatment.contingent_plan.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {treatment.contingent_plan.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper function to render medications
+  const renderMedications = (medications: any[]) => {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Dosage</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Route</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            {medications.map((med: any, idx: number) => (
+              <tr key={idx} className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.route || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.purpose || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // Helper function to render investigations
+  const renderInvestigations = (investigations: any) => {
+    return (
+      <div className="space-y-3">
+        {investigations.ordered && investigations.ordered.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Ordered Investigations</h4>
+            <div className="space-y-2">
+              {investigations.ordered.map((inv: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="font-medium text-gray-900">{inv.name}</h5>
+                      {inv.body_part_or_type && (
+                        <p className="text-sm text-gray-600">{inv.body_part_or_type}</p>
+                      )}
+                    </div>
+                    {inv.priority && (
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        inv.priority === 'High' ? 'bg-red-100 text-red-700' :
+                        inv.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {inv.priority}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {investigations.notes && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Notes</h4>
+            <p className="text-gray-800">{investigations.notes}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">

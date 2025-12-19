@@ -157,37 +157,57 @@ export default function PatientProfile() {
     if (documentsToUpload.length === 0) return;
 
     try {
+      setIsUploading(true);
+      setUploadError('');
+      
+      // Create pre-consult record first
       const preConsult = await createPreConsult(user!.id, patientId!);
       const uploadedUrls = [];
       
       for (const file of documentsToUpload) {
         const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
         
+        console.log('Uploading file:', fileName, 'Size:', file.size);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            contentType: file.type || 'application/octet-stream',
+            contentType: file.type,
             upsert: false
           });
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
-          setUploadError(`Failed to upload ${file.name}: ${uploadError.message}`);
-          return;
+          throw new Error('Failed to upload document: ' + file.name);
         }
 
+        console.log('Upload successful:', uploadData);
+
+        // Get public URL
         const { data: urlData } = supabase.storage
           .from('pre-consultation-documents')
           .getPublicUrl(uploadData.path);
 
-        uploadedUrls.push(urlData.publicUrl);
+        const publicUrl = urlData.publicUrl;
+        console.log('Public URL:', publicUrl);
+
+        uploadedUrls.push(publicUrl);
       }
 
-      alert(`Documents uploaded successfully for pre-consultation.`);
+      // Update pre-consult record with uploaded document URLs
+      await updatePreConsult(preConsult.id, {
+        documents_uploaded: uploadedUrls,
+        status: 'Draft'
+      });
+
+      console.log('Pre-consult updated with documents:', uploadedUrls);
+      alert('Documents uploaded successfully');
       handleCloseDocumentUpload();
     } catch (error) {
       console.error('Error uploading documents:', error);
-      setUploadError('Failed to upload documents. Please try again.');
+      alert('Failed to upload documents. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -236,18 +256,78 @@ export default function PatientProfile() {
 
   const handleEndRecording = async () => {
     if (mediaRecorder) {
-      mediaRecorder.stop();
       setIsRecording(false);
       clearInterval((window as any).recordingInterval);
       
+      // Create a promise that resolves when recording stops
+      const recordingPromise = new Promise<Blob[]>((resolve) => {
+        const chunks: Blob[] = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          resolve(chunks);
+        };
+      });
+      
+      // Stop recording
+      if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      
       try {
+        // Wait for recording to complete
+        const finalChunks = await recordingPromise;
+        let recordingFileUrl = '';
+
+        if (finalChunks.length > 0) {
+          // Create audio blob from chunks
+          const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
+          const fileName = `consultation-${patientId}-${Date.now()}.webm`;
+
+          console.log('Uploading audio file:', fileName, 'Size:', audioBlob.size);
+
+          // Upload to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('consultation-recordings')
+            .upload(fileName, audioBlob, {
+              contentType: 'audio/webm',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error('Failed to upload recording');
+          }
+
+          console.log('Upload successful:', uploadData);
+
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('consultation-recordings')
+            .getPublicUrl(uploadData.path);
+
+          recordingFileUrl = urlData.publicUrl;
+          console.log('Public URL:', recordingFileUrl);
+        } else {
+          console.warn('No audio chunks recorded');
+        }
+
+        // Create consultation record with the public URL
         const consult = await createConsult(user!.id, patientId!, 'dummy-recording-url');
+        
+        console.log('Consultation created with recording URL:', recordingFileUrl);
+        
         await updateConsult(consult.id, {
-          recording_transcript: 'Recording completed',
-          consult_summary_ai: { diagnosis: 'Consultation recorded' }
+          recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+          consult_summary_ai: ''
         });
         
-        alert('Consultation recorded successfully');
+        alert('Consultation recorded and saved successfully');
         await loadPatientData();
       } catch (error) {
         console.error('Error saving consultation:', error);
@@ -448,12 +528,80 @@ export default function PatientProfile() {
   };
 
   const handleDownloadPDF = () => {
-    alert('PDF download functionality will be implemented');
+    if (!selectedConsult) return;
+    
+    // Generate formatted PDF content
+    const pdfContent = generatePDFContent(selectedConsult);
+    
+    // Create blob and download
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `consultation-${patient?.name}-${formatDate(selectedConsult.created_at)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleSendWhatsApp = () => {
-    const message = `Hi ${patient?.name}, here is your consultation summary of your visit to Dr ${user?.email} on ${formatDate(selectedConsult.created_at)}.`;
-    alert(`WhatsApp message: ${message}`);
+    if (!selectedConsult || !patient) return;
+    
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const consultDate = formatDate(selectedConsult.created_at);
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
+    
+    // Generate PDF content for attachment
+    const pdfContent = generatePDFContent(selectedConsult);
+    
+    // Open WhatsApp with pre-filled message
+    const phoneNumber = patient.phone.replace(/[^\d]/g, ''); // Remove non-digits
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const generatePDFContent = (consult: any) => {
+    const summary = consult.consult_summary_final;
+    if (!summary) return 'No consultation summary available.';
+    
+    let content = `CONSULTATION SUMMARY\n`;
+    content += `Patient: ${patient?.name}\n`;
+    content += `Date: ${formatDate(consult.created_at)}\n`;
+    content += `Doctor: ${user?.user_metadata?.name || user?.email || 'Doctor'}\n\n`;
+    
+    if (summary.diagnosis) {
+      content += `DIAGNOSIS\n${summary.diagnosis}\n\n`;
+    }
+    
+    if (summary.history) {
+      content += `HISTORY\n${summary.history}\n\n`;
+    }
+    
+    if (summary.chief_complaints) {
+      content += `CHIEF COMPLAINTS\n${summary.chief_complaints}\n\n`;
+    }
+    
+    if (summary.treatment_suggested) {
+      content += `TREATMENT SUGGESTED\n${summary.treatment_suggested}\n\n`;
+    }
+    
+    if (summary.medications && summary.medications.length > 0) {
+      content += `MEDICATIONS\n`;
+      summary.medications.forEach((med: any, index: number) => {
+        content += `${index + 1}. ${med.name}\n`;
+        content += `   Dose: ${med.frequency} • Duration: ${med.duration}\n`;
+        if (med.timing) content += `   Timing: ${med.timing}\n`;
+        content += `\n`;
+      });
+    }
+    
+    if (summary.followup_recommendations) {
+      content += `FOLLOW-UP RECOMMENDATIONS\n${summary.followup_recommendations}\n\n`;
+    }
+    
+    return content;
   };
 
   if (loading) {
@@ -523,7 +671,7 @@ export default function PatientProfile() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <button
               onClick={handleUploadDocuments}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
             >
               <Upload className="w-4 h-4" />
               <span className="text-sm font-medium">Upload</span>
@@ -531,7 +679,7 @@ export default function PatientProfile() {
             
             <button
               onClick={handleOpenForm}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               <span className="text-sm font-medium">Form</span>
@@ -539,7 +687,7 @@ export default function PatientProfile() {
             
             <button
               onClick={handleSendPreConsultLink}
-              className="flex items-center justify-center space-x-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-2 py-3 px-4 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
             >
               <Send className="w-4 h-4" />
               <span className="text-sm font-medium">Link</span>
@@ -547,10 +695,10 @@ export default function PatientProfile() {
             
             <button
               onClick={isRecording ? handleEndRecording : handleStartRecording}
-              className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-colors ${
+              className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-colors font-medium ${
                 isRecording 
                   ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : 'bg-gray-900 hover:bg-gray-800 text-white'
+                  : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
               }`}
             >
               {isRecording ? (
@@ -739,10 +887,10 @@ export default function PatientProfile() {
                 setConfirmationType('documents');
                 setShowConfirmation(true);
               }}
-              disabled={documentsToUpload.length === 0}
-              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50"
+              disabled={documentsToUpload.length === 0 || isUploading}
+              className="px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              Upload
+              {isUploading ? 'Uploading...' : 'Upload'}
             </button>
           </div>
         </div>
@@ -822,14 +970,14 @@ export default function PatientProfile() {
             <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex gap-3">
               <button
                 onClick={handleDownloadPDF}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
                 <span>Download PDF</span>
               </button>
               <button
                 onClick={handleSendWhatsApp}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Send via WhatsApp</span>

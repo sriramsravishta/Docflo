@@ -8,6 +8,7 @@ import {
   getPatientById, 
   updatePatient, 
   createPreConsult, 
+  updatePreConsult,
   createFollowUp,
   createConsult,
   updateConsult,

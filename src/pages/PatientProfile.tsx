@@ -55,6 +55,7 @@ export default function PatientProfile() {
   const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
   const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
   const [uploadError, setUploadError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (patientId) {

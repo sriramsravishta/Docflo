@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, CheckCircle } from 'lucide-react';
-import { getPreConsultById, updatePreConsult, createPreConsultWithDocuments } from '../lib/database';
+import { getPreConsultById, createPreConsultWithDocuments } from '../lib/database';
 import { supabase } from '../lib/supabase';
 
 export default function PreConsultForm() {
@@ -14,14 +14,22 @@ export default function PreConsultForm() {
   const [documents, setDocuments] = useState<File[]>([]);
   const [isNewForm, setIsNewForm] = useState(false);
 
+  // NEW: store existing form data (so we can create a new row with correct ids)
+  const [preConsultData, setPreConsultData] = useState<any>(null);
+
+  // NEW: inline error (no browser alert)
+  const [submitError, setSubmitError] = useState('');
+
   useEffect(() => {
     loadPreConsult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preConsultId]);
 
   const loadPreConsult = async () => {
     try {
       setLoading(true);
-      
+      setSubmitError('');
+
       if (!preConsultId) {
         console.error('No pre-consult ID provided');
         setFormNotFound(true);
@@ -29,18 +37,19 @@ export default function PreConsultForm() {
       }
 
       if (preConsultId === 'new') {
-        // Special case for new forms - no existing record to load
         setIsNewForm(true);
         setLoading(false);
         return;
       }
-      
-      const data = await getPreConsultById(preConsultId!);
+
+      const data = await getPreConsultById(preConsultId);
 
       if (!data) {
         setFormNotFound(true);
         return;
       }
+
+      setPreConsultData(data);
 
       if (data.status === 'Submitted') {
         setIsSubmitted(true);
@@ -56,36 +65,36 @@ export default function PreConsultForm() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setDocuments(Array.from(e.target.files));
+      setSubmitError('');
     }
   };
 
   const handleSubmit = () => {
+    setSubmitError('');
     if (documents.length === 0) {
-      alert('Please upload at least one document before submitting.');
+      setSubmitError('Please upload at least one document before submitting.');
       return;
     }
     setShowConfirmation(true);
   };
 
   const confirmSubmit = async () => {
-
     try {
       setIsUploading(true);
       setShowConfirmation(false);
+      setSubmitError('');
 
-      // Step 1: Upload ALL files to Supabase Storage FIRST
-      const uploadedUrls = [];
-      
+      // Step 1: Upload ALL files first
+      const uploadedUrls: string[] = [];
+
       for (const file of documents) {
         const fileName = `${Date.now()}-${file.name}`;
-        
-        console.log('Uploading file:', fileName, 'Size:', file.size);
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
             contentType: file.type,
-            upsert: false
+            upsert: false,
           });
 
         if (uploadError) {
@@ -93,47 +102,38 @@ export default function PreConsultForm() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        console.log('Upload successful:', uploadData);
-
-        // Get public URL
         const { data: urlData } = supabase.storage
           .from('pre-consultation-documents')
           .getPublicUrl(uploadData.path);
 
-        const publicUrl = urlData.publicUrl;
-        console.log('Public URL:', publicUrl);
-
-        uploadedUrls.push(publicUrl);
+        uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: ONLY AFTER all uploads complete, create or update DB record
+      // Step 2: ONLY AFTER uploads complete → CREATE a NEW row with URLs already filled
+      let docId: string | null = null;
+      let patientId: string | null = null;
+
       if (isNewForm) {
-        // For new forms, we need to extract docId and patientId from URL params
-        // Since this is a new form, we'll need these from the URL or context
         const urlParams = new URLSearchParams(window.location.search);
-        const docId = urlParams.get('docId');
-        const patientId = urlParams.get('patientId');
-        
-        if (!docId || !patientId) {
-          throw new Error('Missing doctor or patient information for new form');
-        }
-
-        await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
-        console.log('New pre-consult created with documents:', uploadedUrls);
+        docId = urlParams.get('docId');
+        patientId = urlParams.get('patientId');
       } else {
-        // For existing forms, update as before
-        await updatePreConsult(preConsultId!, {
-          status: 'Submitted',
-          documents_uploaded: uploadedUrls,
-          ai_summary: null // Will be filled by n8n workflow
-        });
-        console.log('Pre-consult updated with documents:', uploadedUrls);
+        // For existing form link, derive docId & patientId from the loaded row
+        docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
+        patientId = preConsultData?.patient_id || null;
       }
 
+      if (!docId || !patientId) {
+        throw new Error('Missing doctor/patient info. Please try again or request a new link.');
+      }
+
+      await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
+
+      // Success UI
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting pre-consult:', error);
-      alert('Failed to submit form. Please try again.');
+      setSubmitError('Failed to submit. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -195,7 +195,7 @@ export default function PreConsultForm() {
           <p className="text-gray-600 mb-6">
             Upload any prescriptions, reports, or medical documents (images or PDFs)
           </p>
-          
+
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
             <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
@@ -208,7 +208,7 @@ export default function PreConsultForm() {
               className="hidden"
             />
           </label>
-          
+
           {documents.length > 0 && (
             <div className="mt-6">
               <p className="text-sm font-medium text-gray-700 mb-3">
@@ -228,6 +228,12 @@ export default function PreConsultForm() {
             </div>
           )}
 
+          {submitError && (
+            <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+              {submitError}
+            </div>
+          )}
+
           <div className="mt-8">
             <button
               onClick={handleSubmit}
@@ -242,7 +248,10 @@ export default function PreConsultForm() {
 
       {showConfirmation && (
         <div className="modal-overlay" onClick={() => setShowConfirmation(false)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Pre-Consult Documents</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to submit these documents? They will be sent to your doctor for review.

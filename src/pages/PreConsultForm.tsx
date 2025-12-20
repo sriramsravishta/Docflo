@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, CheckCircle } from 'lucide-react';
-import { getPreConsultById, createPreConsultWithDocuments } from '../lib/database';
+import { getPreConsultById, createPreConsultWithDocuments, updatePreConsult } from '../lib/database';
 import { supabase } from '../lib/supabase';
 
 export default function PreConsultForm() {
@@ -14,10 +14,10 @@ export default function PreConsultForm() {
   const [documents, setDocuments] = useState<File[]>([]);
   const [isNewForm, setIsNewForm] = useState(false);
 
-  // NEW: store existing form data (so we can create a new row with correct ids)
+  // store existing form data
   const [preConsultData, setPreConsultData] = useState<any>(null);
 
-  // NEW: inline error (no browser alert)
+  // inline error (no browser alert)
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function PreConsultForm() {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            contentType: file.type,
+            contentType: file.type || 'application/octet-stream',
             upsert: false,
           });
 
@@ -109,17 +109,34 @@ export default function PreConsultForm() {
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: ONLY AFTER uploads complete → CREATE a NEW row with URLs already filled
-      // CHANGE: Always read docId/patientId from query params to ensure NO row is ever created before upload
-      const urlParams = new URLSearchParams(window.location.search);
-      const docId = urlParams.get('docId');
-      const patientId = urlParams.get('patientId');
+      // Step 2: ONLY AFTER uploads complete:
+      // - NEW form: CREATE a row with URLs already filled
+      // - EXISTING form (preConsultId): UPDATE the SAME row (NO extra row)
+      if (isNewForm) {
+        let docId: string | null = null;
+        let patientId: string | null = null;
 
-      if (!docId || !patientId) {
-        throw new Error('Missing doctor/patient info. Please try again or request a new link.');
+        const urlParams = new URLSearchParams(window.location.search);
+        docId = urlParams.get('docId');
+        patientId = urlParams.get('patientId');
+
+        if (!docId || !patientId) {
+          throw new Error('Missing doctor/patient info. Please try again or request a new link.');
+        }
+
+        await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
+      } else {
+        if (!preConsultId) {
+          throw new Error('Missing pre-consult id. Please try again or request a new link.');
+        }
+
+        // Update the existing row created when link was generated
+        await updatePreConsult(preConsultId, {
+          status: 'Submitted',
+          documents_uploaded: uploadedUrls,
+          ai_summary: null, // will be filled by n8n workflow
+        });
       }
-
-      await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
       // Success UI
       setIsSubmitted(true);
@@ -185,17 +202,17 @@ export default function PreConsultForm() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
           <p className="text-gray-600 mb-6">
-            Upload any prescriptions, reports, or medical documents (images or PDFs)
+            Upload any prescriptions, reports, or medical documents (images, PDFs, Word files)
           </p>
 
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
             <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
-            <span className="text-sm text-gray-500">Images (JPG, PNG, GIF, WebP) or PDF files</span>
+            <span className="text-sm text-gray-500">Images (JPG, PNG, HEIC), PDF, DOC/DOCX</span>
             <input
               type="file"
               multiple
-              accept="image/jpeg,image/png,image/gif,image/webp,.pdf"
+              accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.pdf,.doc,.docx"
               onChange={handleFileUpload}
               className="hidden"
             />

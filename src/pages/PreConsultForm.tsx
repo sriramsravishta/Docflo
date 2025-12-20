@@ -59,13 +59,13 @@ export default function PreConsultForm() {
   };
 
   const confirmSubmit = async () => {
-    if (!preConsultId) return;
+    if (!preConsultId || preConsultId === 'new') return;
 
     try {
       setIsUploading(true);
       setShowConfirmation(false);
 
-      // Upload ALL files to Supabase Storage FIRST
+      // Step 1: Upload ALL files to Supabase Storage FIRST
       const uploadedUrls = [];
       
       for (const file of documents) {
@@ -98,7 +98,7 @@ export default function PreConsultForm() {
         uploadedUrls.push(publicUrl);
       }
 
-      // ONLY AFTER all uploads complete, update DB with URLs
+      // Step 2: ONLY AFTER all uploads complete, update DB with URLs and status
       await updatePreConsult(preConsultId, {
         status: 'Submitted',
         documents_uploaded: uploadedUrls,

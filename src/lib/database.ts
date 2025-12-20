@@ -88,6 +88,26 @@ export const createPreConsult = async (docId: string, patientId: string) => {
   return data;
 };
 
+export const createPreConsultWithDocuments = async (
+  docId: string, 
+  patientId: string, 
+  documentsUploaded: string[]
+) => {
+  const { data, error } = await supabase
+    .from('pre_consult')
+    .insert({
+      doc_id: docId,
+      patient_id: patientId,
+      status: 'Submitted',
+      documents_uploaded: documentsUploaded,
+      ai_summary: null // Will be filled by n8n workflow
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
 export const getPreConsults = async (patientId: string) => {
   const { data, error } = await supabase
     .from('pre_consult')

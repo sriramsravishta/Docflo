@@ -1,19 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Upload, ExternalLink, Send, Mic, Square, Play, Pause, Download, MessageSquare, X, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  CreditCard as Edit,
+  Upload,
+  ExternalLink,
+  Send,
+  Mic,
+  Square,
+  Play,
+  Pause,
+  Download,
+  MessageSquare,
+  X,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { 
-  getPatientById, 
-  updatePatient, 
-  createPreConsult, 
+import {
+  getPatientById,
+  updatePatient,
+  createPreConsult,
   updatePreConsult,
   createFollowUp,
   createConsult,
   updateConsult,
   getLatestSummary,
-  getConsults
+  getConsults,
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,31 +36,31 @@ export default function PatientProfile() {
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Patient data
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Summary data
   const [latestSummary, setLatestSummary] = useState<any>(null);
   const [consultations, setConsultations] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('timeline');
-  
+
   // UI states
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showConsultModal, setShowConsultModal] = useState(false);
   const [selectedConsult, setSelectedConsult] = useState<any>(null);
-  
+
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  
+
   // Form states
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     diagnosis: true,
     chiefComplaints: true,
     treatmentSuggested: true,
@@ -55,9 +69,9 @@ export default function PatientProfile() {
     history: false,
     followupRecommendations: false,
     keyPersonalInsights: false,
-    flagsForReview: false
+    flagsForReview: false,
   });
-  
+
   const [editForm, setEditForm] = useState({
     name: '',
     age: '',
@@ -65,8 +79,11 @@ export default function PatientProfile() {
     case: '',
     gender: 'Male',
   });
+
   const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
-  const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
+  const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>(
+    'preConsult'
+  );
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
@@ -82,13 +99,13 @@ export default function PatientProfile() {
       const [patientData, summaryData, consultsData] = await Promise.all([
         getPatientById(patientId!),
         getLatestSummary(patientId!),
-        getConsults(patientId!)
+        getConsults(patientId!),
       ]);
-      
+
       setPatient(patientData);
       setLatestSummary(summaryData);
       setConsultations(consultsData);
-      
+
       if (patientData) {
         setEditForm({
           name: patientData.name,
@@ -136,21 +153,22 @@ export default function PatientProfile() {
     setShowDocumentUpload(true);
   };
 
+  // ✅ CHANGE #1: Do NOT create a pre-consult row on Form open
   const handleOpenForm = async () => {
     try {
-      const preConsult = await createPreConsult(user!.id, patientId!);
-      window.open(`/pre-consult/${preConsult.id}`, '_blank');
+      const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
+      window.open(link, '_blank');
     } catch (error) {
-      console.error('Error creating pre-consult:', error);
+      console.error('Error opening pre-consult form:', error);
       alert('Failed to open form');
     }
   };
 
+  // ✅ CHANGE #1: Do NOT create a pre-consult row on Link generation
   const handleConfirmAction = async () => {
     try {
       if (confirmationType === 'preConsult') {
-        const preConsult = await createPreConsult(user!.id, patientId!);
-        const link = `${window.location.origin}/pre-consult/${preConsult.id}`;
+        const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
         alert(`Pre-consult link created: ${link}`);
       } else if (confirmationType === 'followUp') {
         const followUp = await createFollowUp(user!.id, patientId!);
@@ -173,20 +191,21 @@ export default function PatientProfile() {
     try {
       setIsUploading(true);
       setUploadError('');
-      
+
       // Upload ALL files first before creating any DB records
-      const uploadedUrls = [];
-      
+      const uploadedUrls: string[] = [];
+
       for (const file of documentsToUpload) {
         const fileName = `${patientId}-${Date.now()}-${file.name}`;
-        
+
         console.log('Uploading file:', fileName, 'Size:', file.size);
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            contentType: file.type,
-            upsert: false
+            // ✅ CHANGE #3: contentType fallback (helps DOC/HEIC where file.type may be empty)
+            contentType: file.type || 'application/octet-stream',
+            upsert: false,
           });
 
         if (uploadError) {
@@ -211,7 +230,7 @@ export default function PatientProfile() {
       const preConsult = await createPreConsult(user!.id, patientId!);
       await updatePreConsult(preConsult.id, {
         documents_uploaded: uploadedUrls,
-        status: 'Draft'
+        status: 'Draft',
       });
 
       console.log('Pre-consult updated with documents:', uploadedUrls);
@@ -236,15 +255,15 @@ export default function PatientProfile() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
-      
+
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);
-      
+
       const interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime((prev) => prev + 1);
       }, 1000);
       (window as any).recordingInterval = interval;
     } catch (error) {
@@ -258,7 +277,7 @@ export default function PatientProfile() {
       if (isPaused) {
         mediaRecorder.resume();
         const interval = setInterval(() => {
-          setRecordingTime(prev => prev + 1);
+          setRecordingTime((prev) => prev + 1);
         }, 1000);
         (window as any).recordingInterval = interval;
       } else {
@@ -273,27 +292,27 @@ export default function PatientProfile() {
     if (mediaRecorder) {
       setIsRecording(false);
       clearInterval((window as any).recordingInterval);
-      
+
       // Create a promise that resolves when recording stops
       const recordingPromise = new Promise<Blob[]>((resolve) => {
         const chunks: Blob[] = [];
-        
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             chunks.push(event.data);
           }
         };
-        
+
         mediaRecorder.onstop = () => {
           resolve(chunks);
         };
       });
-      
+
       // Stop recording
       if (mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
       }
-      
+
       try {
         // Wait for recording to complete
         const finalChunks = await recordingPromise;
@@ -311,7 +330,7 @@ export default function PatientProfile() {
             .from('consultation-recordings')
             .upload(fileName, audioBlob, {
               contentType: 'audio/webm',
-              upsert: false
+              upsert: false,
             });
 
           if (uploadError) {
@@ -331,16 +350,16 @@ export default function PatientProfile() {
         }
 
         // ONLY create consultation record AFTER audio upload completes
-        // Create consultation record with the actual recording URL (or null if no recording)
         const consult = await createConsult(user!.id, patientId!, recordingFileUrl || '');
-        
+
         console.log('Consultation created with recording URL:', recordingFileUrl || 'No recording');
-        
+
         await updateConsult(consult.id, {
-          recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
-          consult_summary_ai: ''
+          recording_transcript:
+            'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+          consult_summary_ai: '',
         });
-        
+
         alert('Consultation recorded and saved successfully');
         await loadPatientData();
       } catch (error) {
@@ -352,12 +371,16 @@ export default function PatientProfile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    if (isNaN(date.getTime())) {
+      // ✅ keeps UI stable for "18-Dec-2025" style strings
+      return dateString;
+    }
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -367,11 +390,54 @@ export default function PatientProfile() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // ✅ CHANGE #2: Normalize consult_summary_final (object OR JSON string)
+  const getConsultSummary = (consult: any) => {
+    const raw = consult?.consult_summary_final;
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (typeof raw === 'object') return raw;
+    return null;
+  };
+
+  // ✅ CHANGE #4: Render timeline summary as bullets when it has "- " lines
+  const renderBulletSummary = (text: any) => {
+    if (typeof text !== 'string') return <p className="text-gray-800">{String(text)}</p>;
+
+    const lines = text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const bulletLines = lines
+      .filter((l) => l.startsWith('-') || l.startsWith('•'))
+      .map((l) => l.replace(/^[-•]\s*/, '').trim())
+      .filter(Boolean);
+
+    // If it looks like a bullet list, show bullets; else show paragraph
+    if (bulletLines.length >= 1 && bulletLines.length === lines.length) {
+      return (
+        <ul className="list-disc list-inside space-y-1 text-gray-800">
+          {bulletLines.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
+  };
+
   const renderTimelineTab = () => {
-    const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events) 
-      ? latestSummary.summary.timeline_of_medical_events 
+    const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events)
+      ? latestSummary.summary.timeline_of_medical_events
       : [];
-    
+
     if (timeline.length === 0) {
       return (
         <div className="text-center py-12">
@@ -388,10 +454,11 @@ export default function PatientProfile() {
               <h4 className="font-semibold text-gray-900">{event.event_type}</h4>
               <span className="text-sm text-gray-500">{formatDate(event.event_datetime)}</span>
             </div>
-            {event.location && (
-              <p className="text-sm text-gray-600 mb-2">{event.location}</p>
-            )}
-            <p className="text-gray-800">{event.summary}</p>
+            {event.location && <p className="text-sm text-gray-600 mb-2">{event.location}</p>}
+
+            {/* ✅ CHANGE #4 */}
+            {renderBulletSummary(event.summary)}
+
             {event.important_findings && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-sm text-yellow-800">{event.important_findings}</p>
@@ -405,7 +472,7 @@ export default function PatientProfile() {
 
   const renderDiagnosticTrendsTab = () => {
     const trends = latestSummary?.summary?.diagnostic_trends || [];
-    
+
     if (trends.length === 0) {
       return (
         <div className="text-center py-12">
@@ -425,16 +492,17 @@ export default function PatientProfile() {
                 {trend.normal_range && <span className="ml-4">Normal: {trend.normal_range}</span>}
               </div>
             </div>
-            
-            {trend.overall_trend_comment && (
-              <p className="text-gray-800 mb-3">{trend.overall_trend_comment}</p>
-            )}
-            
+
+            {trend.overall_trend_comment && <p className="text-gray-800 mb-3">{trend.overall_trend_comment}</p>}
+
             {trend.measurements && trend.measurements.length > 0 && (
               <div className="space-y-2">
                 <h5 className="font-medium text-gray-700">Measurements</h5>
                 {trend.measurements.map((measurement: any, mIndex: number) => (
-                  <div key={mIndex} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                  <div
+                    key={mIndex}
+                    className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
+                  >
                     <span className="text-sm text-gray-600">{formatDate(measurement.measurement_datetime)}</span>
                     <span className="font-medium">{measurement.value_raw}</span>
                     <span className="text-sm text-gray-600">{measurement.clinical_interpretation}</span>
@@ -452,10 +520,9 @@ export default function PatientProfile() {
     const medications = latestSummary?.summary?.medications || {};
     const currentMeds = medications.current || [];
     const pastMeds = medications.past || [];
-    
+
     return (
       <div className="space-y-6">
-        {/* Current Medications */}
         <div>
           <h3 className="font-semibold text-gray-900 mb-3">Current Medications</h3>
           {currentMeds.length === 0 ? (
@@ -467,21 +534,20 @@ export default function PatientProfile() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-semibold text-gray-900">{med.drug_name}</h4>
-                      <p className="text-gray-600">{med.dose} • {med.frequency}</p>
+                      <p className="text-gray-600">
+                        {med.dose} • {med.frequency}
+                      </p>
                       {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
                     </div>
                     <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
                   </div>
-                  {med.notes && (
-                    <p className="text-sm text-gray-600 mt-2">{med.notes}</p>
-                  )}
+                  {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Past Medications */}
         {pastMeds.length > 0 && (
           <details className="group">
             <summary className="cursor-pointer font-semibold text-gray-900 mb-3 group-open:mb-3">
@@ -493,14 +559,14 @@ export default function PatientProfile() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-medium text-gray-700">{med.drug_name}</h4>
-                      <p className="text-gray-600">{med.dose} • {med.frequency}</p>
+                      <p className="text-gray-600">
+                        {med.dose} • {med.frequency}
+                      </p>
                       {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
                     </div>
                     <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
                   </div>
-                  {med.notes && (
-                    <p className="text-sm text-gray-600 mt-2">{med.notes}</p>
-                  )}
+                  {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
                 </div>
               ))}
             </div>
@@ -508,6 +574,21 @@ export default function PatientProfile() {
         )}
       </div>
     );
+  };
+
+  const getConsultPreviewText = (consult: any) => {
+    const summary = getConsultSummary(consult);
+    if (!summary) return 'Consultation summary';
+
+    // Prefer a readable short preview
+    if (typeof summary.diagnosis === 'string' && summary.diagnosis.trim()) return summary.diagnosis;
+    if (summary.diagnosis && typeof summary.diagnosis === 'object') {
+      const first = Array.isArray(summary.diagnosis.provisional) ? summary.diagnosis.provisional[0] : null;
+      if (first) return first;
+    }
+    if (Array.isArray(summary.chief_complaints) && summary.chief_complaints.length > 0) return summary.chief_complaints[0];
+    if (typeof summary.history === 'string' && summary.history.trim()) return 'History available';
+    return 'Consultation summary';
   };
 
   const renderPastSummariesTab = () => {
@@ -530,11 +611,7 @@ export default function PatientProfile() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {consult.consult_summary_final?.diagnosis || 
-                   consult.consult_summary_final?.chief_complaints || 
-                   'Consultation summary'}
-                </p>
+                <p className="text-sm text-gray-600 mt-1">{getConsultPreviewText(consult)}</p>
               </div>
             </div>
           </div>
@@ -543,140 +620,281 @@ export default function PatientProfile() {
     );
   };
 
-  const handleDownloadPDF = () => {
-    if (!selectedConsult) return;
-    
-    // Generate formatted PDF content as HTML
-    const htmlContent = generatePDFHTMLContent(selectedConsult);
-    
-    // Create a simple PDF-like document using HTML and print styles
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Consultation Summary</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
-            h2 { color: #666; margin-top: 20px; }
-            .header { margin-bottom: 30px; }
-            .section { margin-bottom: 20px; }
-            .medication { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; }
-            @media print {
-              body { margin: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          ${htmlContent}
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            }
-          </script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
+  // ✅ CHANGE #5: Fix PDF flow (no blank window, supports your JSON structure, triggers print dialog reliably)
+  const escapeHtml = (s: any) => {
+    const str = String(s ?? '');
+    return str
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  };
+
+  const toHtmlList = (items: any[]) => {
+    return `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`;
   };
 
   const generatePDFHTMLContent = (consult: any) => {
-    const summary = consult.consult_summary_final;
+    const summary = getConsultSummary(consult);
     if (!summary) return '<p>No consultation summary available.</p>';
-    
+
     let content = `
       <div class="header">
         <h1>CONSULTATION SUMMARY</h1>
-        <p><strong>Patient:</strong> ${patient?.name}</p>
-        <p><strong>Date:</strong> ${formatDate(consult.created_at)}</p>
-        <p><strong>Doctor:</strong> ${user?.user_metadata?.name || user?.email || 'Doctor'}</p>
+        <p><strong>Patient:</strong> ${escapeHtml(patient?.name)}</p>
+        <p><strong>Date:</strong> ${escapeHtml(formatDate(consult.created_at))}</p>
+        <p><strong>Doctor:</strong> ${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</p>
       </div>
     `;
-    
+
+    // Diagnosis
     if (summary.diagnosis) {
-      content += `
-        <div class="section">
-          <h2>DIAGNOSIS</h2>
-          <p>${summary.diagnosis}</p>
-        </div>
-      `;
+      if (typeof summary.diagnosis === 'string') {
+        content += `
+          <div class="section">
+            <h2>DIAGNOSIS</h2>
+            <p>${escapeHtml(summary.diagnosis)}</p>
+          </div>
+        `;
+      } else if (typeof summary.diagnosis === 'object') {
+        const prov = Array.isArray(summary.diagnosis.provisional) ? summary.diagnosis.provisional : [];
+        const keyf = Array.isArray(summary.diagnosis.key_findings) ? summary.diagnosis.key_findings : [];
+        content += `
+          <div class="section">
+            <h2>DIAGNOSIS</h2>
+            ${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}
+            ${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}
+          </div>
+        `;
+      }
     }
-    
+
+    // History
     if (summary.history) {
       content += `
         <div class="section">
           <h2>HISTORY</h2>
-          <p>${summary.history}</p>
+          <p>${escapeHtml(summary.history)}</p>
         </div>
       `;
     }
-    
+
+    // Chief Complaints
     if (summary.chief_complaints) {
-      content += `
-        <div class="section">
-          <h2>CHIEF COMPLAINTS</h2>
-          <p>${summary.chief_complaints}</p>
-        </div>
-      `;
+      if (Array.isArray(summary.chief_complaints)) {
+        content += `
+          <div class="section">
+            <h2>CHIEF COMPLAINTS</h2>
+            ${toHtmlList(summary.chief_complaints)}
+          </div>
+        `;
+      } else {
+        content += `
+          <div class="section">
+            <h2>CHIEF COMPLAINTS</h2>
+            <p>${escapeHtml(summary.chief_complaints)}</p>
+          </div>
+        `;
+      }
     }
-    
+
+    // Treatment Suggested
     if (summary.treatment_suggested) {
-      content += `
-        <div class="section">
-          <h2>TREATMENT SUGGESTED</h2>
-          <p>${summary.treatment_suggested}</p>
-        </div>
-      `;
+      if (typeof summary.treatment_suggested === 'string') {
+        content += `
+          <div class="section">
+            <h2>TREATMENT SUGGESTED</h2>
+            <p>${escapeHtml(summary.treatment_suggested)}</p>
+          </div>
+        `;
+      } else if (typeof summary.treatment_suggested === 'object') {
+        const immediate = Array.isArray(summary.treatment_suggested.immediate_plan)
+          ? summary.treatment_suggested.immediate_plan
+          : [];
+        const contingent = Array.isArray(summary.treatment_suggested.contingent_plan)
+          ? summary.treatment_suggested.contingent_plan
+          : [];
+        content += `
+          <div class="section">
+            <h2>TREATMENT SUGGESTED</h2>
+            ${immediate.length ? `<h3>Immediate Plan</h3>${toHtmlList(immediate)}` : ''}
+            ${contingent.length ? `<h3>Contingent Plan</h3>${toHtmlList(contingent)}` : ''}
+          </div>
+        `;
+      }
     }
-    
-    if (summary.medications && summary.medications.length > 0) {
+
+    // Medications
+    if (Array.isArray(summary.medications) && summary.medications.length > 0) {
       content += `
         <div class="section">
           <h2>MEDICATIONS</h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${summary.medications
+                .map(
+                  (m: any) => `
+                <tr>
+                  <td>${escapeHtml(m?.name || '-')}</td>
+                  <td>${escapeHtml(m?.dosage || '-')}</td>
+                  <td>${escapeHtml(m?.route || '-')}</td>
+                  <td>${escapeHtml(m?.frequency || '-')}</td>
+                  <td>${escapeHtml(m?.duration || '-')}</td>
+                  <td>${escapeHtml(m?.purpose || '-')}</td>
+                </tr>
+              `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>
       `;
-      summary.medications.forEach((med: any, index: number) => {
+    }
+
+    // Investigations
+    if (summary.investigations && typeof summary.investigations === 'object') {
+      const ordered = Array.isArray(summary.investigations.ordered) ? summary.investigations.ordered : [];
+      const notes = summary.investigations.notes;
+      if (ordered.length || notes) {
         content += `
-          <div class="medication">
-            <strong>${index + 1}. ${med.name}</strong><br>
-            <strong>Dose:</strong> ${med.dosage} • <strong>Duration:</strong> ${med.duration}<br>
-            ${med.timing ? `<strong>Timing:</strong> ${med.timing}` : ''}
+          <div class="section">
+            <h2>INVESTIGATIONS</h2>
+            ${
+              ordered.length
+                ? `<h3>Ordered</h3>
+                   <ul>
+                     ${ordered
+                       .map(
+                         (inv: any) =>
+                           `<li><strong>${escapeHtml(inv?.name || '-')}</strong>${
+                             inv?.body_part_or_type ? ` — ${escapeHtml(inv.body_part_or_type)}` : ''
+                           }${inv?.priority ? ` (Priority: ${escapeHtml(inv.priority)})` : ''}</li>`
+                       )
+                       .join('')}
+                   </ul>`
+                : ''
+            }
+            ${notes ? `<h3>Notes</h3><p>${escapeHtml(notes)}</p>` : ''}
           </div>
         `;
-      });
-      content += `</div>`;
+      }
     }
-    
+
+    // Follow-up Recommendations
     if (summary.followup_recommendations) {
       content += `
         <div class="section">
           <h2>FOLLOW-UP RECOMMENDATIONS</h2>
-          <p>${summary.followup_recommendations}</p>
+          ${
+            Array.isArray(summary.followup_recommendations)
+              ? toHtmlList(summary.followup_recommendations)
+              : `<p>${escapeHtml(summary.followup_recommendations)}</p>`
+          }
         </div>
       `;
     }
-    
+
+    // Key Personal Insights
+    if (summary.key_personal_insights) {
+      content += `
+        <div class="section">
+          <h2>KEY PERSONAL INSIGHTS</h2>
+          ${
+            Array.isArray(summary.key_personal_insights)
+              ? toHtmlList(summary.key_personal_insights)
+              : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
+          }
+        </div>
+      `;
+    }
+
+    // Flags for Review
+    if (Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0) {
+      content += `
+        <div class="section">
+          <h2>FLAGS FOR REVIEW</h2>
+          ${toHtmlList(summary.flags_for_review)}
+        </div>
+      `;
+    }
+
     return content;
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedConsult) return;
+
+    const htmlContent = generatePDFHTMLContent(selectedConsult);
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Pop-up blocked. Please allow pop-ups to download the PDF.');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>Consultation Summary</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.6; color: #111; }
+          h1 { font-size: 20px; margin: 0 0 8px 0; border-bottom: 2px solid #111; padding-bottom: 8px; }
+          h2 { font-size: 14px; margin: 18px 0 8px 0; color: #333; }
+          h3 { font-size: 12px; margin: 12px 0 6px 0; color: #444; }
+          p { margin: 6px 0; }
+          ul { margin: 6px 0 6px 18px; padding: 0; }
+          .header { margin-bottom: 18px; }
+          .section { margin-bottom: 14px; }
+          .table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          .table th, .table td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; }
+          .table th { background: #f3f4f6; text-align: left; }
+          @page { margin: 12mm; }
+          @media print {
+            body { margin: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+        <script>
+          // Give the browser a moment to render before printing.
+          setTimeout(function () {
+            window.focus();
+            window.print();
+          }, 300);
+
+          // Close after print (works in most browsers)
+          window.onafterprint = function () {
+            window.close();
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleSendWhatsApp = () => {
     if (!selectedConsult || !patient) return;
-    
+
     const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
     const consultDate = formatDate(selectedConsult.created_at);
     const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
-    
-    // Format phone number for WhatsApp (remove any non-digits and add country code if needed)
+
     let phoneNumber = patient.phone.replace(/\D/g, '');
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
-      phoneNumber = '91' + phoneNumber; // Add India country code if missing
+      phoneNumber = '91' + phoneNumber;
     }
-    
-    // Open WhatsApp with pre-filled message
+
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -684,11 +902,11 @@ export default function PatientProfile() {
   // Helper function to render accordion sections
   const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
     const isExpanded = expandedSections[key];
-    
+
     return (
       <div className="border-b border-gray-200 last:border-b-0">
         <button
-          onClick={() => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }))}
+          onClick={() => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
           className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
         >
           <h3 className="font-semibold text-gray-900">{title}</h3>
@@ -698,11 +916,7 @@ export default function PatientProfile() {
             <ChevronRight className="w-5 h-5 text-gray-500" />
           )}
         </button>
-        {isExpanded && (
-          <div className="px-4 pb-4">
-            {content}
-          </div>
-        )}
+        {isExpanded && <div className="px-4 pb-4">{content}</div>}
       </div>
     );
   };
@@ -712,17 +926,18 @@ export default function PatientProfile() {
     if (typeof diagnosis === 'string') {
       return <p className="text-gray-800">{diagnosis}</p>;
     }
-    
-    // Check if diagnosis is an object but has no valid content
+
     if (typeof diagnosis === 'object' && diagnosis !== null) {
-      const hasProvisional = diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
-      const hasKeyFindings = diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
-      
+      const hasProvisional =
+        diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
+      const hasKeyFindings =
+        diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
+
       if (!hasProvisional && !hasKeyFindings) {
         return <p className="text-gray-800">No detailed diagnosis available</p>;
       }
     }
-    
+
     return (
       <div className="space-y-3">
         {diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0 && (
@@ -730,7 +945,9 @@ export default function PatientProfile() {
             <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
             <ul className="list-disc list-inside space-y-1">
               {diagnosis.provisional.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">{item}</li>
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
               ))}
             </ul>
           </div>
@@ -740,7 +957,9 @@ export default function PatientProfile() {
             <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
             <ul className="list-disc list-inside space-y-1">
               {diagnosis.key_findings.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">{item}</li>
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
               ))}
             </ul>
           </div>
@@ -752,28 +971,30 @@ export default function PatientProfile() {
   // Helper function to render array content
   const renderArrayContent = (content: any) => {
     if (typeof content === 'string') {
-      return <p className="text-gray-800">{content}</p>;
+      return <p className="text-gray-800 whitespace-pre-line">{content}</p>;
     }
-    
+
     if (Array.isArray(content)) {
       return (
         <ul className="list-disc list-inside space-y-1">
           {content.map((item: string, idx: number) => (
-            <li key={idx} className="text-gray-800">{item}</li>
+            <li key={idx} className="text-gray-800">
+              {item}
+            </li>
           ))}
         </ul>
       );
     }
-    
+
     return <p className="text-gray-800">{JSON.stringify(content)}</p>;
   };
 
   // Helper function to render treatment suggested
   const renderTreatmentSuggested = (treatment: any) => {
     if (typeof treatment === 'string') {
-      return <p className="text-gray-800">{treatment}</p>;
+      return <p className="text-gray-800 whitespace-pre-line">{treatment}</p>;
     }
-    
+
     return (
       <div className="space-y-3">
         {treatment.immediate_plan && treatment.immediate_plan.length > 0 && (
@@ -781,7 +1002,9 @@ export default function PatientProfile() {
             <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
             <ul className="list-disc list-inside space-y-1">
               {treatment.immediate_plan.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">{item}</li>
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
               ))}
             </ul>
           </div>
@@ -791,7 +1014,9 @@ export default function PatientProfile() {
             <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
             <ul className="list-disc list-inside space-y-1">
               {treatment.contingent_plan.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">{item}</li>
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
               ))}
             </ul>
           </div>
@@ -845,16 +1070,18 @@ export default function PatientProfile() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h5 className="font-medium text-gray-900">{inv.name}</h5>
-                      {inv.body_part_or_type && (
-                        <p className="text-sm text-gray-600">{inv.body_part_or_type}</p>
-                      )}
+                      {inv.body_part_or_type && <p className="text-sm text-gray-600">{inv.body_part_or_type}</p>}
                     </div>
                     {inv.priority && (
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        inv.priority === 'High' ? 'bg-red-100 text-red-700' :
-                        inv.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          inv.priority === 'High'
+                            ? 'bg-red-100 text-red-700'
+                            : inv.priority === 'Medium'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                      >
                         {inv.priority}
                       </span>
                     )}
@@ -873,6 +1100,7 @@ export default function PatientProfile() {
       </div>
     );
   };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -904,7 +1132,7 @@ export default function PatientProfile() {
     { id: 'timeline', label: 'Timeline' },
     { id: 'trends', label: 'Diagnostic Trends' },
     { id: 'medications', label: 'Medications' },
-    { id: 'past', label: 'Past Summaries' }
+    { id: 'past', label: 'Past Summaries' },
   ];
 
   return (
@@ -912,62 +1140,46 @@ export default function PatientProfile() {
       <Navbar showBack />
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Patient Info Container */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
               <div className="text-gray-600 mt-1">
-                <span>{patient.age} years • {patient.gender}</span>
+                <span>
+                  {patient.age} years • {patient.gender}
+                </span>
                 {patient.case && <span className="ml-4 text-blue-600">{patient.case}</span>}
               </div>
               <p className="text-gray-600 mt-1">{patient.phone}</p>
               {patient.last_visit_at && (
-                <p className="text-sm text-gray-500 mt-1">
-                  Last visit: {formatDate(patient.last_visit_at)}
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Last visit: {formatDate(patient.last_visit_at)}</p>
               )}
             </div>
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={() => setShowEditModal(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Edit className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button
-              onClick={handleUploadDocuments}
-              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
-            >
+            <button onClick={handleUploadDocuments} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <Upload className="w-4 h-4" />
               <span className="text-sm font-medium">Upload</span>
             </button>
-            
-            <button
-              onClick={handleOpenForm}
-              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
-            >
+
+            <button onClick={handleOpenForm} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <ExternalLink className="w-4 h-4" />
               <span className="text-sm font-medium">Form</span>
             </button>
-            
-            <button
-              onClick={handleSendPreConsultLink}
-              className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4"
-            >
+
+            <button onClick={handleSendPreConsultLink} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <Send className="w-4 h-4" />
               <span className="text-sm font-medium">Link</span>
             </button>
-            
+
             <button
               onClick={isRecording ? handleEndRecording : handleStartRecording}
               className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-colors font-medium ${
-                isRecording 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                isRecording ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
               }`}
             >
               {isRecording ? (
@@ -997,9 +1209,7 @@ export default function PatientProfile() {
           )}
         </div>
 
-        {/* Summary Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {/* Tabs */}
           <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto">
               {tabs.map((tab) => (
@@ -1018,7 +1228,6 @@ export default function PatientProfile() {
             </div>
           </div>
 
-          {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'timeline' && renderTimelineTab()}
             {activeTab === 'trends' && renderDiagnosticTrendsTab()}
@@ -1028,13 +1237,14 @@ export default function PatientProfile() {
         </div>
       </div>
 
-      {/* Edit Patient Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Patient"
-      >
-        <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleEditPatient();
+          }}
+          className="space-y-4"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input
@@ -1095,7 +1305,11 @@ export default function PatientProfile() {
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors">
@@ -1105,32 +1319,26 @@ export default function PatientProfile() {
         </form>
       </Modal>
 
-      {/* Document Upload Modal */}
-      <Modal
-        isOpen={showDocumentUpload}
-        onClose={handleCloseDocumentUpload}
-        title="Upload Documents"
-      >
+      <Modal isOpen={showDocumentUpload} onClose={handleCloseDocumentUpload} title="Upload Documents">
         <div className="space-y-4">
           <p className="text-gray-600">Upload medical documents for this patient</p>
-          
+
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-8 h-8 text-gray-400 mb-2" />
             <span className="text-gray-600">Click to upload files</span>
             <input
               type="file"
               multiple
-              accept="image/jpeg,image/png,image/gif,image/webp,.pdf"
+              // ✅ CHANGE #3: accept DOC/DOCX + HEIC/HEIF (and keep existing)
+              accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.pdf,.doc,.docx"
               onChange={(e) => e.target.files && setDocumentsToUpload(Array.from(e.target.files))}
               className="hidden"
             />
           </label>
-          
+
           {documentsToUpload.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                {documentsToUpload.length} file(s) selected:
-              </p>
+              <p className="text-sm font-medium text-gray-700 mb-2">{documentsToUpload.length} file(s) selected:</p>
               <div className="space-y-1">
                 {documentsToUpload.map((file, idx) => (
                   <div key={idx} className="text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
@@ -1141,17 +1349,16 @@ export default function PatientProfile() {
             </div>
           )}
 
-          {uploadError && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-              {uploadError}
-            </div>
-          )}
+          {uploadError && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{uploadError}</div>}
 
           <div className="flex space-x-3 justify-end pt-4">
-            <button onClick={handleCloseDocumentUpload} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            <button
+              onClick={handleCloseDocumentUpload}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
               Cancel
             </button>
-            <button 
+            <button
               onClick={() => {
                 setConfirmationType('documents');
                 setShowConfirmation(true);
@@ -1165,155 +1372,139 @@ export default function PatientProfile() {
         </div>
       </Modal>
 
-      {/* Consultation Detail Modal */}
-      {selectedConsult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
-                <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
-                </button>
-                <button
-                  onClick={handleSendWhatsApp}
-                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Send via WhatsApp</span>
-                </button>
-                <button
-                  onClick={() => setSelectedConsult(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-            
-            {selectedConsult.consult_summary_final ? (
-              <>
-                {/* Summary chips */}
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedConsult.consult_summary_final.chief_complaints && (
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                        {Array.isArray(selectedConsult.consult_summary_final.chief_complaints) 
-                          ? selectedConsult.consult_summary_final.chief_complaints.length 
-                          : 1} Complaints
-                      </span>
-                    )}
-                    {selectedConsult.consult_summary_final.medications && (
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                        {selectedConsult.consult_summary_final.medications.length} Medications
-                      </span>
-                    )}
-                    {selectedConsult.consult_summary_final.investigations?.ordered && (
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                        {selectedConsult.consult_summary_final.investigations.ordered.length} Investigations
-                      </span>
-                    )}
-                    {selectedConsult.consult_summary_final.flags_for_review && selectedConsult.consult_summary_final.flags_for_review.length > 0 && (
-                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
-                        {selectedConsult.consult_summary_final.flags_for_review.length} Flags
-                      </span>
-                    )}
-                  </div>
-                </div>
+      {selectedConsult && (() => {
+        const summary = getConsultSummary(selectedConsult);
 
-                {/* Accordion sections */}
-                <div className="divide-y divide-gray-200">
-                  {selectedConsult.consult_summary_final.diagnosis && renderAccordionSection(
-                    "Diagnosis", 
-                    "diagnosis", 
-                    renderDiagnosis(selectedConsult.consult_summary_final.diagnosis)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.chief_complaints && renderAccordionSection(
-                    "Chief Complaints", 
-                    "chiefComplaints", 
-                    renderArrayContent(selectedConsult.consult_summary_final.chief_complaints)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.treatment_suggested && renderAccordionSection(
-                    "Treatment Suggested", 
-                    "treatmentSuggested", 
-                    renderTreatmentSuggested(selectedConsult.consult_summary_final.treatment_suggested)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.medications && selectedConsult.consult_summary_final.medications.length > 0 && renderAccordionSection(
-                    "Medications", 
-                    "medications", 
-                    renderMedications(selectedConsult.consult_summary_final.medications)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.investigations && renderAccordionSection(
-                    "Investigations", 
-                    "investigations", 
-                    renderInvestigations(selectedConsult.consult_summary_final.investigations)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.history && renderAccordionSection(
-                    "History", 
-                    "history", 
-                    renderArrayContent(selectedConsult.consult_summary_final.history)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.followup_recommendations && renderAccordionSection(
-                    "Follow-up Recommendations", 
-                    "followupRecommendations", 
-                    renderArrayContent(selectedConsult.consult_summary_final.followup_recommendations)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.key_personal_insights && renderAccordionSection(
-                    "Key Personal Insights", 
-                    "keyPersonalInsights", 
-                    renderArrayContent(selectedConsult.consult_summary_final.key_personal_insights)
-                  )}
-                  
-                  {selectedConsult.consult_summary_final.flags_for_review && selectedConsult.consult_summary_final.flags_for_review.length > 0 && renderAccordionSection(
-                    "Flags for Review", 
-                    "flagsForReview", 
-                    <div className="space-y-2">
-                      {selectedConsult.consult_summary_final.flags_for_review.map((flag: string, idx: number) => (
-                        <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
-                          <span className="text-red-800 font-medium">⚠ {flag}</span>
-                        </div>
-                      ))}
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
+                  <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download PDF</span>
+                  </button>
+                  <button
+                    onClick={handleSendWhatsApp}
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Send via WhatsApp</span>
+                  </button>
+                  <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              {summary ? (
+                <>
+                  <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="flex flex-wrap gap-2">
+                      {summary.chief_complaints && (
+                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                          {Array.isArray(summary.chief_complaints) ? summary.chief_complaints.length : 1} Complaints
+                        </span>
+                      )}
+                      {Array.isArray(summary.medications) && (
+                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                          {summary.medications.length} Medications
+                        </span>
+                      )}
+                      {summary.investigations?.ordered && Array.isArray(summary.investigations.ordered) && (
+                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                          {summary.investigations.ordered.length} Investigations
+                        </span>
+                      )}
+                      {Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0 && (
+                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
+                          {summary.flags_for_review.length} Flags
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="p-6 text-center text-gray-500">
-                Consultation summary not available yet.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                  </div>
 
-      {/* Confirmation Modal */}
+                  <div className="divide-y divide-gray-200">
+                    {summary.diagnosis &&
+                      renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
+
+                    {summary.chief_complaints &&
+                      renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
+
+                    {summary.treatment_suggested &&
+                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
+
+                    {Array.isArray(summary.medications) &&
+                      summary.medications.length > 0 &&
+                      renderAccordionSection('Medications', 'medications', renderMedications(summary.medications))}
+
+                    {summary.investigations &&
+                      renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}
+
+                    {summary.history &&
+                      renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
+
+                    {summary.followup_recommendations &&
+                      renderAccordionSection(
+                        'Follow-up Recommendations',
+                        'followupRecommendations',
+                        renderArrayContent(summary.followup_recommendations)
+                      )}
+
+                    {summary.key_personal_insights &&
+                      renderAccordionSection(
+                        'Key Personal Insights',
+                        'keyPersonalInsights',
+                        renderArrayContent(summary.key_personal_insights)
+                      )}
+
+                    {Array.isArray(summary.flags_for_review) &&
+                      summary.flags_for_review.length > 0 &&
+                      renderAccordionSection(
+                        'Flags for Review',
+                        'flagsForReview',
+                        <div className="space-y-2">
+                          {summary.flags_for_review.map((flag: string, idx: number) => (
+                            <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
+                              <span className="text-red-800 font-medium">⚠ {flag}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                </>
+              ) : (
+                <div className="p-6 text-center text-gray-500">Consultation summary not available yet.</div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       <ConfirmationModal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmAction}
         title={
-          confirmationType === 'preConsult' ? 'Send Pre-Consult Link' :
-          confirmationType === 'followUp' ? 'Send Follow-Up Link' :
-          'Upload Documents'
+          confirmationType === 'preConsult'
+            ? 'Send Pre-Consult Link'
+            : confirmationType === 'followUp'
+            ? 'Send Follow-Up Link'
+            : 'Upload Documents'
         }
         message={
-          confirmationType === 'preConsult' ? 'Create and send pre-consultation form link to patient?' :
-          confirmationType === 'followUp' ? 'Create and send follow-up form link to patient?' :
-          'Upload selected documents for this patient?'
+          confirmationType === 'preConsult'
+            ? 'Create and send pre-consultation form link to patient?'
+            : confirmationType === 'followUp'
+            ? 'Create and send follow-up form link to patient?'
+            : 'Upload selected documents for this patient?'
         }
       />
     </div>

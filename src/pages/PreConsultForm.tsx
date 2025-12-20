@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, CheckCircle } from 'lucide-react';
-import { getPreConsultById, createPreConsultWithDocuments } from '../lib/database';
+import { getPreConsultById, updatePreConsult, createPreConsultWithDocuments } from '../lib/database';
 import { supabase } from '../lib/supabase';
 
 export default function PreConsultForm() {
@@ -14,10 +14,10 @@ export default function PreConsultForm() {
   const [documents, setDocuments] = useState<File[]>([]);
   const [isNewForm, setIsNewForm] = useState(false);
 
-  // NEW: store existing form data (so we can create a new row with correct ids)
+  // store existing form data
   const [preConsultData, setPreConsultData] = useState<any>(null);
 
-  // NEW: inline error (no browser alert)
+  // inline error (no browser alert)
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function PreConsultForm() {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            contentType: file.type,
+            contentType: file.type || 'application/octet-stream',
             upsert: false,
           });
 
@@ -109,27 +109,27 @@ export default function PreConsultForm() {
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: ONLY AFTER uploads complete → CREATE a NEW row with URLs already filled
-      let docId: string | null = null;
-      let patientId: string | null = null;
-
-      if (isNewForm) {
-        const urlParams = new URLSearchParams(window.location.search);
-        docId = urlParams.get('docId');
-        patientId = urlParams.get('patientId');
+      // Step 2: After uploads complete:
+      // - If this is an existing form link (has preConsultId): UPDATE the SAME row (prevents 2 rows)
+      // - If this is a /new flow: CREATE a new row
+      if (!isNewForm && preConsultId && preConsultId !== 'new') {
+        await updatePreConsult(preConsultId, {
+          status: 'Submitted',
+          documents_uploaded: uploadedUrls,
+          ai_summary: null,
+        });
       } else {
-        // For existing form link, derive docId & patientId from the loaded row
-        docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
-        patientId = preConsultData?.patient_id || null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const docId = urlParams.get('docId');
+        const patientId = urlParams.get('patientId');
+
+        if (!docId || !patientId) {
+          throw new Error('Missing doctor/patient info. Please try again or request a new link.');
+        }
+
+        await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
       }
 
-      if (!docId || !patientId) {
-        throw new Error('Missing doctor/patient info. Please try again or request a new link.');
-      }
-
-      await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
-
-      // Success UI
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting pre-consult:', error);

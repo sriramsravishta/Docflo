@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, CheckCircle } from 'lucide-react';
-import { getPreConsultById, updatePreConsult } from '../lib/database';
+import { getPreConsultById, updatePreConsult, createPreConsultWithDocuments } from '../lib/database';
 import { supabase } from '../lib/supabase';
 
 export default function PreConsultForm() {
@@ -12,6 +12,7 @@ export default function PreConsultForm() {
   const [isUploading, setIsUploading] = useState(false);
   const [formNotFound, setFormNotFound] = useState(false);
   const [documents, setDocuments] = useState<File[]>([]);
+  const [isNewForm, setIsNewForm] = useState(false);
 
   useEffect(() => {
     loadPreConsult();
@@ -21,8 +22,16 @@ export default function PreConsultForm() {
     try {
       setLoading(true);
       
-      if (!preConsultId || preConsultId === 'new') {
-        console.error('Invalid pre-consult ID:', preConsultId);
+      if (!preConsultId) {
+        console.error('No pre-consult ID provided');
+        setFormNotFound(true);
+        return;
+      }
+
+      if (preConsultId === 'new') {
+        // Special case for new forms - no existing record to load
+        setIsNewForm(true);
+        setLoading(false);
         return;
       }
       
@@ -59,7 +68,6 @@ export default function PreConsultForm() {
   };
 
   const confirmSubmit = async () => {
-    if (!preConsultId || preConsultId === 'new') return;
 
     try {
       setIsUploading(true);
@@ -69,7 +77,7 @@ export default function PreConsultForm() {
       const uploadedUrls = [];
       
       for (const file of documents) {
-        const fileName = `${preConsultId}-${Date.now()}-${file.name}`;
+        const fileName = `${Date.now()}-${file.name}`;
         
         console.log('Uploading file:', fileName, 'Size:', file.size);
 
@@ -98,14 +106,30 @@ export default function PreConsultForm() {
         uploadedUrls.push(publicUrl);
       }
 
-      // Step 2: ONLY AFTER all uploads complete, update DB with URLs and status
-      await updatePreConsult(preConsultId, {
-        status: 'Submitted',
-        documents_uploaded: uploadedUrls,
-        ai_summary: null // Will be filled by n8n workflow
-      });
+      // Step 2: ONLY AFTER all uploads complete, create or update DB record
+      if (isNewForm) {
+        // For new forms, we need to extract docId and patientId from URL params
+        // Since this is a new form, we'll need these from the URL or context
+        const urlParams = new URLSearchParams(window.location.search);
+        const docId = urlParams.get('docId');
+        const patientId = urlParams.get('patientId');
+        
+        if (!docId || !patientId) {
+          throw new Error('Missing doctor or patient information for new form');
+        }
 
-      console.log('Pre-consult submitted with documents:', uploadedUrls);
+        await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
+        console.log('New pre-consult created with documents:', uploadedUrls);
+      } else {
+        // For existing forms, update as before
+        await updatePreConsult(preConsultId!, {
+          status: 'Submitted',
+          documents_uploaded: uploadedUrls,
+          ai_summary: null // Will be filled by n8n workflow
+        });
+        console.log('Pre-consult updated with documents:', uploadedUrls);
+      }
+
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting pre-consult:', error);

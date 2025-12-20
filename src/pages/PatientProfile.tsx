@@ -15,6 +15,7 @@ import {
   getLatestSummary,
   getConsults
 } from '../lib/database';
+import { createPreConsultWithDocuments } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -149,6 +150,7 @@ export default function PatientProfile() {
   const handleConfirmAction = async () => {
     try {
       if (confirmationType === 'preConsult') {
+        // For "Send Link" - create draft record as before
         const preConsult = await createPreConsult(user!.id, patientId!);
         const link = `${window.location.origin}/pre-consult/${preConsult.id}`;
         alert(`Pre-consult link created: ${link}`);

@@ -203,7 +203,7 @@ export default function PreConsultForm() {
             <input
               type="file"
               multiple
-              accept="image/jpeg,image/png,image/gif,image/webp,.pdf"
+              accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleFileUpload}
               className="hidden"
             />

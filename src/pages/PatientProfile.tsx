@@ -790,50 +790,184 @@ export default function PatientProfile() {
   };
 
   const renderDiagnosticTrendsTab = () => {
-    const trends = latestSummary?.summary?.diagnostic_trends || [];
+  const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
+    ? latestSummary.summary.diagnostic_trends
+    : [];
 
-    if (trends.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No diagnostic trends available</p>
-        </div>
-      );
-    }
-
+  if (!trends.length) {
     return (
-      <div className="space-y-6">
-        {trends.map((trend: any, index: number) => (
-          <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="mb-3">
-              <h4 className="font-semibold text-gray-900">{trend.parameter_name}</h4>
-              <div className="text-sm text-gray-600">
-                {trend.unit && <span>Unit: {trend.unit}</span>}
-                {trend.normal_range && <span className="ml-4">Normal: {trend.normal_range}</span>}
-              </div>
-            </div>
-
-            {trend.overall_trend_comment && <p className="text-gray-800 mb-3">{trend.overall_trend_comment}</p>}
-
-            {trend.measurements && trend.measurements.length > 0 && (
-              <div className="space-y-2">
-                <h5 className="font-medium text-gray-700">Measurements</h5>
-                {trend.measurements.map((measurement: any, mIndex: number) => (
-                  <div
-                    key={mIndex}
-                    className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
-                  >
-                    <span className="text-sm text-gray-600">{formatDate(measurement.measurement_datetime)}</span>
-                    <span className="font-medium">{measurement.value_raw}</span>
-                    <span className="text-sm text-gray-600">{measurement.clinical_interpretation}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="text-center py-12">
+        <p className="text-gray-500">No diagnostic trends available</p>
       </div>
     );
+  }
+
+  // -------- Helpers --------
+  const toDayKey = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    // group by day (yyyy-mm-dd)
+    return d.toISOString().slice(0, 10);
   };
+
+  const formatColHeader = (dayKey: string) => {
+    // dayKey like "2025-10-31"
+    const d = new Date(dayKey + "T00:00:00");
+    if (isNaN(d.getTime())) return dayKey;
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase(); // "31 OCT"
+  };
+
+  const badgeClass = (label: string) => {
+    const t = (label || "").toLowerCase();
+    if (t.includes("critical")) return "bg-red-100 text-red-700";
+    if (t.includes("high")) return "bg-orange-100 text-orange-700";
+    if (t.includes("elevat")) return "bg-amber-100 text-amber-700";
+    if (t.includes("uncontrol")) return "bg-orange-100 text-orange-700";
+    if (t.includes("normal")) return "bg-green-100 text-green-700";
+    if (t.includes("low")) return "bg-blue-100 text-blue-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  // -------- Build columns (unique days across all parameters) --------
+  const allDays: string[] = [];
+  trends.forEach((p: any) => {
+    (p?.measurements || []).forEach((m: any) => {
+      if (m?.measurement_datetime) allDays.push(toDayKey(m.measurement_datetime));
+    });
+  });
+
+  const uniqueDays = Array.from(new Set(allDays)).sort(); // chronological
+  // Optional: if you only want latest 3 columns like screenshot:
+  // const uniqueDays = Array.from(new Set(allDays)).sort().slice(-3);
+
+  // -------- Build quick lookup: param -> day -> measurement --------
+  const valueMap: Record<string, Record<string, any>> = {};
+  trends.forEach((p: any) => {
+    const key = String(p?.parameter_name || "").trim();
+    if (!key) return;
+
+    valueMap[key] = valueMap[key] || {};
+
+    (p?.measurements || []).forEach((m: any) => {
+      const day = m?.measurement_datetime ? toDayKey(m.measurement_datetime) : null;
+      if (!day) return;
+
+      // if multiple on same day, keep the latest by time
+      const existing = valueMap[key][day];
+      if (!existing) {
+        valueMap[key][day] = m;
+      } else {
+        const a = new Date(existing.measurement_datetime).getTime();
+        const b = new Date(m.measurement_datetime).getTime();
+        if (!isNaN(a) && !isNaN(b) && b > a) valueMap[key][day] = m;
+      }
+    });
+  });
+
+  // -------- Interpretation source --------
+  // Prefer latest measurement's "clinical_interpretation" if present,
+  // else fallback to overall_trend_comment.
+  const getInterpretation = (p: any) => {
+    const ms = Array.isArray(p?.measurements) ? p.measurements : [];
+    const latest = ms
+      .filter((m: any) => m?.measurement_datetime)
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.measurement_datetime).getTime() - new Date(a.measurement_datetime).getTime()
+      )[0];
+
+    return (
+      latest?.clinical_interpretation ||
+      p?.overall_trend_comment ||
+      ""
+    );
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse">
+          {/* Header */}
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">
+                PARAMETER
+              </th>
+
+              {uniqueDays.map((dayKey) => (
+                <th
+                  key={dayKey}
+                  className="text-left text-xs font-semibold tracking-wider text-blue-700 px-4 py-3"
+                >
+                  {formatColHeader(dayKey)}
+                </th>
+              ))}
+
+              <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">
+                INTERPRETATION
+              </th>
+            </tr>
+          </thead>
+
+          {/* Body */}
+          <tbody>
+            {trends.map((p: any, idx: number) => {
+              const paramName = String(p?.parameter_name || "").trim();
+              if (!paramName) return null;
+
+              const interp = String(getInterpretation(p) || "").trim();
+              const unit = p?.unit ? String(p.unit) : "";
+
+              return (
+                <tr
+                  key={paramName + idx}
+                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"}
+                >
+                  {/* Parameter name */}
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                    {paramName}
+                  </td>
+
+                  {/* Value columns */}
+                  {uniqueDays.map((dayKey) => {
+                    const m = valueMap?.[paramName]?.[dayKey];
+                    const val = m?.value_raw ?? "";
+                    const display =
+                      val === "" || val === null || val === undefined
+                        ? "—"
+                        : unit && typeof val === "number"
+                        ? `${val} ${unit}`
+                        : unit && typeof val === "string" && !val.includes(unit)
+                        ? `${val} ${unit}`
+                        : String(val);
+
+                    return (
+                      <td key={dayKey} className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">
+                        {display}
+                      </td>
+                    );
+                  })}
+
+                  {/* Interpretation badge */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {interp ? (
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClass(interp)}`}>
+                        {interp}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 
   const renderMedicationsTab = () => {
     const medications = latestSummary?.summary?.medications || {};

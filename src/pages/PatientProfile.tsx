@@ -511,7 +511,7 @@ export default function PatientProfile() {
 
   const preConsultUrl = `${window.location.origin}/pre-consult/new?docId=${user.id}&patientId=${patientId}`;
 
-  const message = `Hi ${patient.name}, Before your visit, please upload all your past medical reports/prescriptions here: ${preConsultUrl} It helps the doctor see a quick summary of your medical history and treat you better Thank You! — Dr Ranga Reddy’s Clinic`;
+  const message = `Hi ${patient.name},\n\nBefore your visit, please upload all your past medical reports/prescriptions here: ${preConsultUrl}\n\nIt helps the doctor see a quick summary of your medical history and treat you better \n\nThank You! \n— Dr Ranga Reddy’s Clinic`;
 
   let phoneNumber = String(patient.phone).replace(/\D/g, '');
   if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {

@@ -367,3 +367,87 @@ export const getLatestSummary = async (patientId: string) => {
   if (error) throw error;
   return data;
 };
+
+// Consult Medicine functions
+export const getConsultMedicines = async (consultId: string) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .select('*')
+    .eq('consult_id', consultId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const createConsultMedicine = async (medicineData: {
+  consult_id: string;
+  name: string;
+  dosage?: string;
+  frequency?: string;
+  duration?: string;
+  route?: string;
+  instructions?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .insert(medicineData)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateConsultMedicine = async (id: string, updates: {
+  name?: string;
+  dosage?: string;
+  frequency?: string;
+  duration?: string;
+  route?: string;
+  instructions?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteConsultMedicine = async (id: string) => {
+  const { error } = await supabase
+    .from('consult_medicine')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+export const searchMedicines = async (query: string, limit: number = 10) => {
+  const { data, error } = await supabase
+    .from('medicine_master_list')
+    .select('name')
+    .ilike('name', `%${query}%`)
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const updateConsultSummary = async (consultId: string, summaryUpdates: any) => {
+  const { data, error } = await supabase
+    .from('consult')
+    .update({
+      consult_summary_final: summaryUpdates
+    })
+    .eq('id', consultId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};

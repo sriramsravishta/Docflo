@@ -1,4 +1,4 @@
-tell me what changes to do for the database.ts for making the above thing work, here is the code - """import { supabase } from './supabase';
+import { supabase } from './supabase';
 
 export const createPatient = async (patientData: {
   name: string;
@@ -450,4 +450,4 @@ export const updateConsultSummary = async (consultId: string, summaryUpdates: an
 
   if (error) throw error;
   return data;
-};"""
+};

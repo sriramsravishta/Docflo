@@ -477,22 +477,22 @@ export default function PatientProfile() {
     }
   };
 
-  const handleMedicineSearch = async (query: string) => {
-    if (query.trim().length < 1) {
-      setMedicineSearchResults([]);
-      return;
-    }
-
-    try {
-      setSearchingMedicine(true);
-      const results = await searchMedicines(query.trim(), 10);
-      setMedicineSearchResults(results);
-    } catch (error) {
-      console.error('Error searching medicines:', error);
-    } finally {
-      setSearchingMedicine(false);
-    }
-  };
+ 01  const handleMedicineSearch = async (query: string) => {
+02    if (query.length < 2) {
+03      setMedicineSearchResults([]);
+04      return;
+05    }
+06
+07    try {
+08      setSearchingMedicine(true);
+09      const results = await searchMedicines(query, 10);
+10      setMedicineSearchResults(results);
+11    } catch (error) {
+12      console.error('Error searching medicines:', error);
+13    } finally {
+14      setSearchingMedicine(false);
+15    }
+16  };
 
   const handleUploadDocuments = () => {
     setShowDocumentUpload(true);

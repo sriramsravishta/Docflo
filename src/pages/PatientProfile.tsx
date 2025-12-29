@@ -506,10 +506,24 @@ export default function PatientProfile() {
     }
   };
 
-  const handleSendPreConsultLink = () => {
-    setConfirmationType('preConsult');
-    setShowConfirmation(true);
-  };
+ const handleSendPreConsultLink = () => {
+  if (!patient || !patient.phone || !user) return;
+
+  const preConsultUrl = `${window.location.origin}/pre-consult/new?docId=${user.id}&patientId=${patientId}`;
+
+  const message = `Hi ${patient.name}, Before your visit, please upload all your past medical reports/prescriptions here: ${preConsultUrl} It helps the doctor see a quick summary of your medical history and treat you better Thank You! — Dr Ranga Reddy’s Clinic`;
+
+  let phoneNumber = String(patient.phone).replace(/\D/g, '');
+  if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
+    phoneNumber = `91${phoneNumber}`;
+  }
+
+  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+  // Direct open (no popup confirmation modal)
+  window.location.href = whatsappUrl;
+};
+
 
   const handleSendFollowUpLink = () => {
     setConfirmationType('followUp');
@@ -534,10 +548,7 @@ export default function PatientProfile() {
   // ✅ Do NOT create a pre-consult row on Link generation
   const handleConfirmAction = async () => {
     try {
-      if (confirmationType === 'preConsult') {
-        const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
-        alert(`Pre-consult link created: ${link}`);
-      } else if (confirmationType === 'followUp') {
+       else if (confirmationType === 'followUp') {
         const followUp = await createFollowUp(user!.id, patientId!);
         const link = `${window.location.origin}/follow-up/${followUp.id}`;
         alert(`Follow-up link created: ${link}`);

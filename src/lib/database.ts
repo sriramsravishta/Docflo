@@ -427,16 +427,20 @@ export const deleteConsultMedicine = async (id: string) => {
   if (error) throw error;
 };
 
-export const searchMedicines = async (query: string, limit: number = 10) => {
-  const { data, error } = await supabase
-    .from('medicine_master_list')
-    .select('name')
-    .ilike('name', `%${query}%`)
-    .limit(limit);
-
-  if (error) throw error;
-  return data || [];
-};
+01  export async function searchMedicines(query: string, limit = 10) {
+02    const q = query.trim();
+03    if (!q) return [];
+04
+05    const { data, error } = await supabase
+06      .from('medicines')              // ✅ make sure this matches your table name
+07      .select('*')                    // or .select('id,name') if you want lighter payload
+08      .ilike('name', `${q}%`)         // ✅ STARTS WITH (prefix search)
+09      .order('name', { ascending: true }) // ✅ Alphabetical
+10      .limit(limit);                 // ✅ Top N (10)
+11
+12    if (error) throw error;
+13    return data ?? [];
+14  };
 
 export const updateConsultSummary = async (consultId: string, summaryUpdates: any) => {
   const { data, error } = await supabase

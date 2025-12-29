@@ -548,7 +548,9 @@ export default function PatientProfile() {
   // ✅ Do NOT create a pre-consult row on Link generation
   const handleConfirmAction = async () => {
     try {
-       else if (confirmationType === 'followUp') {
+      if (confirmationType === 'preConsult') {
+        const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
+      } else if (confirmationType === 'followUp') {
         const followUp = await createFollowUp(user!.id, patientId!);
         const link = `${window.location.origin}/follow-up/${followUp.id}`;
         alert(`Follow-up link created: ${link}`);

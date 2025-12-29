@@ -478,14 +478,14 @@ export default function PatientProfile() {
   };
 
   const handleMedicineSearch = async (query: string) => {
-    if (query.trim().length < 1) {
+    if (query.length < 2) {
       setMedicineSearchResults([]);
       return;
     }
 
     try {
       setSearchingMedicine(true);
-      const results = await searchMedicines(query.trim(), 10);
+      const results = await searchMedicines(query, 10);
       setMedicineSearchResults(results);
     } catch (error) {
       console.error('Error searching medicines:', error);

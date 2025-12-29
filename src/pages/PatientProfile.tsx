@@ -1933,7 +1933,7 @@ export default function PatientProfile() {
             {(() => {
               const summary = getConsultSummary(selectedConsult);
 
-              return summary ? ( 
+              return summary ? (
                 <>
                   <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
                     <div className="flex flex-wrap gap-2">

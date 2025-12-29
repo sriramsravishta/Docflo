@@ -14,6 +14,16 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Calendar,
+  Phone,
+  User,
+  FileText,
+  Activity,
+  Clock,
+  Plus,
+  Save,
+  XCircle,
+  Trash2,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
@@ -28,6 +38,12 @@ import {
   updateConsult,
   getLatestSummary,
   getConsults,
+  getConsultMedicines,
+  createConsultMedicine,
+  updateConsultMedicine,
+  deleteConsultMedicine,
+  searchMedicines,
+  updateConsultSummary,
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -52,6 +68,11 @@ export default function PatientProfile() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showConsultModal, setShowConsultModal] = useState(false);
   const [selectedConsult, setSelectedConsult] = useState<any>(null);
+  const [isEditingConsult, setIsEditingConsult] = useState(false);
+  const [editedConsult, setEditedConsult] = useState<any>(null);
+  const [consultMedicines, setConsultMedicines] = useState<any[]>([]);
+  const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
+  const [searchingMedicine, setSearchingMedicine] = useState(false);
 
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -93,6 +114,12 @@ export default function PatientProfile() {
     }
   }, [patientId]);
 
+  useEffect(() => {
+    if (selectedConsult && selectedConsult.id) {
+      loadConsultMedicines(selectedConsult.id);
+    }
+  }, [selectedConsult]);
+
   const loadPatientData = async () => {
     try {
       setLoading(true);
@@ -122,6 +149,15 @@ export default function PatientProfile() {
     }
   };
 
+  const loadConsultMedicines = async (consultId: string) => {
+    try {
+      const medicines = await getConsultMedicines(consultId);
+      setConsultMedicines(medicines);
+    } catch (error) {
+      console.error('Error loading consult medicines:', error);
+    }
+  };
+
   const handleEditPatient = async () => {
     try {
       await updatePatient(patientId!, {
@@ -136,6 +172,94 @@ export default function PatientProfile() {
     } catch (error) {
       console.error('Error updating patient:', error);
       alert('Failed to update patient');
+    }
+  };
+
+  const handleEditConsult = () => {
+    setIsEditingConsult(true);
+    setEditedConsult({
+      ...selectedConsult.consult_summary_final,
+      id: selectedConsult.id
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingConsult(false);
+    setEditedConsult(null);
+    setSelectedConsult(null);
+  };
+
+  const handleSaveConsult = async () => {
+    try {
+      // Update consultation summary
+      await updateConsultSummary(selectedConsult.id, editedConsult);
+      
+      // Reload consultation data
+      await loadPatientData();
+      
+      setIsEditingConsult(false);
+      setEditedConsult(null);
+      setSelectedConsult(null);
+      
+      // Show success message
+      alert('Changes saved successfully');
+    } catch (error) {
+      console.error('Error saving consultation:', error);
+      alert('Failed to save changes');
+    }
+  };
+
+  const handleAddMedicine = async () => {
+    try {
+      const newMedicine = await createConsultMedicine({
+        consult_id: selectedConsult.id,
+        name: '',
+        dosage: '',
+        frequency: '',
+        duration: '',
+        route: '',
+        instructions: ''
+      });
+      setConsultMedicines([...consultMedicines, newMedicine]);
+    } catch (error) {
+      console.error('Error adding medicine:', error);
+    }
+  };
+
+  const handleUpdateMedicine = async (medicineId: string, updates: any) => {
+    try {
+      const updatedMedicine = await updateConsultMedicine(medicineId, updates);
+      setConsultMedicines(consultMedicines.map(med => 
+        med.id === medicineId ? updatedMedicine : med
+      ));
+    } catch (error) {
+      console.error('Error updating medicine:', error);
+    }
+  };
+
+  const handleDeleteMedicine = async (medicineId: string) => {
+    try {
+      await deleteConsultMedicine(medicineId);
+      setConsultMedicines(consultMedicines.filter(med => med.id !== medicineId));
+    } catch (error) {
+      console.error('Error deleting medicine:', error);
+    }
+  };
+
+  const handleMedicineSearch = async (query: string) => {
+    if (query.length < 2) {
+      setMedicineSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearchingMedicine(true);
+      const results = await searchMedicines(query, 10);
+      setMedicineSearchResults(results);
+    } catch (error) {
+      console.error('Error searching medicines:', error);
+    } finally {
+      setSearchingMedicine(false);
     }
   };
 
@@ -1372,39 +1496,316 @@ export default function PatientProfile() {
         </div>
       </Modal>
 
-      {selectedConsult && (() => {
-        const summary = getConsultSummary(selectedConsult);
-
-        return (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
-                  <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleDownloadPDF}
-                    className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download PDF</span>
-                  </button>
-                  <button
-                    onClick={handleSendWhatsApp}
-                    className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Send via WhatsApp</span>
-                  </button>
-                  <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <X className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
+      {selectedConsult && isEditingConsult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Edit Consultation Summary</h2>
+                <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
               </div>
+              <button onClick={handleCancelEdit} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
 
-              {summary ? (
+            <div className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">Diagnosis</h3>
+                    {!isEditingConsult && (
+                      <button
+                        onClick={handleEditConsult}
+                        className="btn-secondary flex items-center space-x-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <textarea
+                        value={typeof editedConsult?.diagnosis === 'string' ? editedConsult.diagnosis : JSON.stringify(editedConsult?.diagnosis || '')}
+                        onChange={(e) => setEditedConsult({...editedConsult, diagnosis: e.target.value})}
+                        className="input-field min-h-20"
+                        rows={3}
+                      />
+                    ) : (
+                      renderDiagnosis(selectedConsult.consult_summary_final?.diagnosis)
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">History</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <textarea
+                        value={editedConsult?.history || ''}
+                        onChange={(e) => setEditedConsult({...editedConsult, history: e.target.value})}
+                        className="input-field min-h-20"
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.history || 'No history recorded'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <textarea
+                        value={editedConsult?.chief_complaints || ''}
+                        onChange={(e) => setEditedConsult({...editedConsult, chief_complaints: e.target.value})}
+                        className="input-field min-h-20"
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.chief_complaints || 'No complaints recorded'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Treatment Suggested</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <textarea
+                        value={editedConsult?.treatment_suggested || ''}
+                        onChange={(e) => setEditedConsult({...editedConsult, treatment_suggested: e.target.value})}
+                        className="input-field min-h-20"
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.treatment_suggested || 'No treatment recorded'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">Medications</h3>
+                    {isEditingConsult && (
+                      <button
+                        onClick={handleAddMedicine}
+                        className="btn-secondary flex items-center space-x-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Medicine</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <div className="space-y-4">
+                        {consultMedicines.map((medicine, index) => (
+                          <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-medium text-gray-900">Medicine {index + 1}</span>
+                              <button
+                                onClick={() => handleDeleteMedicine(medicine.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="relative">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
+                                <input
+                                  type="text"
+                                  value={medicine.name}
+                                  onChange={(e) => {
+                                    handleUpdateMedicine(medicine.id, { name: e.target.value });
+                                    handleMedicineSearch(e.target.value);
+                                  }}
+                                  className="input-field"
+                                  placeholder="Search medicine..."
+                                />
+                                {medicineSearchResults.length > 0 && (
+                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                    {medicineSearchResults.map((result, idx) => (
+                                      <button
+                                        key={idx}
+                                        onClick={() => {
+                                          handleUpdateMedicine(medicine.id, { name: result.name });
+                                          setMedicineSearchResults([]);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                      >
+                                        {result.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                                <input
+                                  type="text"
+                                  value={medicine.dosage}
+                                  onChange={(e) => handleUpdateMedicine(medicine.id, { dosage: e.target.value })}
+                                  className="input-field"
+                                  placeholder="e.g., 500mg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                                <input
+                                  type="text"
+                                  value={medicine.frequency}
+                                  onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+                                  className="input-field"
+                                  placeholder="e.g., Twice daily"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                                <input
+                                  type="text"
+                                  value={medicine.duration}
+                                  onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })}
+                                  className="input-field"
+                                  placeholder="e.g., 7 days"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
+                                <input
+                                  type="text"
+                                  value={medicine.route}
+                                  onChange={(e) => handleUpdateMedicine(medicine.id, { route: e.target.value })}
+                                  className="input-field"
+                                  placeholder="e.g., Oral"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                                <input
+                                  type="text"
+                                  value={medicine.instructions}
+                                  onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
+                                  className="input-field"
+                                  placeholder="e.g., After meals"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {consultMedicines.length === 0 && (
+                          <p className="text-gray-500 text-center py-4">No medicines added yet</p>
+                        )}
+                      </div>
+                    ) : (
+                      consultMedicines && consultMedicines.length > 0 ? (
+                        <div className="space-y-3">
+                          {consultMedicines.map((medicine, index) => (
+                            <div key={medicine.id} className="border-l-4 border-[#024CDB] pl-4">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900">{medicine.name}</p>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    {medicine.dosage && <span>Dosage: {medicine.dosage}</span>}
+                                    {medicine.frequency && <span className="ml-3">Frequency: {medicine.frequency}</span>}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {medicine.duration && <span>Duration: {medicine.duration}</span>}
+                                    {medicine.route && <span className="ml-3">Route: {medicine.route}</span>}
+                                  </div>
+                                  {medicine.instructions && (
+                                    <div className="text-sm text-gray-600">
+                                      Instructions: {medicine.instructions}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No medications prescribed</p>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Follow-up Recommendations</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {isEditingConsult ? (
+                      <textarea
+                        value={editedConsult?.followup_recommendations || ''}
+                        onChange={(e) => setEditedConsult({...editedConsult, followup_recommendations: e.target.value})}
+                        className="input-field min-h-20"
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.followup_recommendations || 'No follow-up recommendations'}</p>
+                    )}
+                  </div>
+                </div>
+
+                {isEditingConsult && (
+                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="btn-secondary flex items-center space-x-2 flex-1"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </button>
+                    <button
+                      onClick={handleSaveConsult}
+                      className="btn-primary flex items-center space-x-2 flex-1"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Save Changes</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedConsult && !isEditingConsult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
+                <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Send via WhatsApp</span>
+                </button>
+                <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {(() => {
+              const summary = getConsultSummary(selectedConsult);
+
+              return summary ? (
                 <>
                   <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
                     <div className="flex flex-wrap gap-2">
@@ -1482,11 +1883,11 @@ export default function PatientProfile() {
                 </>
               ) : (
                 <div className="p-6 text-center text-gray-500">Consultation summary not available yet.</div>
-              )}
-            </div>
+              );
+            })()}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       <ConfirmationModal
         isOpen={showConfirmation}

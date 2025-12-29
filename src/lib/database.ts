@@ -477,22 +477,21 @@ export default function PatientProfile() {
     }
   };
 
-  const handleMedicineSearch = async (query: string) => {
-    if (query.length < 2) {
-      setMedicineSearchResults([]);
-      return;
-    }
+  export const searchMedicines = async (query: string, limit: number = 10) => {
+  const q = (query || '').trim();
+  if (!q) return [];
 
-    try {
-      setSearchingMedicine(true);
-      const results = await searchMedicines(query, 10);
-      setMedicineSearchResults(results);
-    } catch (error) {
-      console.error('Error searching medicines:', error);
-    } finally {
-      setSearchingMedicine(false);
-    }
-  };
+  const { data, error } = await supabase
+    .from('medicine_master_list')
+    .select('name')
+    .ilike('name', `${q}%`) // ✅ prefix match: starts with
+    .order('name', { ascending: true }) // ✅ alphabetical A→Z
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+};
+
 
   const handleUploadDocuments = () => {
     setShowDocumentUpload(true);

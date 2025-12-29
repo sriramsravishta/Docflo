@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CreditCard as Edit,
@@ -14,12 +14,6 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Calendar,
-  Phone,
-  User,
-  FileText,
-  Activity,
-  Clock,
   Plus,
   Save,
   XCircle,
@@ -48,6 +42,19 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+type ConfirmType = 'preConsult' | 'followUp' | 'documents';
+
+type DraftMedicine = {
+  id: string; // can be temp-*
+  consult_id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  route: string;
+  instructions: string;
+};
+
 export default function PatientProfile() {
   const { patientId } = useParams();
   const navigate = useNavigate();
@@ -66,13 +73,20 @@ export default function PatientProfile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showConsultModal, setShowConsultModal] = useState(false);
   const [selectedConsult, setSelectedConsult] = useState<any>(null);
+
+  // ✅ Editing states
   const [isEditingConsult, setIsEditingConsult] = useState(false);
   const [editedConsult, setEditedConsult] = useState<any>(null);
+  const [editJsonError, setEditJsonError] = useState<string>('');
+
+  // ✅ Medicines from Consult Medicine table
   const [consultMedicines, setConsultMedicines] = useState<any[]>([]);
-  const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
-  const [searchingMedicine, setSearchingMedicine] = useState(false);
+  const [consultMedicinesDraft, setConsultMedicinesDraft] = useState<DraftMedicine[]>([]);
+
+  // ✅ Typeahead per medicine row
+  const [medicineSearchResultsById, setMedicineSearchResultsById] = useState<Record<string, any[]>>({});
+  const [searchingMedicineById, setSearchingMedicineById] = useState<Record<string, boolean>>({});
 
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -80,7 +94,7 @@ export default function PatientProfile() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
-  // Form states
+  // Accordion open/close (view mode)
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     diagnosis: true,
     chiefComplaints: true,
@@ -102,21 +116,20 @@ export default function PatientProfile() {
   });
 
   const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
-  const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>(
-    'preConsult'
-  );
+  const [confirmationType, setConfirmationType] = useState<ConfirmType>('preConsult');
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (patientId) {
-      loadPatientData();
-    }
+    if (patientId) loadPatientData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
 
   useEffect(() => {
-    if (selectedConsult && selectedConsult.id) {
+    if (selectedConsult?.id) {
       loadConsultMedicines(selectedConsult.id);
+    } else {
+      setConsultMedicines([]);
     }
   }, [selectedConsult]);
 
@@ -136,10 +149,10 @@ export default function PatientProfile() {
       if (patientData) {
         setEditForm({
           name: patientData.name,
-          age: patientData.age.toString(),
-          phone: patientData.phone,
+          age: patientData.age?.toString?.() || '',
+          phone: patientData.phone || '',
           case: patientData.case || '',
-          gender: patientData.gender,
+          gender: patientData.gender || 'Male',
         });
       }
     } catch (error) {
@@ -152,9 +165,10 @@ export default function PatientProfile() {
   const loadConsultMedicines = async (consultId: string) => {
     try {
       const medicines = await getConsultMedicines(consultId);
-      setConsultMedicines(medicines);
+      setConsultMedicines(medicines || []);
     } catch (error) {
       console.error('Error loading consult medicines:', error);
+      setConsultMedicines([]);
     }
   };
 
@@ -175,33 +189,184 @@ export default function PatientProfile() {
     }
   };
 
-  const handleEditConsult = () => {
-    setIsEditingConsult(true);
-    setEditedConsult({
-      ...selectedConsult.consult_summary_final,
-      id: selectedConsult.id
-    });
+  // ✅ Normalize consult_summary_final
+  const getConsultSummary = (consult: any) => {
+    const raw = consult?.consult_summary_final;
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (typeof raw === 'object') return raw;
+    return null;
   };
 
+  // ✅ Start edit mode from VIEW popup
+  const handleStartEditConsult = async () => {
+    if (!selectedConsult?.id) return;
+
+    const summary = getConsultSummary(selectedConsult) || {};
+
+    // Build a safe editable copy
+    setEditedConsult({
+      ...summary,
+      id: selectedConsult.id,
+    });
+
+    // Draft medicines copied from DB state (NO DB writes until Save)
+    const consultId = selectedConsult.id;
+    const dbMeds = await getConsultMedicines(consultId).catch(() => []);
+    setConsultMedicines(dbMeds || []);
+    setConsultMedicinesDraft(
+      (dbMeds || []).map((m: any) => ({
+        id: m.id,
+        consult_id: consultId,
+        name: m.name || '',
+        dosage: m.dosage || '',
+        frequency: m.frequency || '',
+        duration: m.duration || '',
+        route: m.route || '',
+        instructions: m.instructions || '',
+      }))
+    );
+
+    setEditJsonError('');
+    setIsEditingConsult(true);
+  };
+
+  // ✅ Cancel edit mode: discard everything and close popup
   const handleCancelEdit = () => {
     setIsEditingConsult(false);
     setEditedConsult(null);
-    setSelectedConsult(null);
+    setEditJsonError('');
+    setConsultMedicinesDraft([]);
+    setMedicineSearchResultsById({});
+    setSearchingMedicineById({});
+    setSelectedConsult(null); // closes popup
   };
 
+  // ✅ Helpers for editing arrays as newline text
+  const toMultiline = (value: any) => {
+    if (Array.isArray(value)) return value.join('\n');
+    if (typeof value === 'string') return value;
+    if (value == null) return '';
+    return JSON.stringify(value, null, 2);
+  };
+
+  const fromMultilineArray = (value: string) => {
+    return value
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+  };
+
+  // ✅ For object fields, allow JSON editing
+  const safeParseJSON = (text: string) => {
+    try {
+      return { ok: true, value: JSON.parse(text) };
+    } catch {
+      return { ok: false, value: null };
+    }
+  };
+
+  // ✅ Save consult summary + medicines (only now write to DB)
   const handleSaveConsult = async () => {
     try {
-      // Update consultation summary
-      await updateConsultSummary(selectedConsult.id, editedConsult);
-      
-      // Reload consultation data
+      if (!selectedConsult?.id) return;
+
+      // Validate JSON fields if user edited them as JSON
+      // We’ll treat these as “object-possible” fields:
+      const maybeJsonFields = ['diagnosis', 'treatment_suggested', 'investigations'];
+
+      let payload: any = { ...editedConsult };
+      delete payload.id;
+
+      // Convert certain fields back to arrays if user edited as multiline strings
+      // (if they already are arrays, keep)
+      const multilineArrayFields = [
+        'chief_complaints',
+        'followup_recommendations',
+        'key_personal_insights',
+        'flags_for_review',
+      ];
+
+      multilineArrayFields.forEach((f) => {
+        const v = payload?.[f];
+        if (typeof v === 'string') payload[f] = fromMultilineArray(v);
+      });
+
+      // For JSON-edit textareas, allow string OR JSON object
+      // If it looks like JSON (starts with { or [), enforce valid JSON
+      for (const f of maybeJsonFields) {
+        const v = payload?.[f];
+        if (typeof v === 'string') {
+          const trimmed = v.trim();
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            const parsed = safeParseJSON(trimmed);
+            if (!parsed.ok) {
+              setEditJsonError(`Invalid JSON in "${f}". Please fix it before saving.`);
+              return;
+            }
+            payload[f] = parsed.value;
+          }
+        }
+      }
+
+      // 1) Update consultation summary JSON
+      await updateConsultSummary(selectedConsult.id, payload);
+
+      // 2) Persist medicines (diff existing vs draft)
+      const consultId = selectedConsult.id;
+
+      const existing = consultMedicines || [];
+      const existingIds = new Set(existing.map((m: any) => m.id));
+
+      const draft = consultMedicinesDraft || [];
+      const draftIds = new Set(draft.filter((m) => !m.id.startsWith('temp-')).map((m) => m.id));
+
+      // Delete removed medicines
+      for (const m of existing) {
+        if (!draftIds.has(m.id)) {
+          await deleteConsultMedicine(m.id);
+        }
+      }
+
+      // Create/update medicines
+      for (const m of draft) {
+        const base = {
+          consult_id: consultId,
+          name: m.name,
+          dosage: m.dosage,
+          frequency: m.frequency,
+          duration: m.duration,
+          route: m.route,
+          instructions: m.instructions,
+        };
+
+        if (m.id.startsWith('temp-')) {
+          await createConsultMedicine(base);
+        } else if (existingIds.has(m.id)) {
+          await updateConsultMedicine(m.id, base);
+        } else {
+          // safety fallback
+          await createConsultMedicine(base);
+        }
+      }
+
+      // Reload
       await loadPatientData();
-      
+
       setIsEditingConsult(false);
       setEditedConsult(null);
+      setEditJsonError('');
+      setConsultMedicinesDraft([]);
+      setMedicineSearchResultsById({});
+      setSearchingMedicineById({});
       setSelectedConsult(null);
-      
-      // Show success message
+
       alert('Changes saved successfully');
     } catch (error) {
       console.error('Error saving consultation:', error);
@@ -209,57 +374,56 @@ export default function PatientProfile() {
     }
   };
 
-  const handleAddMedicine = async () => {
-    try {
-      const newMedicine = await createConsultMedicine({
-        consult_id: selectedConsult.id,
+  // ✅ Draft medicine handlers (NO DB WRITES)
+  const handleAddMedicineDraft = () => {
+    if (!selectedConsult?.id) return;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const consultId = selectedConsult.id;
+
+    setConsultMedicinesDraft((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        consult_id: consultId,
         name: '',
         dosage: '',
         frequency: '',
         duration: '',
         route: '',
-        instructions: ''
-      });
-      setConsultMedicines([...consultMedicines, newMedicine]);
-    } catch (error) {
-      console.error('Error adding medicine:', error);
-    }
+        instructions: '',
+      },
+    ]);
   };
 
-  const handleUpdateMedicine = async (medicineId: string, updates: any) => {
-    try {
-      const updatedMedicine = await updateConsultMedicine(medicineId, updates);
-      setConsultMedicines(consultMedicines.map(med => 
-        med.id === medicineId ? updatedMedicine : med
-      ));
-    } catch (error) {
-      console.error('Error updating medicine:', error);
-    }
+  const handleDeleteMedicineDraft = (medicineId: string) => {
+    setConsultMedicinesDraft((prev) => prev.filter((m) => m.id !== medicineId));
+    setMedicineSearchResultsById((prev) => {
+      const copy = { ...prev };
+      delete copy[medicineId];
+      return copy;
+    });
   };
 
-  const handleDeleteMedicine = async (medicineId: string) => {
-    try {
-      await deleteConsultMedicine(medicineId);
-      setConsultMedicines(consultMedicines.filter(med => med.id !== medicineId));
-    } catch (error) {
-      console.error('Error deleting medicine:', error);
-    }
+  const handleUpdateMedicineDraft = (medicineId: string, updates: Partial<DraftMedicine>) => {
+    setConsultMedicinesDraft((prev) =>
+      prev.map((m) => (m.id === medicineId ? { ...m, ...updates } : m))
+    );
   };
 
-  const handleMedicineSearch = async (query: string) => {
-    if (query.length < 2) {
-      setMedicineSearchResults([]);
+  const handleMedicineSearch = async (medicineId: string, query: string) => {
+    if (!query || query.trim().length < 2) {
+      setMedicineSearchResultsById((prev) => ({ ...prev, [medicineId]: [] }));
       return;
     }
 
     try {
-      setSearchingMedicine(true);
+      setSearchingMedicineById((prev) => ({ ...prev, [medicineId]: true }));
       const results = await searchMedicines(query, 10);
-      setMedicineSearchResults(results);
+      setMedicineSearchResultsById((prev) => ({ ...prev, [medicineId]: results || [] }));
     } catch (error) {
       console.error('Error searching medicines:', error);
     } finally {
-      setSearchingMedicine(false);
+      setSearchingMedicineById((prev) => ({ ...prev, [medicineId]: false }));
     }
   };
 
@@ -277,7 +441,7 @@ export default function PatientProfile() {
     setShowDocumentUpload(true);
   };
 
-  // ✅ CHANGE #1: Do NOT create a pre-consult row on Form open
+  // ✅ Do NOT create pre-consult row on open
   const handleOpenForm = async () => {
     try {
       const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
@@ -288,7 +452,7 @@ export default function PatientProfile() {
     }
   };
 
-  // ✅ CHANGE #1: Do NOT create a pre-consult row on Link generation
+  // ✅ Do NOT create a pre-consult row on link generation
   const handleConfirmAction = async () => {
     try {
       if (confirmationType === 'preConsult') {
@@ -316,18 +480,14 @@ export default function PatientProfile() {
       setIsUploading(true);
       setUploadError('');
 
-      // Upload ALL files first before creating any DB records
       const uploadedUrls: string[] = [];
 
       for (const file of documentsToUpload) {
         const fileName = `${patientId}-${Date.now()}-${file.name}`;
 
-        console.log('Uploading file:', fileName, 'Size:', file.size);
-
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('pre-consultation-documents')
           .upload(fileName, file, {
-            // ✅ CHANGE #3: contentType fallback (helps DOC/HEIC where file.type may be empty)
             contentType: file.type || 'application/octet-stream',
             upsert: false,
           });
@@ -337,27 +497,19 @@ export default function PatientProfile() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        console.log('Upload successful:', uploadData);
-
-        // Get public URL
         const { data: urlData } = supabase.storage
           .from('pre-consultation-documents')
           .getPublicUrl(uploadData.path);
 
-        const publicUrl = urlData.publicUrl;
-        console.log('Public URL:', publicUrl);
-
-        uploadedUrls.push(publicUrl);
+        uploadedUrls.push(urlData.publicUrl);
       }
 
-      // ONLY AFTER all uploads complete, create DB record with URLs
       const preConsult = await createPreConsult(user!.id, patientId!);
       await updatePreConsult(preConsult.id, {
         documents_uploaded: uploadedUrls,
         status: 'Draft',
       });
 
-      console.log('Pre-consult updated with documents:', uploadedUrls);
       alert('Documents uploaded successfully');
       setShowConfirmation(false);
       handleCloseDocumentUpload();
@@ -417,39 +569,26 @@ export default function PatientProfile() {
       setIsRecording(false);
       clearInterval((window as any).recordingInterval);
 
-      // Create a promise that resolves when recording stops
       const recordingPromise = new Promise<Blob[]>((resolve) => {
         const chunks: Blob[] = [];
 
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
-          }
+          if (event.data.size > 0) chunks.push(event.data);
         };
 
-        mediaRecorder.onstop = () => {
-          resolve(chunks);
-        };
+        mediaRecorder.onstop = () => resolve(chunks);
       });
 
-      // Stop recording
-      if (mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
+      if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
 
       try {
-        // Wait for recording to complete
         const finalChunks = await recordingPromise;
         let recordingFileUrl = null;
 
         if (finalChunks.length > 0) {
-          // Create audio blob from chunks
           const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
           const fileName = `consultation-${patientId}-${Date.now()}.webm`;
 
-          console.log('Uploading audio file:', fileName, 'Size:', audioBlob.size);
-
-          // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('consultation-recordings')
             .upload(fileName, audioBlob, {
@@ -462,21 +601,14 @@ export default function PatientProfile() {
             throw new Error('Failed to upload recording');
           }
 
-          console.log('Upload successful:', uploadData);
-
-          // Get public URL
           const { data: urlData } = supabase.storage
             .from('consultation-recordings')
             .getPublicUrl(uploadData.path);
 
           recordingFileUrl = urlData.publicUrl;
-          console.log('Public URL:', recordingFileUrl);
         }
 
-        // ONLY create consultation record AFTER audio upload completes
         const consult = await createConsult(user!.id, patientId!, recordingFileUrl || '');
-
-        console.log('Consultation created with recording URL:', recordingFileUrl || 'No recording');
 
         await updateConsult(consult.id, {
           recording_transcript:
@@ -495,10 +627,7 @@ export default function PatientProfile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      // ✅ keeps UI stable for "18-Dec-2025" style strings
-      return dateString;
-    }
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -514,22 +643,7 @@ export default function PatientProfile() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ✅ CHANGE #2: Normalize consult_summary_final (object OR JSON string)
-  const getConsultSummary = (consult: any) => {
-    const raw = consult?.consult_summary_final;
-    if (!raw) return null;
-    if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        return null;
-      }
-    }
-    if (typeof raw === 'object') return raw;
-    return null;
-  };
-
-  // ✅ CHANGE #4: Render timeline summary as bullets when it has "- " lines
+  // Timeline bullet helper
   const renderBulletSummary = (text: any) => {
     if (typeof text !== 'string') return <p className="text-gray-800">{String(text)}</p>;
 
@@ -543,7 +657,6 @@ export default function PatientProfile() {
       .map((l) => l.replace(/^[-•]\s*/, '').trim())
       .filter(Boolean);
 
-    // If it looks like a bullet list, show bullets; else show paragraph
     if (bulletLines.length >= 1 && bulletLines.length === lines.length) {
       return (
         <ul className="list-disc list-inside space-y-1 text-gray-800">
@@ -579,10 +692,7 @@ export default function PatientProfile() {
               <span className="text-sm text-gray-500">{formatDate(event.event_datetime)}</span>
             </div>
             {event.location && <p className="text-sm text-gray-600 mb-2">{event.location}</p>}
-
-            {/* ✅ CHANGE #4 */}
             {renderBulletSummary(event.summary)}
-
             {event.important_findings && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-sm text-yellow-800">{event.important_findings}</p>
@@ -704,7 +814,6 @@ export default function PatientProfile() {
     const summary = getConsultSummary(consult);
     if (!summary) return 'Consultation summary';
 
-    // Prefer a readable short preview
     if (typeof summary.diagnosis === 'string' && summary.diagnosis.trim()) return summary.diagnosis;
     if (summary.diagnosis && typeof summary.diagnosis === 'object') {
       const first = Array.isArray(summary.diagnosis.provisional) ? summary.diagnosis.provisional[0] : null;
@@ -744,7 +853,7 @@ export default function PatientProfile() {
     );
   };
 
-  // ✅ CHANGE #5: Fix PDF flow (no blank window, supports your JSON structure, triggers print dialog reliably)
+  // ---------- PDF helpers ----------
   const escapeHtml = (s: any) => {
     const str = String(s ?? '');
     return str
@@ -759,7 +868,8 @@ export default function PatientProfile() {
     return `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`;
   };
 
-  const generatePDFHTMLContent = (consult: any) => {
+  // ✅ IMPORTANT: PDF medications pulled from Consult Medicine table
+  const generatePDFHTMLContent = (consult: any, medicinesFromTable: any[]) => {
     const summary = getConsultSummary(consult);
     if (!summary) return '<p>No consultation summary available.</p>';
 
@@ -775,93 +885,51 @@ export default function PatientProfile() {
     // Diagnosis
     if (summary.diagnosis) {
       if (typeof summary.diagnosis === 'string') {
-        content += `
-          <div class="section">
-            <h2>DIAGNOSIS</h2>
-            <p>${escapeHtml(summary.diagnosis)}</p>
-          </div>
-        `;
+        content += `<div class="section"><h2>DIAGNOSIS</h2><p>${escapeHtml(summary.diagnosis)}</p></div>`;
       } else if (typeof summary.diagnosis === 'object') {
         const prov = Array.isArray(summary.diagnosis.provisional) ? summary.diagnosis.provisional : [];
         const keyf = Array.isArray(summary.diagnosis.key_findings) ? summary.diagnosis.key_findings : [];
-        content += `
-          <div class="section">
-            <h2>DIAGNOSIS</h2>
-            ${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}
-            ${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}
-          </div>
-        `;
+        content += `<div class="section"><h2>DIAGNOSIS</h2>
+          ${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}
+          ${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}
+        </div>`;
       }
     }
 
     // History
     if (summary.history) {
-      content += `
-        <div class="section">
-          <h2>HISTORY</h2>
-          <p>${escapeHtml(summary.history)}</p>
-        </div>
-      `;
+      content += `<div class="section"><h2>HISTORY</h2><p>${escapeHtml(summary.history)}</p></div>`;
     }
 
     // Chief Complaints
     if (summary.chief_complaints) {
-      if (Array.isArray(summary.chief_complaints)) {
-        content += `
-          <div class="section">
-            <h2>CHIEF COMPLAINTS</h2>
-            ${toHtmlList(summary.chief_complaints)}
-          </div>
-        `;
-      } else {
-        content += `
-          <div class="section">
-            <h2>CHIEF COMPLAINTS</h2>
-            <p>${escapeHtml(summary.chief_complaints)}</p>
-          </div>
-        `;
-      }
+      content += `<div class="section"><h2>CHIEF COMPLAINTS</h2>${
+        Array.isArray(summary.chief_complaints) ? toHtmlList(summary.chief_complaints) : `<p>${escapeHtml(summary.chief_complaints)}</p>`
+      }</div>`;
     }
 
     // Treatment Suggested
     if (summary.treatment_suggested) {
-      if (typeof summary.treatment_suggested === 'string') {
-        content += `
-          <div class="section">
-            <h2>TREATMENT SUGGESTED</h2>
-            <p>${escapeHtml(summary.treatment_suggested)}</p>
-          </div>
-        `;
-      } else if (typeof summary.treatment_suggested === 'object') {
-        const immediate = Array.isArray(summary.treatment_suggested.immediate_plan)
-          ? summary.treatment_suggested.immediate_plan
-          : [];
-        const contingent = Array.isArray(summary.treatment_suggested.contingent_plan)
-          ? summary.treatment_suggested.contingent_plan
-          : [];
-        content += `
-          <div class="section">
-            <h2>TREATMENT SUGGESTED</h2>
-            ${immediate.length ? `<h3>Immediate Plan</h3>${toHtmlList(immediate)}` : ''}
-            ${contingent.length ? `<h3>Contingent Plan</h3>${toHtmlList(contingent)}` : ''}
-          </div>
-        `;
-      }
+      content += `<div class="section"><h2>TREATMENT SUGGESTED</h2>${
+        typeof summary.treatment_suggested === 'string'
+          ? `<p>${escapeHtml(summary.treatment_suggested)}</p>`
+          : `<pre>${escapeHtml(JSON.stringify(summary.treatment_suggested, null, 2))}</pre>`
+      }</div>`;
     }
 
-    // Medications
-    if (Array.isArray(summary.medications) && summary.medications.length > 0) {
+    // ✅ Medications from table
+    if (Array.isArray(medicinesFromTable) && medicinesFromTable.length > 0) {
       content += `
         <div class="section">
           <h2>MEDICATIONS</h2>
           <table class="table">
             <thead>
               <tr>
-                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
+                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Instructions</th>
               </tr>
             </thead>
             <tbody>
-              ${summary.medications
+              ${medicinesFromTable
                 .map(
                   (m: any) => `
                 <tr>
@@ -870,7 +938,7 @@ export default function PatientProfile() {
                   <td>${escapeHtml(m?.route || '-')}</td>
                   <td>${escapeHtml(m?.frequency || '-')}</td>
                   <td>${escapeHtml(m?.duration || '-')}</td>
-                  <td>${escapeHtml(m?.purpose || '-')}</td>
+                  <td>${escapeHtml(m?.instructions || '-')}</td>
                 </tr>
               `
                 )
@@ -882,80 +950,43 @@ export default function PatientProfile() {
     }
 
     // Investigations
-    if (summary.investigations && typeof summary.investigations === 'object') {
-      const ordered = Array.isArray(summary.investigations.ordered) ? summary.investigations.ordered : [];
-      const notes = summary.investigations.notes;
-      if (ordered.length || notes) {
-        content += `
-          <div class="section">
-            <h2>INVESTIGATIONS</h2>
-            ${
-              ordered.length
-                ? `<h3>Ordered</h3>
-                   <ul>
-                     ${ordered
-                       .map(
-                         (inv: any) =>
-                           `<li><strong>${escapeHtml(inv?.name || '-')}</strong>${
-                             inv?.body_part_or_type ? ` — ${escapeHtml(inv.body_part_or_type)}` : ''
-                           }${inv?.priority ? ` (Priority: ${escapeHtml(inv.priority)})` : ''}</li>`
-                       )
-                       .join('')}
-                   </ul>`
-                : ''
-            }
-            ${notes ? `<h3>Notes</h3><p>${escapeHtml(notes)}</p>` : ''}
-          </div>
-        `;
-      }
+    if (summary.investigations) {
+      content += `<div class="section"><h2>INVESTIGATIONS</h2><pre>${escapeHtml(JSON.stringify(summary.investigations, null, 2))}</pre></div>`;
     }
 
-    // Follow-up Recommendations
+    // Follow-up
     if (summary.followup_recommendations) {
-      content += `
-        <div class="section">
-          <h2>FOLLOW-UP RECOMMENDATIONS</h2>
-          ${
-            Array.isArray(summary.followup_recommendations)
-              ? toHtmlList(summary.followup_recommendations)
-              : `<p>${escapeHtml(summary.followup_recommendations)}</p>`
-          }
-        </div>
-      `;
+      content += `<div class="section"><h2>FOLLOW-UP RECOMMENDATIONS</h2>${
+        Array.isArray(summary.followup_recommendations)
+          ? toHtmlList(summary.followup_recommendations)
+          : `<p>${escapeHtml(summary.followup_recommendations)}</p>`
+      }</div>`;
     }
 
-    // Key Personal Insights
+    // Key insights
     if (summary.key_personal_insights) {
-      content += `
-        <div class="section">
-          <h2>KEY PERSONAL INSIGHTS</h2>
-          ${
-            Array.isArray(summary.key_personal_insights)
-              ? toHtmlList(summary.key_personal_insights)
-              : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
-          }
-        </div>
-      `;
+      content += `<div class="section"><h2>KEY PERSONAL INSIGHTS</h2>${
+        Array.isArray(summary.key_personal_insights)
+          ? toHtmlList(summary.key_personal_insights)
+          : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
+      }</div>`;
     }
 
-    // Flags for Review
+    // Flags
     if (Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0) {
-      content += `
-        <div class="section">
-          <h2>FLAGS FOR REVIEW</h2>
-          ${toHtmlList(summary.flags_for_review)}
-        </div>
-      `;
+      content += `<div class="section"><h2>FLAGS FOR REVIEW</h2>${toHtmlList(summary.flags_for_review)}</div>`;
     }
 
     return content;
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!selectedConsult) return;
 
-    const htmlContent = generatePDFHTMLContent(selectedConsult);
+    const meds = await getConsultMedicines(selectedConsult.id).catch(() => consultMedicines || []);
+    const htmlContent = generatePDFHTMLContent(selectedConsult, meds || []);
 
+    // MUST happen on click gesture
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Pop-up blocked. Please allow pop-ups to download the PDF.');
@@ -981,25 +1012,19 @@ export default function PatientProfile() {
           .table { width: 100%; border-collapse: collapse; margin-top: 8px; }
           .table th, .table td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; }
           .table th { background: #f3f4f6; text-align: left; }
+          pre { background: #f8fafc; border: 1px solid #e5e7eb; padding: 10px; border-radius: 6px; white-space: pre-wrap; }
           @page { margin: 12mm; }
-          @media print {
-            body { margin: 0; }
-          }
+          @media print { body { margin: 0; } }
         </style>
       </head>
       <body>
         ${htmlContent}
         <script>
-          // Give the browser a moment to render before printing.
           setTimeout(function () {
             window.focus();
             window.print();
           }, 300);
-
-          // Close after print (works in most browsers)
-          window.onafterprint = function () {
-            window.close();
-          };
+          window.onafterprint = function () { window.close(); };
         </script>
       </body>
       </html>
@@ -1014,16 +1039,14 @@ export default function PatientProfile() {
     const consultDate = formatDate(selectedConsult.created_at);
     const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
 
-    let phoneNumber = patient.phone.replace(/\D/g, '');
-    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
-      phoneNumber = '91' + phoneNumber;
-    }
+    let phoneNumber = (patient.phone || '').replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  // Helper function to render accordion sections
+  // Accordion
   const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
     const isExpanded = expandedSections[key];
 
@@ -1034,196 +1057,97 @@ export default function PatientProfile() {
           className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
         >
           <h3 className="font-semibold text-gray-900">{title}</h3>
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-gray-500" />
-          )}
+          {isExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
         </button>
         {isExpanded && <div className="px-4 pb-4">{content}</div>}
       </div>
     );
   };
 
-  // Helper function to render diagnosis
-  const renderDiagnosis = (diagnosis: any) => {
-    if (typeof diagnosis === 'string') {
-      return <p className="text-gray-800">{diagnosis}</p>;
-    }
-
-    if (typeof diagnosis === 'object' && diagnosis !== null) {
-      const hasProvisional =
-        diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
-      const hasKeyFindings =
-        diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
-
-      if (!hasProvisional && !hasKeyFindings) {
-        return <p className="text-gray-800">No detailed diagnosis available</p>;
-      }
-    }
-
-    return (
-      <div className="space-y-3">
-        {diagnosis.provisional && Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
-            <ul className="list-disc list-inside space-y-1">
-              {diagnosis.provisional.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {diagnosis.key_findings && Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
-            <ul className="list-disc list-inside space-y-1">
-              {diagnosis.key_findings.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Helper function to render array content
   const renderArrayContent = (content: any) => {
-    if (typeof content === 'string') {
-      return <p className="text-gray-800 whitespace-pre-line">{content}</p>;
-    }
-
+    if (typeof content === 'string') return <p className="text-gray-800 whitespace-pre-line">{content}</p>;
     if (Array.isArray(content)) {
       return (
         <ul className="list-disc list-inside space-y-1">
           {content.map((item: string, idx: number) => (
-            <li key={idx} className="text-gray-800">
-              {item}
-            </li>
+            <li key={idx} className="text-gray-800">{item}</li>
           ))}
         </ul>
       );
     }
-
-    return <p className="text-gray-800">{JSON.stringify(content)}</p>;
+    return <pre className="text-gray-800">{JSON.stringify(content, null, 2)}</pre>;
   };
 
-  // Helper function to render treatment suggested
-  const renderTreatmentSuggested = (treatment: any) => {
-    if (typeof treatment === 'string') {
-      return <p className="text-gray-800 whitespace-pre-line">{treatment}</p>;
+  const renderDiagnosis = (diagnosis: any) => {
+    if (typeof diagnosis === 'string') return <p className="text-gray-800">{diagnosis}</p>;
+
+    if (typeof diagnosis === 'object' && diagnosis !== null) {
+      const hasProvisional = Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
+      const hasKeyFindings = Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
+      if (!hasProvisional && !hasKeyFindings) return <p className="text-gray-800">No detailed diagnosis available</p>;
+
+      return (
+        <div className="space-y-3">
+          {hasProvisional && (
+            <div>
+              <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {diagnosis.provisional.map((item: string, idx: number) => (
+                  <li key={idx} className="text-gray-800">{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {hasKeyFindings && (
+            <div>
+              <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {diagnosis.key_findings.map((item: string, idx: number) => (
+                  <li key={idx} className="text-gray-800">{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
     }
 
-    return (
-      <div className="space-y-3">
-        {treatment.immediate_plan && treatment.immediate_plan.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
-            <ul className="list-disc list-inside space-y-1">
-              {treatment.immediate_plan.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {treatment.contingent_plan && treatment.contingent_plan.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
-            <ul className="list-disc list-inside space-y-1">
-              {treatment.contingent_plan.map((item: string, idx: number) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
+    return <p className="text-gray-800">No diagnosis available</p>;
   };
 
-  // Helper function to render medications
-  const renderMedications = (medications: any[]) => {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Dosage</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Route</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            {medications.map((med: any, idx: number) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.route || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.purpose || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+  // ✅ View mode medications must come from consultMedicines table
+  const renderConsultMedicinesView = (meds: any[]) => {
+    if (!meds || meds.length === 0) return <p className="text-gray-500">No medications prescribed</p>;
 
-  // Helper function to render investigations
-  const renderInvestigations = (investigations: any) => {
     return (
       <div className="space-y-3">
-        {investigations.ordered && investigations.ordered.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Ordered Investigations</h4>
-            <div className="space-y-2">
-              {investigations.ordered.map((inv: any, idx: number) => (
-                <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h5 className="font-medium text-gray-900">{inv.name}</h5>
-                      {inv.body_part_or_type && <p className="text-sm text-gray-600">{inv.body_part_or_type}</p>}
-                    </div>
-                    {inv.priority && (
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          inv.priority === 'High'
-                            ? 'bg-red-100 text-red-700'
-                            : inv.priority === 'Medium'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
-                      >
-                        {inv.priority}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {meds.map((medicine, index) => (
+          <div key={medicine.id} className="border-l-4 border-[#024CDB] pl-4">
+            <div>
+              <p className="font-medium text-gray-900">{medicine.name || '-'}</p>
+              <div className="text-sm text-gray-600 mt-1">
+                {medicine.dosage && <span>Dosage: {medicine.dosage}</span>}
+                {medicine.frequency && <span className="ml-3">Frequency: {medicine.frequency}</span>}
+              </div>
+              <div className="text-sm text-gray-600">
+                {medicine.duration && <span>Duration: {medicine.duration}</span>}
+                {medicine.route && <span className="ml-3">Route: {medicine.route}</span>}
+              </div>
+              {medicine.instructions && <div className="text-sm text-gray-600">Instructions: {medicine.instructions}</div>}
             </div>
           </div>
-        )}
-        {investigations.notes && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Notes</h4>
-            <p className="text-gray-800">{investigations.notes}</p>
-          </div>
-        )}
+        ))}
       </div>
     );
   };
+
+  // Tabs
+  const tabs = [
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'trends', label: 'Diagnostic Trends' },
+    { id: 'medications', label: 'Medications' },
+    { id: 'past', label: 'Past Summaries' },
+  ];
 
   if (loading) {
     return (
@@ -1251,13 +1175,6 @@ export default function PatientProfile() {
       </div>
     );
   }
-
-  const tabs = [
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'trends', label: 'Diagnostic Trends' },
-    { id: 'medications', label: 'Medications' },
-    { id: 'past', label: 'Past Summaries' },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1361,6 +1278,7 @@ export default function PatientProfile() {
         </div>
       </div>
 
+      {/* Edit Patient Modal */}
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
         <form
           onSubmit={(e) => {
@@ -1443,6 +1361,7 @@ export default function PatientProfile() {
         </form>
       </Modal>
 
+      {/* Upload Documents Modal */}
       <Modal isOpen={showDocumentUpload} onClose={handleCloseDocumentUpload} title="Upload Documents">
         <div className="space-y-4">
           <p className="text-gray-600">Upload medical documents for this patient</p>
@@ -1453,7 +1372,6 @@ export default function PatientProfile() {
             <input
               type="file"
               multiple
-              // ✅ CHANGE #3: accept DOC/DOCX + HEIC/HEIF (and keep existing)
               accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.pdf,.doc,.docx"
               onChange={(e) => e.target.files && setDocumentsToUpload(Array.from(e.target.files))}
               className="hidden"
@@ -1496,6 +1414,7 @@ export default function PatientProfile() {
         </div>
       </Modal>
 
+      {/* ✅ EDIT CONSULT POPUP */}
       {selectedConsult && isEditingConsult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1510,269 +1429,248 @@ export default function PatientProfile() {
             </div>
 
             <div className="p-6">
+              {editJsonError && (
+                <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+                  {editJsonError}
+                </div>
+              )}
+
               <div className="space-y-6">
+                {/* Diagnosis */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">Diagnosis</h3>
-                    {!isEditingConsult && (
-                      <button
-                        onClick={handleEditConsult}
-                        className="btn-secondary flex items-center space-x-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                    )}
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <textarea
-                        value={typeof editedConsult?.diagnosis === 'string' ? editedConsult.diagnosis : JSON.stringify(editedConsult?.diagnosis || '')}
-                        onChange={(e) => setEditedConsult({...editedConsult, diagnosis: e.target.value})}
-                        className="input-field min-h-20"
-                        rows={3}
-                      />
-                    ) : (
-                      renderDiagnosis(selectedConsult.consult_summary_final?.diagnosis)
-                    )}
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
+                  <textarea
+                    value={toMultiline(editedConsult?.diagnosis)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, diagnosis: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder='Text OR JSON (e.g. {"provisional":["..."],"key_findings":["..."]})'
+                  />
                 </div>
 
+                {/* History */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">History</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <textarea
-                        value={editedConsult?.history || ''}
-                        onChange={(e) => setEditedConsult({...editedConsult, history: e.target.value})}
-                        className="input-field min-h-20"
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.history || 'No history recorded'}</p>
-                    )}
-                  </div>
+                  <textarea
+                    value={toMultiline(editedConsult?.history)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                  />
                 </div>
 
+                {/* Chief Complaints */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <textarea
-                        value={editedConsult?.chief_complaints || ''}
-                        onChange={(e) => setEditedConsult({...editedConsult, chief_complaints: e.target.value})}
-                        className="input-field min-h-20"
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.chief_complaints || 'No complaints recorded'}</p>
-                    )}
-                  </div>
+                  <textarea
+                    value={toMultiline(editedConsult?.chief_complaints)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder="One per line"
+                  />
                 </div>
 
+                {/* Treatment Suggested */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Treatment Suggested</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <textarea
-                        value={editedConsult?.treatment_suggested || ''}
-                        onChange={(e) => setEditedConsult({...editedConsult, treatment_suggested: e.target.value})}
-                        className="input-field min-h-20"
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.treatment_suggested || 'No treatment recorded'}</p>
-                    )}
-                  </div>
+                  <textarea
+                    value={toMultiline(editedConsult?.treatment_suggested)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, treatment_suggested: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder='Text OR JSON (e.g. {"immediate_plan":["..."],"contingent_plan":["..."]})'
+                  />
                 </div>
 
+                {/* ✅ Medicines from Consult Medicine table */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">Medications</h3>
-                    {isEditingConsult && (
-                      <button
-                        onClick={handleAddMedicine}
-                        className="btn-secondary flex items-center space-x-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Medicine</span>
-                      </button>
-                    )}
+                    <button onClick={handleAddMedicineDraft} className="btn-secondary flex items-center space-x-2">
+                      <Plus className="w-4 h-4" />
+                      <span>Add Medicine</span>
+                    </button>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <div className="space-y-4">
-                        {consultMedicines.map((medicine, index) => (
-                          <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-medium text-gray-900">Medicine {index + 1}</span>
-                              <button
-                                onClick={() => handleDeleteMedicine(medicine.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="relative">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
-                                <input
-                                  type="text"
-                                  value={medicine.name}
-                                  onChange={(e) => {
-                                    handleUpdateMedicine(medicine.id, { name: e.target.value });
-                                    handleMedicineSearch(e.target.value);
-                                  }}
-                                  className="input-field"
-                                  placeholder="Search medicine..."
-                                />
-                                {medicineSearchResults.length > 0 && (
-                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                                    {medicineSearchResults.map((result, idx) => (
-                                      <button
-                                        key={idx}
-                                        onClick={() => {
-                                          handleUpdateMedicine(medicine.id, { name: result.name });
-                                          setMedicineSearchResults([]);
-                                        }}
-                                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                                      >
-                                        {result.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                                <input
-                                  type="text"
-                                  value={medicine.dosage}
-                                  onChange={(e) => handleUpdateMedicine(medicine.id, { dosage: e.target.value })}
-                                  className="input-field"
-                                  placeholder="e.g., 500mg"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                                <input
-                                  type="text"
-                                  value={medicine.frequency}
-                                  onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
-                                  className="input-field"
-                                  placeholder="e.g., Twice daily"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                                <input
-                                  type="text"
-                                  value={medicine.duration}
-                                  onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })}
-                                  className="input-field"
-                                  placeholder="e.g., 7 days"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
-                                <input
-                                  type="text"
-                                  value={medicine.route}
-                                  onChange={(e) => handleUpdateMedicine(medicine.id, { route: e.target.value })}
-                                  className="input-field"
-                                  placeholder="e.g., Oral"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                                <input
-                                  type="text"
-                                  value={medicine.instructions}
-                                  onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
-                                  className="input-field"
-                                  placeholder="e.g., After meals"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {consultMedicines.length === 0 && (
-                          <p className="text-gray-500 text-center py-4">No medicines added yet</p>
-                        )}
-                      </div>
-                    ) : (
-                      consultMedicines && consultMedicines.length > 0 ? (
-                        <div className="space-y-3">
-                          {consultMedicines.map((medicine, index) => (
-                            <div key={medicine.id} className="border-l-4 border-[#024CDB] pl-4">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="font-medium text-gray-900">{medicine.name}</p>
-                                  <div className="text-sm text-gray-600 mt-1">
-                                    {medicine.dosage && <span>Dosage: {medicine.dosage}</span>}
-                                    {medicine.frequency && <span className="ml-3">Frequency: {medicine.frequency}</span>}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    {medicine.duration && <span>Duration: {medicine.duration}</span>}
-                                    {medicine.route && <span className="ml-3">Route: {medicine.route}</span>}
-                                  </div>
-                                  {medicine.instructions && (
-                                    <div className="text-sm text-gray-600">
-                                      Instructions: {medicine.instructions}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+
+                  <div className="space-y-4">
+                    {consultMedicinesDraft.map((medicine, index) => (
+                      <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-medium text-gray-900">Medicine {index + 1}</span>
+                          <button
+                            onClick={() => handleDeleteMedicineDraft(medicine.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      ) : (
-                        <p className="text-gray-500">No medications prescribed</p>
-                      )
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Name dropdown search */}
+                          <div className="relative">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
+                            <input
+                              type="text"
+                              value={medicine.name}
+                              onChange={(e) => {
+                                const q = e.target.value;
+                                handleUpdateMedicineDraft(medicine.id, { name: q });
+                                handleMedicineSearch(medicine.id, q);
+                              }}
+                              className="input-field"
+                              placeholder="Type to search..."
+                              autoComplete="off"
+                            />
+                            {(medicineSearchResultsById[medicine.id] || []).length > 0 && (
+                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-44 overflow-y-auto">
+                                {(medicineSearchResultsById[medicine.id] || []).map((result, idx) => (
+                                  <button
+                                    type="button"
+                                    key={idx}
+                                    onClick={() => {
+                                      handleUpdateMedicineDraft(medicine.id, { name: result.name });
+                                      setMedicineSearchResultsById((prev) => ({ ...prev, [medicine.id]: [] }));
+                                    }}
+                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                  >
+                                    {result.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                            <input
+                              type="text"
+                              value={medicine.dosage}
+                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { dosage: e.target.value })}
+                              className="input-field"
+                              placeholder="e.g., 500mg"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                            <input
+                              type="text"
+                              value={medicine.frequency}
+                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { frequency: e.target.value })}
+                              className="input-field"
+                              placeholder="e.g., Twice daily"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                            <input
+                              type="text"
+                              value={medicine.duration}
+                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { duration: e.target.value })}
+                              className="input-field"
+                              placeholder="e.g., 7 days"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
+                            <input
+                              type="text"
+                              value={medicine.route}
+                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { route: e.target.value })}
+                              className="input-field"
+                              placeholder="e.g., Oral"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                            <input
+                              type="text"
+                              value={medicine.instructions}
+                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { instructions: e.target.value })}
+                              className="input-field"
+                              placeholder="e.g., After meals"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {consultMedicinesDraft.length === 0 && (
+                      <p className="text-gray-500 text-center py-4">No medicines added yet</p>
                     )}
                   </div>
                 </div>
 
+                {/* Investigations */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Investigations</h3>
+                  <textarea
+                    value={toMultiline(editedConsult?.investigations)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, investigations: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={5}
+                    placeholder='JSON recommended (e.g. {"ordered":[{"name":"CBC"}],"notes":"..."})'
+                  />
+                </div>
+
+                {/* Follow-up */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Follow-up Recommendations</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {isEditingConsult ? (
-                      <textarea
-                        value={editedConsult?.followup_recommendations || ''}
-                        onChange={(e) => setEditedConsult({...editedConsult, followup_recommendations: e.target.value})}
-                        className="input-field min-h-20"
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-gray-700">{selectedConsult.consult_summary_final?.followup_recommendations || 'No follow-up recommendations'}</p>
-                    )}
-                  </div>
+                  <textarea
+                    value={toMultiline(editedConsult?.followup_recommendations)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder="One per line"
+                  />
                 </div>
 
-                {isEditingConsult && (
-                  <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={handleCancelEdit}
-                      className="btn-secondary flex items-center space-x-2 flex-1"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      <span>Cancel</span>
-                    </button>
-                    <button
-                      onClick={handleSaveConsult}
-                      className="btn-primary flex items-center space-x-2 flex-1"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>Save Changes</span>
-                    </button>
-                  </div>
-                )}
+                {/* Key Insights */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Personal Insights</h3>
+                  <textarea
+                    value={toMultiline(editedConsult?.key_personal_insights)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, key_personal_insights: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder="One per line"
+                  />
+                </div>
+
+                {/* Flags */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Flags for Review</h3>
+                  <textarea
+                    value={toMultiline(editedConsult?.flags_for_review)}
+                    onChange={(e) => setEditedConsult({ ...editedConsult, flags_for_review: e.target.value })}
+                    className="input-field min-h-24 w-full"
+                    rows={4}
+                    placeholder="One per line"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  <button onClick={handleCancelEdit} className="btn-secondary flex items-center space-x-2 flex-1">
+                    <XCircle className="w-4 h-4" />
+                    <span>Cancel</span>
+                  </button>
+                  <button onClick={handleSaveConsult} className="btn-primary flex items-center space-x-2 flex-1">
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* ✅ VIEW CONSULT POPUP */}
       {selectedConsult && !isEditingConsult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1781,7 +1679,17 @@ export default function PatientProfile() {
                 <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
                 <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
               </div>
+
               <div className="flex items-center gap-3">
+                {/* ✅ REQUIRED: Edit button visible in view mode */}
+                <button
+                  onClick={handleStartEditConsult}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Edit</span>
+                </button>
+
                 <button
                   onClick={handleDownloadPDF}
                   className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -1789,6 +1697,7 @@ export default function PatientProfile() {
                   <Download className="w-4 h-4" />
                   <span>Download PDF</span>
                 </button>
+
                 <button
                   onClick={handleSendWhatsApp}
                   className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -1796,6 +1705,7 @@ export default function PatientProfile() {
                   <MessageSquare className="w-4 h-4" />
                   <span>Send via WhatsApp</span>
                 </button>
+
                 <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
@@ -1814,11 +1724,11 @@ export default function PatientProfile() {
                           {Array.isArray(summary.chief_complaints) ? summary.chief_complaints.length : 1} Complaints
                         </span>
                       )}
-                      {Array.isArray(summary.medications) && (
-                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                          {summary.medications.length} Medications
-                        </span>
-                      )}
+                      {/* ✅ count medications from consult medicine table */}
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                        {(consultMedicines || []).length} Medications
+                      </span>
+
                       {summary.investigations?.ordered && Array.isArray(summary.investigations.ordered) && (
                         <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                           {summary.investigations.ordered.length} Investigations
@@ -1833,38 +1743,26 @@ export default function PatientProfile() {
                   </div>
 
                   <div className="divide-y divide-gray-200">
-                    {summary.diagnosis &&
-                      renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
+                    {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
 
                     {summary.chief_complaints &&
                       renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
 
                     {summary.treatment_suggested &&
-                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
+                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderArrayContent(summary.treatment_suggested))}
 
-                    {Array.isArray(summary.medications) &&
-                      summary.medications.length > 0 &&
-                      renderAccordionSection('Medications', 'medications', renderMedications(summary.medications))}
+                    {/* ✅ Medications from consult medicine table */}
+                    {renderAccordionSection('Medications', 'medications', renderConsultMedicinesView(consultMedicines || []))}
 
-                    {summary.investigations &&
-                      renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}
+                    {summary.investigations && renderAccordionSection('Investigations', 'investigations', renderArrayContent(summary.investigations))}
 
-                    {summary.history &&
-                      renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
+                    {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
 
                     {summary.followup_recommendations &&
-                      renderAccordionSection(
-                        'Follow-up Recommendations',
-                        'followupRecommendations',
-                        renderArrayContent(summary.followup_recommendations)
-                      )}
+                      renderAccordionSection('Follow-up Recommendations', 'followupRecommendations', renderArrayContent(summary.followup_recommendations))}
 
                     {summary.key_personal_insights &&
-                      renderAccordionSection(
-                        'Key Personal Insights',
-                        'keyPersonalInsights',
-                        renderArrayContent(summary.key_personal_insights)
-                      )}
+                      renderAccordionSection('Key Personal Insights', 'keyPersonalInsights', renderArrayContent(summary.key_personal_insights))}
 
                     {Array.isArray(summary.flags_for_review) &&
                       summary.flags_for_review.length > 0 &&

@@ -1958,7 +1958,7 @@ export default function PatientProfile() {
 
                   <div className="divide-y divide-gray-200">
                     {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
- 
+
                     {summary.chief_complaints &&
                       renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
 

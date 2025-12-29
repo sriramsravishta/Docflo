@@ -427,7 +427,7 @@ export const deleteConsultMedicine = async (id: string) => {
   if (error) throw error;
 };
 
-export const searchMedicines = async (query: string, limit: number = 10) => {
+export const searchMedicines = async (query: string, limit = 10) => {
   const q = query.trim();
 03    if (!q) return [];
 04

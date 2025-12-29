@@ -428,10 +428,14 @@ export const deleteConsultMedicine = async (id: string) => {
 };
 
 export const searchMedicines = async (query: string, limit: number = 10) => {
+  const q = (query || '').trim();
+  if (!q) return [];
+
   const { data, error } = await supabase
     .from('medicine_master_list')
-    .select('name') 
-    .ilike('name', `%${query}%`)
+    .select('name')
+    .ilike('name', `${q}%`) // ✅ prefix match: starts with
+    .order('name', { ascending: true }) // ✅ alphabetical A→Z
     .limit(limit);
 
   if (error) throw error;

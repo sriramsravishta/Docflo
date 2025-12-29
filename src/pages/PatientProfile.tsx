@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CreditCard as Edit,
@@ -42,19 +42,6 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-type ConfirmType = 'preConsult' | 'followUp' | 'documents';
-
-type DraftMedicine = {
-  id: string; // can be temp-*
-  consult_id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  route: string;
-  instructions: string;
-};
-
 export default function PatientProfile() {
   const { patientId } = useParams();
   const navigate = useNavigate();
@@ -75,18 +62,17 @@ export default function PatientProfile() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedConsult, setSelectedConsult] = useState<any>(null);
 
-  // ✅ Editing states
   const [isEditingConsult, setIsEditingConsult] = useState(false);
   const [editedConsult, setEditedConsult] = useState<any>(null);
-  const [editJsonError, setEditJsonError] = useState<string>('');
 
-  // ✅ Medicines from Consult Medicine table
+  // NEW: editable text for fields that were showing JSON in edit mode
+  const [editedDiagnosisText, setEditedDiagnosisText] = useState('');
+  const [editedTreatmentText, setEditedTreatmentText] = useState('');
+  const [editedInvestigationsText, setEditedInvestigationsText] = useState('');
+
   const [consultMedicines, setConsultMedicines] = useState<any[]>([]);
-  const [consultMedicinesDraft, setConsultMedicinesDraft] = useState<DraftMedicine[]>([]);
-
-  // ✅ Typeahead per medicine row
-  const [medicineSearchResultsById, setMedicineSearchResultsById] = useState<Record<string, any[]>>({});
-  const [searchingMedicineById, setSearchingMedicineById] = useState<Record<string, boolean>>({});
+  const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
+  const [searchingMedicine, setSearchingMedicine] = useState(false);
 
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -94,7 +80,7 @@ export default function PatientProfile() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
-  // Accordion open/close (view mode)
+  // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     diagnosis: true,
     chiefComplaints: true,
@@ -116,21 +102,22 @@ export default function PatientProfile() {
   });
 
   const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
-  const [confirmationType, setConfirmationType] = useState<ConfirmType>('preConsult');
+  const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (patientId) loadPatientData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (patientId) {
+      loadPatientData();
+    }
   }, [patientId]);
 
   useEffect(() => {
-    if (selectedConsult?.id) {
+    if (selectedConsult && selectedConsult.id) {
       loadConsultMedicines(selectedConsult.id);
-    } else {
-      setConsultMedicines([]);
     }
+    // close medicine dropdown whenever consult changes
+    setMedicineSearchResults([]);
   }, [selectedConsult]);
 
   const loadPatientData = async () => {
@@ -149,14 +136,17 @@ export default function PatientProfile() {
       if (patientData) {
         setEditForm({
           name: patientData.name,
-          age: patientData.age?.toString?.() || '',
-          phone: patientData.phone || '',
+          age: patientData.age.toString(),
+          phone: patientData.phone,
           case: patientData.case || '',
-          gender: patientData.gender || 'Male',
+          gender: patientData.gender,
         });
       }
+
+      return { patientData, summaryData, consultsData };
     } catch (error) {
       console.error('Error loading patient data:', error);
+      return { patientData: null, summaryData: null, consultsData: [] as any[] };
     } finally {
       setLoading(false);
     }
@@ -165,10 +155,9 @@ export default function PatientProfile() {
   const loadConsultMedicines = async (consultId: string) => {
     try {
       const medicines = await getConsultMedicines(consultId);
-      setConsultMedicines(medicines || []);
+      setConsultMedicines(medicines);
     } catch (error) {
       console.error('Error loading consult medicines:', error);
-      setConsultMedicines([]);
     }
   };
 
@@ -189,183 +178,273 @@ export default function PatientProfile() {
     }
   };
 
-  // ✅ Normalize consult_summary_final
+  // -------------------------
+  // Helpers: JSON safe parse + pretty/editable conversions
+  // -------------------------
+  const safeJsonParse = (value: any) => {
+    if (typeof value !== 'string') return null;
+    const t = value.trim();
+    if (!(t.startsWith('{') || t.startsWith('['))) return null;
+    try {
+      return JSON.parse(t);
+    } catch {
+      return null;
+    }
+  };
+
+  const bulletify = (arr: any[]) => arr.map((x) => `- ${String(x ?? '').trim()}`).filter((l) => l.trim() !== '-');
+
+  const diagnosisToEditableText = (diagnosis: any) => {
+    const parsed = safeJsonParse(diagnosis);
+    const d = parsed ?? diagnosis;
+
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+
+    const prov = Array.isArray(d.provisional) ? d.provisional : [];
+    const keyf = Array.isArray(d.key_findings) ? d.key_findings : [];
+
+    const lines: string[] = [];
+    if (prov.length) {
+      lines.push('Provisional:');
+      lines.push(...bulletify(prov));
+      lines.push('');
+    }
+    if (keyf.length) {
+      lines.push('Key Findings:');
+      lines.push(...bulletify(keyf));
+      lines.push('');
+    }
+
+    return lines.join('\n').trim() || '';
+  };
+
+  const parseSectionBullets = (lines: string[], startIdx: number) => {
+    const items: string[] = [];
+    for (let i = startIdx; i < lines.length; i++) {
+      const l = lines[i].trim();
+      if (!l) continue;
+      if (/^(provisional|key findings|immediate plan|contingent plan|notes|ordered)\s*:/i.test(l)) break;
+      if (/^[-•*]\s+/.test(l)) items.push(l.replace(/^[-•*]\s+/, '').trim());
+      else items.push(l); // allow plain lines too
+    }
+    return items.filter(Boolean);
+  };
+
+  const diagnosisTextToJson = (text: string, fallbackOriginal: any) => {
+    const raw = text.trim();
+    if (!raw) return fallbackOriginal ?? '';
+
+    const lines = raw.split('\n').map((l) => l.trim());
+    const provIdx = lines.findIndex((l) => /^provisional\s*:/i.test(l));
+    const keyIdx = lines.findIndex((l) => /^key findings\s*:/i.test(l));
+
+    const provisional = provIdx >= 0 ? parseSectionBullets(lines, provIdx + 1) : [];
+    const key_findings = keyIdx >= 0 ? parseSectionBullets(lines, keyIdx + 1) : [];
+
+    if (provisional.length || key_findings.length) {
+      return {
+        ...(provisional.length ? { provisional } : {}),
+        ...(key_findings.length ? { key_findings } : {}),
+      };
+    }
+
+    // If user just typed bullets without headings, store as string to avoid bad parsing
+    return raw;
+  };
+
+  const treatmentToEditableText = (treatment: any) => {
+    const parsed = safeJsonParse(treatment);
+    const t = parsed ?? treatment;
+
+    if (!t) return '';
+    if (typeof t === 'string') return t;
+
+    const immediate = Array.isArray(t.immediate_plan) ? t.immediate_plan : [];
+    const contingent = Array.isArray(t.contingent_plan) ? t.contingent_plan : [];
+
+    const lines: string[] = [];
+    if (immediate.length) {
+      lines.push('Immediate Plan:');
+      lines.push(...bulletify(immediate));
+      lines.push('');
+    }
+    if (contingent.length) {
+      lines.push('Contingent Plan:');
+      lines.push(...bulletify(contingent));
+      lines.push('');
+    }
+
+    return lines.join('\n').trim() || '';
+  };
+
+  const treatmentTextToJson = (text: string, fallbackOriginal: any) => {
+    const raw = text.trim();
+    if (!raw) return fallbackOriginal ?? '';
+
+    const lines = raw.split('\n').map((l) => l.trim());
+    const immIdx = lines.findIndex((l) => /^immediate plan\s*:/i.test(l));
+    const conIdx = lines.findIndex((l) => /^contingent plan\s*:/i.test(l));
+
+    const immediate_plan = immIdx >= 0 ? parseSectionBullets(lines, immIdx + 1) : [];
+    const contingent_plan = conIdx >= 0 ? parseSectionBullets(lines, conIdx + 1) : [];
+
+    if (immediate_plan.length || contingent_plan.length) {
+      return {
+        ...(immediate_plan.length ? { immediate_plan } : {}),
+        ...(contingent_plan.length ? { contingent_plan } : {}),
+      };
+    }
+
+    return raw;
+  };
+
+  const investigationsToEditableText = (investigations: any) => {
+    const parsed = safeJsonParse(investigations);
+    const inv = parsed ?? investigations;
+
+    if (!inv) return '';
+    if (typeof inv === 'string') return inv;
+
+    const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
+    const notes = inv.notes ? String(inv.notes) : '';
+
+    const lines: string[] = [];
+    if (notes) {
+      lines.push('Notes:');
+      lines.push(notes);
+      lines.push('');
+    }
+    if (ordered.length) {
+      lines.push('Ordered:');
+      ordered.forEach((o: any) => {
+        const name = o?.name ? String(o.name) : '-';
+        const b = o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
+        const p = o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+        lines.push(`- ${name}${b}${p}`.trim());
+      });
+      lines.push('');
+    }
+    return lines.join('\n').trim();
+  };
+
+  const investigationsTextToJson = (text: string, fallbackOriginal: any) => {
+    const raw = text.trim();
+    if (!raw) return fallbackOriginal ?? '';
+
+    const lines = raw.split('\n').map((l) => l.trim());
+    const notesIdx = lines.findIndex((l) => /^notes\s*:/i.test(l));
+    const ordIdx = lines.findIndex((l) => /^ordered\s*:/i.test(l));
+
+    let notes = '';
+    if (notesIdx >= 0) {
+      const after = lines.slice(notesIdx + 1, ordIdx >= 0 ? ordIdx : lines.length).filter(Boolean);
+      notes = after.join('\n').trim();
+    }
+
+    let ordered: any[] = [];
+    if (ordIdx >= 0) {
+      const items = parseSectionBullets(lines, ordIdx + 1);
+      ordered = items
+        .map((item) => {
+          let priority: string | null = null;
+          const pr = item.match(/\(.*priority\s*:\s*([^)]+)\)/i);
+          if (pr?.[1]) priority = pr[1].trim();
+
+          const cleaned = item.replace(/\(.*priority\s*:\s*[^)]+\)/gi, '').trim();
+
+          const parts = cleaned.split('—').map((p) => p.trim()).filter(Boolean);
+          const name = parts[0] || cleaned;
+          const body_part_or_type = parts.length > 1 ? parts.slice(1).join(' — ') : '';
+
+          return {
+            name,
+            ...(body_part_or_type ? { body_part_or_type } : {}),
+            ...(priority ? { priority } : {}),
+          };
+        })
+        .filter((o) => o.name);
+    }
+
+    if (notes || ordered.length) {
+      return {
+        ...(notes ? { notes } : {}),
+        ...(ordered.length ? { ordered } : {}),
+      };
+    }
+
+    return raw;
+  };
+
+  // ✅ CHANGE #2: Normalize consult_summary_final (object OR JSON string)
   const getConsultSummary = (consult: any) => {
     const raw = consult?.consult_summary_final;
     if (!raw) return null;
     if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        return null;
-      }
+      const parsed = safeJsonParse(raw);
+      return parsed ?? null;
     }
     if (typeof raw === 'object') return raw;
     return null;
   };
 
-  // ✅ Start edit mode from VIEW popup
-  const handleStartEditConsult = async () => {
-    if (!selectedConsult?.id) return;
-
+  const handleEditConsult = () => {
     const summary = getConsultSummary(selectedConsult) || {};
-
-    // Build a safe editable copy
+    setIsEditingConsult(true);
     setEditedConsult({
       ...summary,
       id: selectedConsult.id,
     });
 
-    // Draft medicines copied from DB state (NO DB writes until Save)
-    const consultId = selectedConsult.id;
-    const dbMeds = await getConsultMedicines(consultId).catch(() => []);
-    setConsultMedicines(dbMeds || []);
-    setConsultMedicinesDraft(
-      (dbMeds || []).map((m: any) => ({
-        id: m.id,
-        consult_id: consultId,
-        name: m.name || '',
-        dosage: m.dosage || '',
-        frequency: m.frequency || '',
-        duration: m.duration || '',
-        route: m.route || '',
-        instructions: m.instructions || '',
-      }))
-    );
+    // ✅ CHANGE: show readable text (not JSON) in edit mode
+    setEditedDiagnosisText(diagnosisToEditableText(summary.diagnosis));
+    setEditedTreatmentText(treatmentToEditableText(summary.treatment_suggested));
+    setEditedInvestigationsText(investigationsToEditableText(summary.investigations));
 
-    setEditJsonError('');
-    setIsEditingConsult(true);
+    // close any open dropdown
+    setMedicineSearchResults([]);
   };
 
-  // ✅ Cancel edit mode: discard everything and close popup
+  // ✅ CHANGE: Cancel should exit edit mode but keep popup open (show view mode)
   const handleCancelEdit = () => {
     setIsEditingConsult(false);
     setEditedConsult(null);
-    setEditJsonError('');
-    setConsultMedicinesDraft([]);
-    setMedicineSearchResultsById({});
-    setSearchingMedicineById({});
-    setSelectedConsult(null); // closes popup
+    setEditedDiagnosisText('');
+    setEditedTreatmentText('');
+    setEditedInvestigationsText('');
+    setMedicineSearchResults([]);
   };
 
-  // ✅ Helpers for editing arrays as newline text
-  const toMultiline = (value: any) => {
-    if (Array.isArray(value)) return value.join('\n');
-    if (typeof value === 'string') return value;
-    if (value == null) return '';
-    return JSON.stringify(value, null, 2);
-  };
-
-  const fromMultilineArray = (value: string) => {
-    return value
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean);
-  };
-
-  // ✅ For object fields, allow JSON editing
-  const safeParseJSON = (text: string) => {
-    try {
-      return { ok: true, value: JSON.parse(text) };
-    } catch {
-      return { ok: false, value: null };
-    }
-  };
-
-  // ✅ Save consult summary + medicines (only now write to DB)
+  // ✅ CHANGE: Save should exit edit mode but keep popup open (show view mode)
   const handleSaveConsult = async () => {
     try {
-      if (!selectedConsult?.id) return;
+      if (!selectedConsult) return;
 
-      // Validate JSON fields if user edited them as JSON
-      // We’ll treat these as “object-possible” fields:
-      const maybeJsonFields = ['diagnosis', 'treatment_suggested', 'investigations'];
+      const originalSummary = getConsultSummary(selectedConsult) || {};
 
-      let payload: any = { ...editedConsult };
-      delete payload.id;
+      const toSave = {
+        ...editedConsult,
+        diagnosis: diagnosisTextToJson(editedDiagnosisText, originalSummary.diagnosis),
+        treatment_suggested: treatmentTextToJson(editedTreatmentText, originalSummary.treatment_suggested),
+        investigations: investigationsTextToJson(editedInvestigationsText, originalSummary.investigations),
+      };
 
-      // Convert certain fields back to arrays if user edited as multiline strings
-      // (if they already are arrays, keep)
-      const multilineArrayFields = [
-        'chief_complaints',
-        'followup_recommendations',
-        'key_personal_insights',
-        'flags_for_review',
-      ];
+      // do not persist internal id into JSON
+      const { id, ...payload } = toSave || {};
 
-      multilineArrayFields.forEach((f) => {
-        const v = payload?.[f];
-        if (typeof v === 'string') payload[f] = fromMultilineArray(v);
-      });
-
-      // For JSON-edit textareas, allow string OR JSON object
-      // If it looks like JSON (starts with { or [), enforce valid JSON
-      for (const f of maybeJsonFields) {
-        const v = payload?.[f];
-        if (typeof v === 'string') {
-          const trimmed = v.trim();
-          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-            const parsed = safeParseJSON(trimmed);
-            if (!parsed.ok) {
-              setEditJsonError(`Invalid JSON in "${f}". Please fix it before saving.`);
-              return;
-            }
-            payload[f] = parsed.value;
-          }
-        }
-      }
-
-      // 1) Update consultation summary JSON
       await updateConsultSummary(selectedConsult.id, payload);
 
-      // 2) Persist medicines (diff existing vs draft)
-      const consultId = selectedConsult.id;
-
-      const existing = consultMedicines || [];
-      const existingIds = new Set(existing.map((m: any) => m.id));
-
-      const draft = consultMedicinesDraft || [];
-      const draftIds = new Set(draft.filter((m) => !m.id.startsWith('temp-')).map((m) => m.id));
-
-      // Delete removed medicines
-      for (const m of existing) {
-        if (!draftIds.has(m.id)) {
-          await deleteConsultMedicine(m.id);
-        }
-      }
-
-      // Create/update medicines
-      for (const m of draft) {
-        const base = {
-          consult_id: consultId,
-          name: m.name,
-          dosage: m.dosage,
-          frequency: m.frequency,
-          duration: m.duration,
-          route: m.route,
-          instructions: m.instructions,
-        };
-
-        if (m.id.startsWith('temp-')) {
-          await createConsultMedicine(base);
-        } else if (existingIds.has(m.id)) {
-          await updateConsultMedicine(m.id, base);
-        } else {
-          // safety fallback
-          await createConsultMedicine(base);
-        }
-      }
-
-      // Reload
-      await loadPatientData();
+      // Refresh lists + keep this consult selected
+      const { consultsData } = await loadPatientData();
+      const updated = consultsData.find((c: any) => c.id === selectedConsult.id);
+      if (updated) setSelectedConsult(updated);
 
       setIsEditingConsult(false);
       setEditedConsult(null);
-      setEditJsonError('');
-      setConsultMedicinesDraft([]);
-      setMedicineSearchResultsById({});
-      setSearchingMedicineById({});
-      setSelectedConsult(null);
+      setEditedDiagnosisText('');
+      setEditedTreatmentText('');
+      setEditedInvestigationsText('');
+      setMedicineSearchResults([]);
 
       alert('Changes saved successfully');
     } catch (error) {
@@ -374,56 +453,56 @@ export default function PatientProfile() {
     }
   };
 
-  // ✅ Draft medicine handlers (NO DB WRITES)
-  const handleAddMedicineDraft = () => {
-    if (!selectedConsult?.id) return;
-    const tempId = `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const consultId = selectedConsult.id;
-
-    setConsultMedicinesDraft((prev) => [
-      ...prev,
-      {
-        id: tempId,
-        consult_id: consultId,
+  const handleAddMedicine = async () => {
+    try {
+      const newMedicine = await createConsultMedicine({
+        consult_id: selectedConsult.id,
         name: '',
         dosage: '',
         frequency: '',
         duration: '',
         route: '',
         instructions: '',
-      },
-    ]);
+      });
+      setConsultMedicines([...consultMedicines, newMedicine]);
+    } catch (error) {
+      console.error('Error adding medicine:', error);
+    }
   };
 
-  const handleDeleteMedicineDraft = (medicineId: string) => {
-    setConsultMedicinesDraft((prev) => prev.filter((m) => m.id !== medicineId));
-    setMedicineSearchResultsById((prev) => {
-      const copy = { ...prev };
-      delete copy[medicineId];
-      return copy;
-    });
+  const handleUpdateMedicine = async (medicineId: string, updates: any) => {
+    try {
+      const updatedMedicine = await updateConsultMedicine(medicineId, updates);
+      setConsultMedicines(consultMedicines.map((med) => (med.id === medicineId ? updatedMedicine : med)));
+    } catch (error) {
+      console.error('Error updating medicine:', error);
+    }
   };
 
-  const handleUpdateMedicineDraft = (medicineId: string, updates: Partial<DraftMedicine>) => {
-    setConsultMedicinesDraft((prev) =>
-      prev.map((m) => (m.id === medicineId ? { ...m, ...updates } : m))
-    );
+  const handleDeleteMedicine = async (medicineId: string) => {
+    try {
+      await deleteConsultMedicine(medicineId);
+      setConsultMedicines(consultMedicines.filter((med) => med.id !== medicineId));
+      setMedicineSearchResults([]);
+    } catch (error) {
+      console.error('Error deleting medicine:', error);
+    }
   };
 
-  const handleMedicineSearch = async (medicineId: string, query: string) => {
-    if (!query || query.trim().length < 2) {
-      setMedicineSearchResultsById((prev) => ({ ...prev, [medicineId]: [] }));
+  const handleMedicineSearch = async (query: string) => {
+    if (query.length < 2) {
+      setMedicineSearchResults([]);
       return;
     }
 
     try {
-      setSearchingMedicineById((prev) => ({ ...prev, [medicineId]: true }));
+      setSearchingMedicine(true);
       const results = await searchMedicines(query, 10);
-      setMedicineSearchResultsById((prev) => ({ ...prev, [medicineId]: results || [] }));
+      setMedicineSearchResults(results);
     } catch (error) {
       console.error('Error searching medicines:', error);
     } finally {
-      setSearchingMedicineById((prev) => ({ ...prev, [medicineId]: false }));
+      setSearchingMedicine(false);
     }
   };
 
@@ -441,7 +520,7 @@ export default function PatientProfile() {
     setShowDocumentUpload(true);
   };
 
-  // ✅ Do NOT create pre-consult row on open
+  // ✅ Do NOT create a pre-consult row on Form open
   const handleOpenForm = async () => {
     try {
       const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
@@ -452,7 +531,7 @@ export default function PatientProfile() {
     }
   };
 
-  // ✅ Do NOT create a pre-consult row on link generation
+  // ✅ Do NOT create a pre-consult row on Link generation
   const handleConfirmAction = async () => {
     try {
       if (confirmationType === 'preConsult') {
@@ -480,6 +559,7 @@ export default function PatientProfile() {
       setIsUploading(true);
       setUploadError('');
 
+      // Upload ALL files first before creating any DB records
       const uploadedUrls: string[] = [];
 
       for (const file of documentsToUpload) {
@@ -497,13 +577,12 @@ export default function PatientProfile() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        const { data: urlData } = supabase.storage
-          .from('pre-consultation-documents')
-          .getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
 
         uploadedUrls.push(urlData.publicUrl);
       }
 
+      // ONLY AFTER all uploads complete, create DB record with URLs
       const preConsult = await createPreConsult(user!.id, patientId!);
       await updatePreConsult(preConsult.id, {
         documents_uploaded: uploadedUrls,
@@ -579,7 +658,9 @@ export default function PatientProfile() {
         mediaRecorder.onstop = () => resolve(chunks);
       });
 
-      if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
 
       try {
         const finalChunks = await recordingPromise;
@@ -591,20 +672,11 @@ export default function PatientProfile() {
 
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('consultation-recordings')
-            .upload(fileName, audioBlob, {
-              contentType: 'audio/webm',
-              upsert: false,
-            });
+            .upload(fileName, audioBlob, { contentType: 'audio/webm', upsert: false });
 
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error('Failed to upload recording');
-          }
+          if (uploadError) throw new Error('Failed to upload recording');
 
-          const { data: urlData } = supabase.storage
-            .from('consultation-recordings')
-            .getPublicUrl(uploadData.path);
-
+          const { data: urlData } = supabase.storage.from('consultation-recordings').getPublicUrl(uploadData.path);
           recordingFileUrl = urlData.publicUrl;
         }
 
@@ -643,7 +715,7 @@ export default function PatientProfile() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Timeline bullet helper
+  // ✅ Render timeline summary as bullets when it has "- " lines
   const renderBulletSummary = (text: any) => {
     if (typeof text !== 'string') return <p className="text-gray-800">{String(text)}</p>;
 
@@ -853,7 +925,7 @@ export default function PatientProfile() {
     );
   };
 
-  // ---------- PDF helpers ----------
+  // ✅ PDF helpers (kept as-is)
   const escapeHtml = (s: any) => {
     const str = String(s ?? '');
     return str
@@ -868,8 +940,7 @@ export default function PatientProfile() {
     return `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`;
   };
 
-  // ✅ IMPORTANT: PDF medications pulled from Consult Medicine table
-  const generatePDFHTMLContent = (consult: any, medicinesFromTable: any[]) => {
+  const generatePDFHTMLContent = (consult: any) => {
     const summary = getConsultSummary(consult);
     if (!summary) return '<p>No consultation summary available.</p>';
 
@@ -882,54 +953,91 @@ export default function PatientProfile() {
       </div>
     `;
 
-    // Diagnosis
     if (summary.diagnosis) {
       if (typeof summary.diagnosis === 'string') {
-        content += `<div class="section"><h2>DIAGNOSIS</h2><p>${escapeHtml(summary.diagnosis)}</p></div>`;
+        content += `
+          <div class="section">
+            <h2>DIAGNOSIS</h2>
+            <p>${escapeHtml(summary.diagnosis)}</p>
+          </div>
+        `;
       } else if (typeof summary.diagnosis === 'object') {
         const prov = Array.isArray(summary.diagnosis.provisional) ? summary.diagnosis.provisional : [];
         const keyf = Array.isArray(summary.diagnosis.key_findings) ? summary.diagnosis.key_findings : [];
-        content += `<div class="section"><h2>DIAGNOSIS</h2>
-          ${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}
-          ${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}
-        </div>`;
+        content += `
+          <div class="section">
+            <h2>DIAGNOSIS</h2>
+            ${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}
+            ${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}
+          </div>
+        `;
       }
     }
 
-    // History
     if (summary.history) {
-      content += `<div class="section"><h2>HISTORY</h2><p>${escapeHtml(summary.history)}</p></div>`;
+      content += `
+        <div class="section">
+          <h2>HISTORY</h2>
+          <p>${escapeHtml(summary.history)}</p>
+        </div>
+      `;
     }
 
-    // Chief Complaints
     if (summary.chief_complaints) {
-      content += `<div class="section"><h2>CHIEF COMPLAINTS</h2>${
-        Array.isArray(summary.chief_complaints) ? toHtmlList(summary.chief_complaints) : `<p>${escapeHtml(summary.chief_complaints)}</p>`
-      }</div>`;
+      if (Array.isArray(summary.chief_complaints)) {
+        content += `
+          <div class="section">
+            <h2>CHIEF COMPLAINTS</h2>
+            ${toHtmlList(summary.chief_complaints)}
+          </div>
+        `;
+      } else {
+        content += `
+          <div class="section">
+            <h2>CHIEF COMPLAINTS</h2>
+            <p>${escapeHtml(summary.chief_complaints)}</p>
+          </div>
+        `;
+      }
     }
 
-    // Treatment Suggested
     if (summary.treatment_suggested) {
-      content += `<div class="section"><h2>TREATMENT SUGGESTED</h2>${
-        typeof summary.treatment_suggested === 'string'
-          ? `<p>${escapeHtml(summary.treatment_suggested)}</p>`
-          : `<pre>${escapeHtml(JSON.stringify(summary.treatment_suggested, null, 2))}</pre>`
-      }</div>`;
+      if (typeof summary.treatment_suggested === 'string') {
+        content += `
+          <div class="section">
+            <h2>TREATMENT SUGGESTED</h2>
+            <p>${escapeHtml(summary.treatment_suggested)}</p>
+          </div>
+        `;
+      } else if (typeof summary.treatment_suggested === 'object') {
+        const immediate = Array.isArray(summary.treatment_suggested.immediate_plan)
+          ? summary.treatment_suggested.immediate_plan
+          : [];
+        const contingent = Array.isArray(summary.treatment_suggested.contingent_plan)
+          ? summary.treatment_suggested.contingent_plan
+          : [];
+        content += `
+          <div class="section">
+            <h2>TREATMENT SUGGESTED</h2>
+            ${immediate.length ? `<h3>Immediate Plan</h3>${toHtmlList(immediate)}` : ''}
+            ${contingent.length ? `<h3>Contingent Plan</h3>${toHtmlList(contingent)}` : ''}
+          </div>
+        `;
+      }
     }
 
-    // ✅ Medications from table
-    if (Array.isArray(medicinesFromTable) && medicinesFromTable.length > 0) {
+    if (Array.isArray(summary.medications) && summary.medications.length > 0) {
       content += `
         <div class="section">
           <h2>MEDICATIONS</h2>
           <table class="table">
             <thead>
               <tr>
-                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Instructions</th>
+                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
               </tr>
             </thead>
             <tbody>
-              ${medicinesFromTable
+              ${summary.medications
                 .map(
                   (m: any) => `
                 <tr>
@@ -938,7 +1046,7 @@ export default function PatientProfile() {
                   <td>${escapeHtml(m?.route || '-')}</td>
                   <td>${escapeHtml(m?.frequency || '-')}</td>
                   <td>${escapeHtml(m?.duration || '-')}</td>
-                  <td>${escapeHtml(m?.instructions || '-')}</td>
+                  <td>${escapeHtml(m?.purpose || '-')}</td>
                 </tr>
               `
                 )
@@ -949,44 +1057,77 @@ export default function PatientProfile() {
       `;
     }
 
-    // Investigations
-    if (summary.investigations) {
-      content += `<div class="section"><h2>INVESTIGATIONS</h2><pre>${escapeHtml(JSON.stringify(summary.investigations, null, 2))}</pre></div>`;
+    if (summary.investigations && typeof summary.investigations === 'object') {
+      const ordered = Array.isArray(summary.investigations.ordered) ? summary.investigations.ordered : [];
+      const notes = summary.investigations.notes;
+      if (ordered.length || notes) {
+        content += `
+          <div class="section">
+            <h2>INVESTIGATIONS</h2>
+            ${
+              ordered.length
+                ? `<h3>Ordered</h3>
+                   <ul>
+                     ${ordered
+                       .map(
+                         (inv: any) =>
+                           `<li><strong>${escapeHtml(inv?.name || '-')}</strong>${
+                             inv?.body_part_or_type ? ` — ${escapeHtml(inv.body_part_or_type)}` : ''
+                           }${inv?.priority ? ` (Priority: ${escapeHtml(inv.priority)})` : ''}</li>`
+                       )
+                       .join('')}
+                   </ul>`
+                : ''
+            }
+            ${notes ? `<h3>Notes</h3><p>${escapeHtml(notes)}</p>` : ''}
+          </div>
+        `;
+      }
     }
 
-    // Follow-up
     if (summary.followup_recommendations) {
-      content += `<div class="section"><h2>FOLLOW-UP RECOMMENDATIONS</h2>${
-        Array.isArray(summary.followup_recommendations)
-          ? toHtmlList(summary.followup_recommendations)
-          : `<p>${escapeHtml(summary.followup_recommendations)}</p>`
-      }</div>`;
+      content += `
+        <div class="section">
+          <h2>FOLLOW-UP RECOMMENDATIONS</h2>
+          ${
+            Array.isArray(summary.followup_recommendations)
+              ? toHtmlList(summary.followup_recommendations)
+              : `<p>${escapeHtml(summary.followup_recommendations)}</p>`
+          }
+        </div>
+      `;
     }
 
-    // Key insights
     if (summary.key_personal_insights) {
-      content += `<div class="section"><h2>KEY PERSONAL INSIGHTS</h2>${
-        Array.isArray(summary.key_personal_insights)
-          ? toHtmlList(summary.key_personal_insights)
-          : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
-      }</div>`;
+      content += `
+        <div class="section">
+          <h2>KEY PERSONAL INSIGHTS</h2>
+          ${
+            Array.isArray(summary.key_personal_insights)
+              ? toHtmlList(summary.key_personal_insights)
+              : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
+          }
+        </div>
+      `;
     }
 
-    // Flags
     if (Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0) {
-      content += `<div class="section"><h2>FLAGS FOR REVIEW</h2>${toHtmlList(summary.flags_for_review)}</div>`;
+      content += `
+        <div class="section">
+          <h2>FLAGS FOR REVIEW</h2>
+          ${toHtmlList(summary.flags_for_review)}
+        </div>
+      `;
     }
 
     return content;
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!selectedConsult) return;
 
-    const meds = await getConsultMedicines(selectedConsult.id).catch(() => consultMedicines || []);
-    const htmlContent = generatePDFHTMLContent(selectedConsult, meds || []);
+    const htmlContent = generatePDFHTMLContent(selectedConsult);
 
-    // MUST happen on click gesture
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Pop-up blocked. Please allow pop-ups to download the PDF.');
@@ -1012,7 +1153,6 @@ export default function PatientProfile() {
           .table { width: 100%; border-collapse: collapse; margin-top: 8px; }
           .table th, .table td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; }
           .table th { background: #f3f4f6; text-align: left; }
-          pre { background: #f8fafc; border: 1px solid #e5e7eb; padding: 10px; border-radius: 6px; white-space: pre-wrap; }
           @page { margin: 12mm; }
           @media print { body { margin: 0; } }
         </style>
@@ -1020,10 +1160,7 @@ export default function PatientProfile() {
       <body>
         ${htmlContent}
         <script>
-          setTimeout(function () {
-            window.focus();
-            window.print();
-          }, 300);
+          setTimeout(function () { window.focus(); window.print(); }, 300);
           window.onafterprint = function () { window.close(); };
         </script>
       </body>
@@ -1039,14 +1176,16 @@ export default function PatientProfile() {
     const consultDate = formatDate(selectedConsult.created_at);
     const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${consultDate}.`;
 
-    let phoneNumber = (patient.phone || '').replace(/\D/g, '');
-    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
+    let phoneNumber = patient.phone.replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
+      phoneNumber = '91' + phoneNumber;
+    }
 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  // Accordion
+  // Helper function to render accordion sections
   const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
     const isExpanded = expandedSections[key];
 
@@ -1064,26 +1203,17 @@ export default function PatientProfile() {
     );
   };
 
-  const renderArrayContent = (content: any) => {
-    if (typeof content === 'string') return <p className="text-gray-800 whitespace-pre-line">{content}</p>;
-    if (Array.isArray(content)) {
-      return (
-        <ul className="list-disc list-inside space-y-1">
-          {content.map((item: string, idx: number) => (
-            <li key={idx} className="text-gray-800">{item}</li>
-          ))}
-        </ul>
-      );
-    }
-    return <pre className="text-gray-800">{JSON.stringify(content, null, 2)}</pre>;
-  };
-
+  // Helper function to render diagnosis
   const renderDiagnosis = (diagnosis: any) => {
-    if (typeof diagnosis === 'string') return <p className="text-gray-800">{diagnosis}</p>;
+    const parsed = safeJsonParse(diagnosis);
+    const d = parsed ?? diagnosis;
 
-    if (typeof diagnosis === 'object' && diagnosis !== null) {
-      const hasProvisional = Array.isArray(diagnosis.provisional) && diagnosis.provisional.length > 0;
-      const hasKeyFindings = Array.isArray(diagnosis.key_findings) && diagnosis.key_findings.length > 0;
+    if (typeof d === 'string') return <p className="text-gray-800 whitespace-pre-line">{d}</p>;
+
+    if (typeof d === 'object' && d !== null) {
+      const hasProvisional = d.provisional && Array.isArray(d.provisional) && d.provisional.length > 0;
+      const hasKeyFindings = d.key_findings && Array.isArray(d.key_findings) && d.key_findings.length > 0;
+
       if (!hasProvisional && !hasKeyFindings) return <p className="text-gray-800">No detailed diagnosis available</p>;
 
       return (
@@ -1092,8 +1222,10 @@ export default function PatientProfile() {
             <div>
               <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
               <ul className="list-disc list-inside space-y-1">
-                {diagnosis.provisional.map((item: string, idx: number) => (
-                  <li key={idx} className="text-gray-800">{item}</li>
+                {d.provisional.map((item: string, idx: number) => (
+                  <li key={idx} className="text-gray-800">
+                    {item}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -1102,8 +1234,10 @@ export default function PatientProfile() {
             <div>
               <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
               <ul className="list-disc list-inside space-y-1">
-                {diagnosis.key_findings.map((item: string, idx: number) => (
-                  <li key={idx} className="text-gray-800">{item}</li>
+                {d.key_findings.map((item: string, idx: number) => (
+                  <li key={idx} className="text-gray-800">
+                    {item}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -1112,42 +1246,155 @@ export default function PatientProfile() {
       );
     }
 
-    return <p className="text-gray-800">No diagnosis available</p>;
+    return <p className="text-gray-800">No detailed diagnosis available</p>;
   };
 
-  // ✅ View mode medications must come from consultMedicines table
-  const renderConsultMedicinesView = (meds: any[]) => {
-    if (!meds || meds.length === 0) return <p className="text-gray-500">No medications prescribed</p>;
+  // Helper function to render array/string content
+  const renderArrayContent = (content: any) => {
+    const parsed = safeJsonParse(content);
+    const c = parsed ?? content;
+
+    if (typeof c === 'string') return <p className="text-gray-800 whitespace-pre-line">{c}</p>;
+
+    if (Array.isArray(c)) {
+      return (
+        <ul className="list-disc list-inside space-y-1">
+          {c.map((item: string, idx: number) => (
+            <li key={idx} className="text-gray-800">
+              {item}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // If object but not expected, show pretty-ish text instead of raw JSON
+    try {
+      return <p className="text-gray-800 whitespace-pre-line">{JSON.stringify(c, null, 2)}</p>;
+    } catch {
+      return <p className="text-gray-800">{String(c)}</p>;
+    }
+  };
+
+  // ✅ CHANGE: Treatment suggested should NOT display raw JSON in view mode
+  const renderTreatmentSuggested = (treatment: any) => {
+    const parsed = safeJsonParse(treatment);
+    const t = parsed ?? treatment;
+
+    if (typeof t === 'string') return <p className="text-gray-800 whitespace-pre-line">{t}</p>;
+    if (!t || typeof t !== 'object') return <p className="text-gray-800">No treatment recorded</p>;
+
+    const immediate = Array.isArray(t.immediate_plan) ? t.immediate_plan : [];
+    const contingent = Array.isArray(t.contingent_plan) ? t.contingent_plan : [];
+
+    if (!immediate.length && !contingent.length) return <p className="text-gray-800">No treatment recorded</p>;
 
     return (
       <div className="space-y-3">
-        {meds.map((medicine, index) => (
-          <div key={medicine.id} className="border-l-4 border-[#024CDB] pl-4">
-            <div>
-              <p className="font-medium text-gray-900">{medicine.name || '-'}</p>
-              <div className="text-sm text-gray-600 mt-1">
-                {medicine.dosage && <span>Dosage: {medicine.dosage}</span>}
-                {medicine.frequency && <span className="ml-3">Frequency: {medicine.frequency}</span>}
-              </div>
-              <div className="text-sm text-gray-600">
-                {medicine.duration && <span>Duration: {medicine.duration}</span>}
-                {medicine.route && <span className="ml-3">Route: {medicine.route}</span>}
-              </div>
-              {medicine.instructions && <div className="text-sm text-gray-600">Instructions: {medicine.instructions}</div>}
-            </div>
+        {immediate.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {immediate.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-        ))}
+        )}
+        {contingent.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {contingent.map((item: string, idx: number) => (
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   };
 
-  // Tabs
-  const tabs = [
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'trends', label: 'Diagnostic Trends' },
-    { id: 'medications', label: 'Medications' },
-    { id: 'past', label: 'Past Summaries' },
-  ];
+  // Helper function to render medications (view popup - unchanged)
+  const renderMedications = (medications: any[]) => {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Dosage</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Route</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
+              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            {medications.map((med: any, idx: number) => (
+              <tr key={idx} className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.route || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.purpose || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // ✅ CHANGE: Investigations should NOT display raw JSON in view mode
+  const renderInvestigations = (investigations: any) => {
+    const parsed = safeJsonParse(investigations);
+    const inv = parsed ?? investigations;
+
+    if (typeof inv === 'string') return <p className="text-gray-800 whitespace-pre-line">{inv}</p>;
+    if (!inv || typeof inv !== 'object') return <p className="text-gray-800">No investigations recorded</p>;
+
+    const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
+    const notes = inv.notes;
+
+    if (!ordered.length && !notes) return <p className="text-gray-800">No investigations recorded</p>;
+
+    return (
+      <div className="space-y-3">
+        {ordered.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Ordered Investigations</h4>
+            <div className="space-y-2">
+              {ordered.map((o: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="font-medium text-gray-900">{o.name}</h5>
+                      {o.body_part_or_type && <p className="text-sm text-gray-600">{o.body_part_or_type}</p>}
+                    </div>
+                    {o.priority && (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">{o.priority}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {notes && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Notes</h4>
+            <p className="text-gray-800 whitespace-pre-line">{String(notes)}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -1176,6 +1423,13 @@ export default function PatientProfile() {
     );
   }
 
+  const tabs = [
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'trends', label: 'Diagnostic Trends' },
+    { id: 'medications', label: 'Medications' },
+    { id: 'past', label: 'Past Summaries' },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showBack />
@@ -1192,9 +1446,7 @@ export default function PatientProfile() {
                 {patient.case && <span className="ml-4 text-blue-600">{patient.case}</span>}
               </div>
               <p className="text-gray-600 mt-1">{patient.phone}</p>
-              {patient.last_visit_at && (
-                <p className="text-sm text-gray-500 mt-1">Last visit: {formatDate(patient.last_visit_at)}</p>
-              )}
+              {patient.last_visit_at && <p className="text-sm text-gray-500 mt-1">Last visit: {formatDate(patient.last_visit_at)}</p>}
             </div>
             <button onClick={() => setShowEditModal(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Edit className="w-5 h-5 text-gray-600" />
@@ -1278,7 +1530,6 @@ export default function PatientProfile() {
         </div>
       </div>
 
-      {/* Edit Patient Modal */}
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
         <form
           onSubmit={(e) => {
@@ -1361,7 +1612,6 @@ export default function PatientProfile() {
         </form>
       </Modal>
 
-      {/* Upload Documents Modal */}
       <Modal isOpen={showDocumentUpload} onClose={handleCloseDocumentUpload} title="Upload Documents">
         <div className="space-y-4">
           <p className="text-gray-600">Upload medical documents for this patient</p>
@@ -1414,11 +1664,12 @@ export default function PatientProfile() {
         </div>
       </Modal>
 
-      {/* ✅ EDIT CONSULT POPUP */}
+      {/* EDIT MODE POPUP */}
       {selectedConsult && isEditingConsult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            {/* ✅ CHANGE: higher z-index so dropdown does not overlap header */}
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Edit Consultation Summary</h2>
                 <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
@@ -1429,261 +1680,228 @@ export default function PatientProfile() {
             </div>
 
             <div className="p-6">
-              {editJsonError && (
-                <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-                  {editJsonError}
-                </div>
-              )}
-
               <div className="space-y-6">
                 {/* Diagnosis */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.diagnosis)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, diagnosis: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder='Text OR JSON (e.g. {"provisional":["..."],"key_findings":["..."]})'
-                  />
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {/* ✅ CHANGE: text (not JSON) */}
+                    <textarea
+                      value={editedDiagnosisText}
+                      onChange={(e) => setEditedDiagnosisText(e.target.value)}
+                      className="input-field min-h-20"
+                      rows={4}
+                    />
+                  </div>
                 </div>
 
                 {/* History */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">History</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.history)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                  />
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <textarea
+                      value={editedConsult?.history || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
+                      className="input-field min-h-20"
+                      rows={3}
+                    />
+                  </div>
                 </div>
 
                 {/* Chief Complaints */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.chief_complaints)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder="One per line"
-                  />
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <textarea
+                      value={editedConsult?.chief_complaints || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
+                      className="input-field min-h-20"
+                      rows={3}
+                    />
+                  </div>
                 </div>
 
                 {/* Treatment Suggested */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Treatment Suggested</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.treatment_suggested)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, treatment_suggested: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder='Text OR JSON (e.g. {"immediate_plan":["..."],"contingent_plan":["..."]})'
-                  />
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {/* ✅ CHANGE: text (not JSON) */}
+                    <textarea
+                      value={editedTreatmentText}
+                      onChange={(e) => setEditedTreatmentText(e.target.value)}
+                      className="input-field min-h-20"
+                      rows={5}
+                    />
+                  </div>
                 </div>
 
-                {/* ✅ Medicines from Consult Medicine table */}
+                {/* Medications */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">Medications</h3>
-                    <button onClick={handleAddMedicineDraft} className="btn-secondary flex items-center space-x-2">
+                    <button onClick={handleAddMedicine} className="btn-secondary flex items-center space-x-2">
                       <Plus className="w-4 h-4" />
                       <span>Add Medicine</span>
                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                    {consultMedicinesDraft.map((medicine, index) => (
-                      <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-medium text-gray-900">Medicine {index + 1}</span>
-                          <button
-                            onClick={() => handleDeleteMedicineDraft(medicine.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {/* Name dropdown search */}
-                          <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
-                            <input
-                              type="text"
-                              value={medicine.name}
-                              onChange={(e) => {
-                                const q = e.target.value;
-                                handleUpdateMedicineDraft(medicine.id, { name: q });
-                                handleMedicineSearch(medicine.id, q);
-                              }}
-                              className="input-field"
-                              placeholder="Type to search..."
-                              autoComplete="off"
-                            />
-                            {(medicineSearchResultsById[medicine.id] || []).length > 0 && (
-                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-44 overflow-y-auto">
-                                {(medicineSearchResultsById[medicine.id] || []).map((result, idx) => (
-                                  <button
-                                    type="button"
-                                    key={idx}
-                                    onClick={() => {
-                                      handleUpdateMedicineDraft(medicine.id, { name: result.name });
-                                      setMedicineSearchResultsById((prev) => ({ ...prev, [medicine.id]: [] }));
-                                    }}
-                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                                  >
-                                    {result.name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="space-y-4">
+                      {consultMedicines.map((medicine, index) => (
+                        <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-medium text-gray-900">Medicine {index + 1}</span>
+                            <button onClick={() => handleDeleteMedicine(medicine.id)} className="text-red-600 hover:text-red-800">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                            <input
-                              type="text"
-                              value={medicine.dosage}
-                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { dosage: e.target.value })}
-                              className="input-field"
-                              placeholder="e.g., 500mg"
-                            />
-                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="relative">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
+                              <input
+                                type="text"
+                                value={medicine.name}
+                                onChange={(e) => {
+                                  handleUpdateMedicine(medicine.id, { name: e.target.value });
+                                  handleMedicineSearch(e.target.value);
+                                }}
+                                className="input-field"
+                                placeholder="Search medicine..."
+                              />
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                            <input
-                              type="text"
-                              value={medicine.frequency}
-                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { frequency: e.target.value })}
-                              className="input-field"
-                              placeholder="e.g., Twice daily"
-                            />
-                          </div>
+                              {medicineSearchResults.length > 0 && (
+                                // ✅ CHANGE: lower than header z-index to avoid overlap
+                                <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                  {medicineSearchResults.map((result, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => {
+                                        handleUpdateMedicine(medicine.id, { name: result.name });
+                                        setMedicineSearchResults([]);
+                                      }}
+                                      className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                    >
+                                      {result.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                            <input
-                              type="text"
-                              value={medicine.duration}
-                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { duration: e.target.value })}
-                              className="input-field"
-                              placeholder="e.g., 7 days"
-                            />
-                          </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                              <input
+                                type="text"
+                                value={medicine.dosage}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { dosage: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., 500mg"
+                              />
+                            </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
-                            <input
-                              type="text"
-                              value={medicine.route}
-                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { route: e.target.value })}
-                              className="input-field"
-                              placeholder="e.g., Oral"
-                            />
-                          </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                              <input
+                                type="text"
+                                value={medicine.frequency}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., Twice daily"
+                              />
+                            </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                            <input
-                              type="text"
-                              value={medicine.instructions}
-                              onChange={(e) => handleUpdateMedicineDraft(medicine.id, { instructions: e.target.value })}
-                              className="input-field"
-                              placeholder="e.g., After meals"
-                            />
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                              <input
+                                type="text"
+                                value={medicine.duration}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., 7 days"
+                              />
+                            </div>
+
+                            {/* ✅ CHANGE: REMOVE route field from UI */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                              <input
+                                type="text"
+                                value={medicine.instructions}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., After meals"
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    {consultMedicinesDraft.length === 0 && (
-                      <p className="text-gray-500 text-center py-4">No medicines added yet</p>
-                    )}
+                      {consultMedicines.length === 0 && <p className="text-gray-500 text-center py-4">No medicines added yet</p>}
+                    </div>
                   </div>
                 </div>
 
                 {/* Investigations */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Investigations</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.investigations)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, investigations: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={5}
-                    placeholder='JSON recommended (e.g. {"ordered":[{"name":"CBC"}],"notes":"..."})'
-                  />
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {/* ✅ CHANGE: text (not JSON) */}
+                    <textarea
+                      value={editedInvestigationsText}
+                      onChange={(e) => setEditedInvestigationsText(e.target.value)}
+                      className="input-field min-h-20"
+                      rows={5}
+                    />
+                  </div>
                 </div>
 
-                {/* Follow-up */}
+                {/* Follow-up Recommendations */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Follow-up Recommendations</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.followup_recommendations)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder="One per line"
-                  />
-                </div>
-
-                {/* Key Insights */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Personal Insights</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.key_personal_insights)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, key_personal_insights: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder="One per line"
-                  />
-                </div>
-
-                {/* Flags */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Flags for Review</h3>
-                  <textarea
-                    value={toMultiline(editedConsult?.flags_for_review)}
-                    onChange={(e) => setEditedConsult({ ...editedConsult, flags_for_review: e.target.value })}
-                    className="input-field min-h-24 w-full"
-                    rows={4}
-                    placeholder="One per line"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
-                  <button onClick={handleCancelEdit} className="btn-secondary flex items-center space-x-2 flex-1">
-                    <XCircle className="w-4 h-4" />
-                    <span>Cancel</span>
-                  </button>
-                  <button onClick={handleSaveConsult} className="btn-primary flex items-center space-x-2 flex-1">
-                    <Save className="w-4 h-4" />
-                    <span>Save Changes</span>
-                  </button>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <textarea
+                      value={editedConsult?.followup_recommendations || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
+                      className="input-field min-h-20"
+                      rows={3}
+                    />
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* ✅ CHANGE: sticky footer buttons, not full width */}
+            <div className="sticky bottom-0 z-40 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button onClick={handleCancelEdit} className="btn-secondary flex items-center space-x-2">
+                <XCircle className="w-4 h-4" />
+                <span>Cancel</span>
+              </button>
+              <button onClick={handleSaveConsult} className="btn-primary flex items-center space-x-2">
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ✅ VIEW CONSULT POPUP */}
+      {/* VIEW MODE POPUP */}
       {selectedConsult && !isEditingConsult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            {/* ✅ CHANGE: higher z-index for header */}
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
                 <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
               </div>
 
               <div className="flex items-center gap-3">
-                {/* ✅ REQUIRED: Edit button visible in view mode */}
+                {/* (kept) */}
                 <button
-                  onClick={handleStartEditConsult}
+                  onClick={handleEditConsult}
                   className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
                 >
                   <Edit className="w-4 h-4" />
@@ -1724,20 +1942,16 @@ export default function PatientProfile() {
                           {Array.isArray(summary.chief_complaints) ? summary.chief_complaints.length : 1} Complaints
                         </span>
                       )}
-                      {/* ✅ count medications from consult medicine table */}
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                        {(consultMedicines || []).length} Medications
-                      </span>
-
+                      {Array.isArray(summary.medications) && (
+                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">{summary.medications.length} Medications</span>
+                      )}
                       {summary.investigations?.ordered && Array.isArray(summary.investigations.ordered) && (
                         <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                           {summary.investigations.ordered.length} Investigations
                         </span>
                       )}
                       {Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0 && (
-                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
-                          {summary.flags_for_review.length} Flags
-                        </span>
+                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">{summary.flags_for_review.length} Flags</span>
                       )}
                     </div>
                   </div>
@@ -1749,17 +1963,23 @@ export default function PatientProfile() {
                       renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
 
                     {summary.treatment_suggested &&
-                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderArrayContent(summary.treatment_suggested))}
+                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
 
-                    {/* ✅ Medications from consult medicine table */}
-                    {renderAccordionSection('Medications', 'medications', renderConsultMedicinesView(consultMedicines || []))}
+                    {Array.isArray(summary.medications) &&
+                      summary.medications.length > 0 &&
+                      renderAccordionSection('Medications', 'medications', renderMedications(summary.medications))}
 
-                    {summary.investigations && renderAccordionSection('Investigations', 'investigations', renderArrayContent(summary.investigations))}
+                    {summary.investigations &&
+                      renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}
 
                     {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
 
                     {summary.followup_recommendations &&
-                      renderAccordionSection('Follow-up Recommendations', 'followupRecommendations', renderArrayContent(summary.followup_recommendations))}
+                      renderAccordionSection(
+                        'Follow-up Recommendations',
+                        'followupRecommendations',
+                        renderArrayContent(summary.followup_recommendations)
+                      )}
 
                     {summary.key_personal_insights &&
                       renderAccordionSection('Key Personal Insights', 'keyPersonalInsights', renderArrayContent(summary.key_personal_insights))}

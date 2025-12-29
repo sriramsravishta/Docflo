@@ -480,7 +480,7 @@ export default function PatientProfile() {
   const handleMedicineSearch = async (query: string) => {
     if (query.trim().length < 1) {
       setMedicineSearchResults([]);
-      return; 
+      return;
     }
 
     try {

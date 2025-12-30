@@ -2142,7 +2142,7 @@ const getViewModeMedicines = (summary: any) => {
                     {summary.treatment_suggested &&
                       renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
 
-                    {(() => {
+                    {(() => { 
   const meds = getViewModeMedicines(summary);
   return meds.length > 0
     ? renderAccordionSection('Medications', 'medications', renderMedications(meds))

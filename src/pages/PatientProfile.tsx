@@ -1498,6 +1498,36 @@ export default function PatientProfile() {
     );
   };
 
+  // ✅ NEW: Normalize meds for VIEW mode (prefer summary.medications, else consultMedicines)
+const getViewModeMedicines = (summary: any) => {
+  // 1) If AI summary has medications array, use it
+  if (Array.isArray(summary?.medications) && summary.medications.length > 0) {
+    return summary.medications.map((m: any) => ({
+      name: m?.name || m?.drug_name || '',
+      dosage: m?.dosage || m?.dose || '',
+      route: m?.route || '',
+      frequency: m?.frequency || '',
+      duration: m?.duration || m?.duration_or_quantity || '',
+      purpose: m?.purpose || m?.indication || '',
+    }));
+  }
+
+  // 2) Else fallback to consult_medicine table (edit mode source)
+  if (Array.isArray(consultMedicines) && consultMedicines.length > 0) {
+    return consultMedicines.map((m: any) => ({
+      name: m?.name || '',
+      dosage: m?.dosage || '',
+      route: m?.route || '',
+      frequency: m?.frequency || '',
+      duration: m?.duration || '',
+      purpose: m?.instructions || '', // use instructions as purpose column fallback
+    }));
+  }
+
+  return [];
+};
+
+
   // ✅ CHANGE: Investigations should NOT display raw JSON in view mode
   const renderInvestigations = (investigations: any) => {
     const parsed = safeJsonParse(investigations);

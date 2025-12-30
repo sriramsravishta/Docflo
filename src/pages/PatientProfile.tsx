@@ -1173,36 +1173,40 @@ export default function PatientProfile() {
       }
     }
 
-    if (Array.isArray(summary.medications) && summary.medications.length > 0) {
-      content += `
-        <div class="section">
-          <h2>MEDICATIONS</h2>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${summary.medications
-                .map(
-                  (m: any) => `
-                <tr>
-                  <td>${escapeHtml(m?.name || '-')}</td>
-                  <td>${escapeHtml(m?.dosage || '-')}</td>
-                  <td>${escapeHtml(m?.route || '-')}</td>
-                  <td>${escapeHtml(m?.frequency || '-')}</td>
-                  <td>${escapeHtml(m?.duration || '-')}</td>
-                  <td>${escapeHtml(m?.purpose || '-')}</td>
-                </tr>
-              `
-                )
-                .join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
+   // ✅ FIX: Use normalized meds (summary.medications OR consultMedicines fallback)
+const pdfMeds = getViewModeMedicines(summary);
+
+if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
+  content += `
+    <div class="section">
+      <h2>MEDICATIONS</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pdfMeds
+            .map(
+              (m: any) => `
+            <tr>
+              <td>${escapeHtml(m?.name || '-')}</td>
+              <td>${escapeHtml(m?.dosage || '-')}</td>
+              <td>${escapeHtml(m?.route || '-')}</td>
+              <td>${escapeHtml(m?.frequency || '-')}</td>
+              <td>${escapeHtml(m?.duration || '-')}</td>
+              <td>${escapeHtml(m?.purpose || '-')}</td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 
     if (summary.investigations && typeof summary.investigations === 'object') {
       const ordered = Array.isArray(summary.investigations.ordered) ? summary.investigations.ordered : [];

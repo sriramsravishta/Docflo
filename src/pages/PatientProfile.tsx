@@ -2142,9 +2142,12 @@ const getViewModeMedicines = (summary: any) => {
                     {summary.treatment_suggested &&
                       renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
 
-                    {Array.isArray(summary.medications) &&
-                      summary.medications.length > 0 &&
-                      renderAccordionSection('Medications', 'medications', renderMedications(summary.medications))}
+                    {(() => {
+  const meds = getViewModeMedicines(summary);
+  return meds.length > 0
+    ? renderAccordionSection('Medications', 'medications', renderMedications(meds))
+    : null;
+})()}
 
                     {summary.investigations &&
                       renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}

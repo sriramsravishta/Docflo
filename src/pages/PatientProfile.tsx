@@ -1276,7 +1276,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
 
   const handleDownloadPDF = () => {
     if (!selectedConsult) return;
-    await loadConsultMedicines(selectedConsult.id);
+   
 
     const htmlContent = generatePDFHTMLContent(selectedConsult);
 

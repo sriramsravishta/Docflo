@@ -238,41 +238,97 @@ export default function MainPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
                 </div>
               ) : (
-                filteredListA.slice(0, 5).map((patient) => (
-                  <div
-                    key={patient.id}
-                    onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
-                      {patient.case && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                        {patient.case}
+                filteredTodaysAppointments.slice(0, 5).map((appointment) => (
+                  <div key={appointment.id} className="relative">
+                    <div
+                      onClick={() => navigate(`/patient/${appointment.patient_id}`)}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-[#024CDB] text-white rounded-full text-sm font-semibold">
+                            {appointment.queue}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
+                              {appointment.patients?.name}
+                            </h3>
+                            <div className="text-sm text-gray-500">
+                              {appointment.patients?.age}yrs · {appointment.patients?.gender}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {appointment.pre_consult_filled === 'yes' && (
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          )}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowKebabMenu(showKebabMenu === appointment.id ? null : appointment.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded-full"
+                            >
+                              <MoreVertical className="w-4 h-4 text-gray-400" />
+                            </button>
+                            {showKebabMenu === appointment.id && (
+                              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveUp(appointment);
+                                  }}
+                                  disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === 0}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                  <span>Move Up</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveDown(appointment);
+                                  }}
+                                  disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === todaysAppointments.length - 1}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                  <span>Move Down</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveClick(appointment);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center space-x-2"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Remove</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    
-                    </div>
-                    <div className="text-sm text-gray-500">
-                        {patient.age}yrs · {patient.gender}
-                      </div>
-                    <div className="mt-5 pt-3 border-t border-gray-100">
-                      {patient.last_visit_at && (
-                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
-                    )}
+                      {appointment.patients?.case && (
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+                          {appointment.patients?.case}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
               )}
             </div>
-            {filteredListA.length > 5 && (
+            {filteredTodaysAppointments.length > 5 && (
               <button className="text-[#024CDB] hover:underline text-sm font-medium">
-                View all ({filteredListA.length})
+                View all ({filteredTodaysAppointments.length})
               </button>
             )}
-            {filteredListA.length === 0 && (
+            {filteredTodaysAppointments.length === 0 && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <p className="text-gray-500">No patients with completed pre-consults today</p>
+                <p className="text-gray-500">No appointments scheduled for today</p>
               </div>
             )}
           </section>
@@ -287,40 +343,38 @@ export default function MainPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
                 </div>
               ) : (
-                filteredListB.slice(0, 5).map((patient) => (
+                filteredAllPatients.slice(0, 12).map((patient) => (
                   <div
                     key={patient.id}
                     onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer] group"
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
                   >
                     <div className="flex items-start justify-between">
                       <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
                       {patient.case && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                        {patient.case}
-                      </div>
-                    )}
-                      
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+                          {patient.case}
+                        </div>
+                      )}
                     </div>
                     <div className="text-sm text-gray-500">
-                        {patient.age}yrs · {patient.gender}
-                      </div>
-                    
-                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      {patient.age}yrs · {patient.gender}
+                    </div>
+                    <div className="mt-5 pt-3 border-t border-gray-100">
                       {patient.last_visit_at && (
-                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
-                    )}
+                        <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
+                      )}
                     </div>
                   </div>
                 ))
               )}
             </div>
-            {filteredListB.length > 5 && (
+            {filteredAllPatients.length > 12 && (
               <button className="text-[#024CDB] hover:underline text-sm font-medium">
-                View all ({filteredListB.length})
+                View all ({filteredAllPatients.length})
               </button>
             )}
-            {filteredListB.length === 0 && (
+            {filteredAllPatients.length === 0 && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                 <p className="text-gray-500">No patients found</p>
               </div>
@@ -337,39 +391,30 @@ export default function MainPage() {
         <form onSubmit={(e) => { e.preventDefault(); handleAddPatient(); }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={newPatient.phone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              className="input-field"
+              required
+            />
+            {existingPatient && (
+              <p className="text-sm text-green-600 mt-1">Patient found! Details auto-filled.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={newPatient.name}
               onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-              className="input-field"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Case (optional)
-            </label>
-            <input
-              type="text"
-              value={newPatient.case}
-              onChange={(e) => setNewPatient({ ...newPatient, case: e.target.value })}
-              className="input-field"
-              placeholder="e.g., Hypertension, Diabetes"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              value={newPatient.phone}
-              onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-              className="input-field"
+              className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+              readOnly={!!existingPatient}
               required
             />
           </div>
@@ -383,7 +428,8 @@ export default function MainPage() {
                 type="number"
                 value={newPatient.age}
                 onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
-                className="input-field"
+                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+                readOnly={!!existingPatient}
                 required
               />
             </div>
@@ -395,7 +441,8 @@ export default function MainPage() {
               <select
                 value={newPatient.gender}
                 onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-                className="input-field"
+                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+                disabled={!!existingPatient}
                 required
               >
                 <option value="Male">Male</option>
@@ -406,15 +453,36 @@ export default function MainPage() {
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={() => setShowAddPatient(false)} className="btn-secondary">
+            <button type="button" onClick={handleCloseModal} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
-              Create
-            </button>
+            {existingPatient ? (
+              <button 
+                type="button" 
+                onClick={handleAddToQueue}
+                className="btn-primary"
+              >
+                Add to Queue
+              </button>
+            ) : (
+              <button type="submit" className="btn-primary">
+                Create
+              </button>
+            )}
           </div>
         </form>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={showRemoveConfirmation}
+        onClose={() => setShowRemoveConfirmation(false)}
+        onConfirm={handleConfirmRemove}
+        title="Remove Patient from Queue"
+        message={`Are you sure you want to remove ${appointmentToRemove?.patients?.name} from today's queue? This action cannot be undone.`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

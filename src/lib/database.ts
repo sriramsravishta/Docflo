@@ -538,7 +538,7 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
     .from('users')
     .select('org_id')
     .eq('auth_id', docId)
-    .single();
+    .maybeSingle();
 
   if (!userData) return null;
 

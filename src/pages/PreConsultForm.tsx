@@ -129,6 +129,26 @@ export default function PreConsultForm() {
 
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
+      // ✅ Step 3: Mark today's appointment pre_consult_filled = true for this patient
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+      const { error: apptUpdateError } = await supabase
+        .from('appointments')
+        .update({ pre_consult_filled: true })
+        .eq('patient_id', patientId)
+        .eq('doc_id', docId)
+        .eq('completed', false)
+        .gte('created_at', startOfToday.toISOString())
+        .lt('created_at', startOfTomorrow.toISOString());
+
+      if (apptUpdateError) {
+        console.error('Error updating appointment pre_consult_filled:', apptUpdateError);
+        throw new Error('Failed to update appointment status. Please try again.');
+      }
+
       // Success UI
       setIsSubmitted(true);
     } catch (error) {
@@ -147,9 +167,7 @@ export default function PreConsultForm() {
             <span className="text-red-500 text-2xl">!</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Found</h2>
-          <p className="text-gray-600">
-            The pre-consult form you're looking for doesn't exist or may have been removed.
-          </p>
+          <p className="text-gray-600">The pre-consult form you're looking for doesn't exist or may have been removed.</p>
         </div>
       </div>
     );
@@ -172,9 +190,7 @@ export default function PreConsultForm() {
         <div className="text-center max-w-md">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Submitted Successfully!</h2>
-          <p className="text-gray-600">
-            Your documents have been sent to your doctor. You'll be called when it's your turn.
-          </p>
+          <p className="text-gray-600">Your documents have been sent to your doctor. You'll be called when it's your turn.</p>
         </div>
       </div>
     );
@@ -185,16 +201,12 @@ export default function PreConsultForm() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#024CDB] mb-2">Pre-Consult Form</h1>
-          <p className="text-gray-600">
-            Upload your medical documents to help your doctor prepare for your visit
-          </p>
+          <p className="text-gray-600">Upload your medical documents to help your doctor prepare for your visit</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
-          <p className="text-gray-600 mb-6">
-            Upload any prescriptions, reports, or medical documents (images or PDFs)
-          </p>
+          <p className="text-gray-600 mb-6">Upload any prescriptions, reports, or medical documents (images or PDFs)</p>
 
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
@@ -219,20 +231,14 @@ export default function PreConsultForm() {
                   <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
                     <span className="mr-2">📎</span>
                     <span className="flex-1">{file.name}</span>
-                    <span className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(1)} MB
-                    </span>
+                    <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {submitError && (
-            <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-              {submitError}
-            </div>
-          )}
+          {submitError && <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{submitError}</div>}
 
           <div className="mt-8">
             <button
@@ -248,10 +254,7 @@ export default function PreConsultForm() {
 
       {showConfirmation && (
         <div className="modal-overlay" onClick={() => setShowConfirmation(false)}>
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Pre-Consult Documents</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to submit these documents? They will be sent to your doctor for review.

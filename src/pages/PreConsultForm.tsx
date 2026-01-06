@@ -1,7 +1,4 @@
-On submitting the pre consultation documents, the status of the pre consultation filled colum in the appointments table containg todays appointment of that patient should be changed to value as true, the doc id and patoent id are prent in the form url here is an example form url for ref"https://docflo-healthcare-wo-0zgb.bolt.host/pre-consult/new?docId=08781faa-6cff-4391-a0e5-e5f43a672ffc&patientId=669e3141-b03a-4ff0-a5b3-ac56eca342ea"
-
-
-modify the code with the following change so that i can copy paste the while code - """import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, CheckCircle } from 'lucide-react';
 import { getPreConsultById, createPreConsultWithDocuments } from '../lib/database';
@@ -17,11 +14,14 @@ export default function PreConsultForm() {
   const [documents, setDocuments] = useState<File[]>([]);
   const [isNewForm, setIsNewForm] = useState(false);
 
-  // NEW: store existing form data (so we can create a new row with correct ids)
+  // store existing form data (so we can create a new row with correct ids)
   const [preConsultData, setPreConsultData] = useState<any>(null);
 
-  // NEW: inline error (no browser alert)
+  // inline error (no browser alert)
   const [submitError, setSubmitError] = useState('');
+
+  // optional warning to show after success (if appointment couldn't be updated)
+  const [postSubmitNote, setPostSubmitNote] = useState('');
 
   useEffect(() => {
     loadPreConsult();
@@ -32,6 +32,7 @@ export default function PreConsultForm() {
     try {
       setLoading(true);
       setSubmitError('');
+      setPostSubmitNote('');
 
       if (!preConsultId) {
         console.error('No pre-consult ID provided');
@@ -86,6 +87,7 @@ export default function PreConsultForm() {
       setIsUploading(true);
       setShowConfirmation(false);
       setSubmitError('');
+      setPostSubmitNote('');
 
       // Step 1: Upload ALL files first
       const uploadedUrls: string[] = [];
@@ -105,23 +107,21 @@ export default function PreConsultForm() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        const { data: urlData } = supabase.storage
-          .from('pre-consultation-documents')
-          .getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
 
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: ONLY AFTER uploads complete → CREATE a NEW row with URLs already filled
-      let docId: string | null = null;
-      let patientId: string | null = null;
+      // Step 2: Resolve docId + patientId
+      // ✅ docId/patientId are present in URL like:
+      // /pre-consult/new?docId=...&patientId=...
+      const urlParams = new URLSearchParams(window.location.search);
 
-      if (isNewForm) {
-        const urlParams = new URLSearchParams(window.location.search);
-        docId = urlParams.get('docId');
-        patientId = urlParams.get('patientId');
-      } else {
-        // For existing form link, derive docId & patientId from the loaded row
+      let docId: string | null = urlParams.get('docId');
+      let patientId: string | null = urlParams.get('patientId');
+
+      // Fallback: if opened via an existing preConsultId link (without query params)
+      if (!docId || !patientId) {
         docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
         patientId = preConsultData?.patient_id || null;
       }
@@ -130,7 +130,57 @@ export default function PreConsultForm() {
         throw new Error('Missing doctor/patient info. Please try again or request a new link.');
       }
 
+      // Step 3: Create pre-consult row with documents
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
+
+      // Step 4: Update TODAY'S appointment -> pre_consult_filled (boolean) = true
+      // We find today's (local) incomplete appointment for this docId+patientId and mark it true.
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+      // Fetch the most recent "today" appointment (incomplete)
+      const { data: appts, error: apptFindError } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('doc_id', docId)
+        .eq('patient_id', patientId)
+        .eq('completed', false)
+        .gte('created_at', startOfToday.toISOString())
+        .lt('created_at', startOfTomorrow.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (apptFindError) {
+        console.error('Error finding today appointment:', apptFindError);
+        // don't block patient submission
+        setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
+        setIsSubmitted(true);
+        return;
+      }
+
+      if (!appts || appts.length === 0) {
+        // no matching appointment found for today
+        setPostSubmitNote('Documents submitted. No "today" appointment was found to update.');
+        setIsSubmitted(true);
+        return;
+      }
+
+      const appointmentId = appts[0].id;
+
+      const { error: apptUpdateError } = await supabase
+        .from('appointments')
+        .update({ pre_consult_filled: true })
+        .eq('id', appointmentId);
+
+      if (apptUpdateError) {
+        console.error('Error updating appointments.pre_consult_filled:', apptUpdateError);
+        setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
+        setIsSubmitted(true);
+        return;
+      }
 
       // Success UI
       setIsSubmitted(true);
@@ -150,9 +200,7 @@ export default function PreConsultForm() {
             <span className="text-red-500 text-2xl">!</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Found</h2>
-          <p className="text-gray-600">
-            The pre-consult form you're looking for doesn't exist or may have been removed.
-          </p>
+          <p className="text-gray-600">The pre-consult form you're looking for doesn't exist or may have been removed.</p>
         </div>
       </div>
     );
@@ -175,9 +223,13 @@ export default function PreConsultForm() {
         <div className="text-center max-w-md">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Submitted Successfully!</h2>
-          <p className="text-gray-600">
-            Your documents have been sent to your doctor. You'll be called when it's your turn.
-          </p>
+          <p className="text-gray-600">Your documents have been sent to your doctor. You'll be called when it's your turn.</p>
+
+          {postSubmitNote && (
+            <div className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+              {postSubmitNote}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -188,16 +240,12 @@ export default function PreConsultForm() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#024CDB] mb-2">Pre-Consult Form</h1>
-          <p className="text-gray-600">
-            Upload your medical documents to help your doctor prepare for your visit
-          </p>
+          <p className="text-gray-600">Upload your medical documents to help your doctor prepare for your visit</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
-          <p className="text-gray-600 mb-6">
-            Upload any prescriptions, reports, or medical documents (images or PDFs)
-          </p>
+          <p className="text-gray-600 mb-6">Upload any prescriptions, reports, or medical documents (images or PDFs)</p>
 
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
@@ -222,20 +270,14 @@ export default function PreConsultForm() {
                   <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
                     <span className="mr-2">📎</span>
                     <span className="flex-1">{file.name}</span>
-                    <span className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(1)} MB
-                    </span>
+                    <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {submitError && (
-            <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-              {submitError}
-            </div>
-          )}
+          {submitError && <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{submitError}</div>}
 
           <div className="mt-8">
             <button
@@ -251,10 +293,7 @@ export default function PreConsultForm() {
 
       {showConfirmation && (
         <div className="modal-overlay" onClick={() => setShowConfirmation(false)}>
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Pre-Consult Documents</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to submit these documents? They will be sent to your doctor for review.
@@ -273,4 +312,3 @@ export default function PreConsultForm() {
     </div>
   );
 }
-"""

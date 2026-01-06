@@ -20,7 +20,7 @@ export default function PreConsultForm() {
   // inline error (no browser alert)
   const [submitError, setSubmitError] = useState('');
 
-  // optional warning to show after success (if appointment couldn't be updated)
+  // optional note shown after success (if appointment couldn't be updated)
   const [postSubmitNote, setPostSubmitNote] = useState('');
 
   useEffect(() => {
@@ -107,20 +107,19 @@ export default function PreConsultForm() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage
+          .from('pre-consultation-documents')
+          .getPublicUrl(uploadData.path);
 
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: Resolve docId + patientId
-      // ✅ docId/patientId are present in URL like:
-      // /pre-consult/new?docId=...&patientId=...
+      // Step 2: Resolve docId + patientId (prefer URL query params; fallback to loaded preConsult row)
       const urlParams = new URLSearchParams(window.location.search);
 
       let docId: string | null = urlParams.get('docId');
       let patientId: string | null = urlParams.get('patientId');
 
-      // Fallback: if opened via an existing preConsultId link (without query params)
       if (!docId || !patientId) {
         docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
         patientId = preConsultData?.patient_id || null;
@@ -133,21 +132,23 @@ export default function PreConsultForm() {
       // Step 3: Create pre-consult row with documents
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
-      // Step 4: Update TODAY'S appointment -> pre_consult_filled (boolean) = true
-      // We find today's (local) incomplete appointment for this docId+patientId and mark it true.
+      // Step 4: If there exists an appointment for THIS patient+doctor created on the day of upload,
+      // update that row's pre_consult_filled boolean to true.
+      //
+      // NOTE: This uses created_at to detect "same day". If you instead store an explicit appointment_date,
+      // use that column instead (more reliable than timezone-sensitive created_at comparisons).
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
 
       const startOfTomorrow = new Date(startOfToday);
       startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-      // Fetch the most recent "today" appointment (incomplete)
+      // Find today's appointment (if multiple exist, update the latest one)
       const { data: appts, error: apptFindError } = await supabase
         .from('appointments')
         .select('id')
         .eq('doc_id', docId)
         .eq('patient_id', patientId)
-        .eq('completed', false)
         .gte('created_at', startOfToday.toISOString())
         .lt('created_at', startOfTomorrow.toISOString())
         .order('created_at', { ascending: false })
@@ -155,15 +156,14 @@ export default function PreConsultForm() {
 
       if (apptFindError) {
         console.error('Error finding today appointment:', apptFindError);
-        // don't block patient submission
+        // Do not block submission for patient
         setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
         setIsSubmitted(true);
         return;
       }
 
       if (!appts || appts.length === 0) {
-        // no matching appointment found for today
-        setPostSubmitNote('Documents submitted. No "today" appointment was found to update.');
+        // No appointment created today — nothing to update (as per your requirement)
         setIsSubmitted(true);
         return;
       }
@@ -200,7 +200,9 @@ export default function PreConsultForm() {
             <span className="text-red-500 text-2xl">!</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Found</h2>
-          <p className="text-gray-600">The pre-consult form you're looking for doesn't exist or may have been removed.</p>
+          <p className="text-gray-600">
+            The pre-consult form you're looking for doesn't exist or may have been removed.
+          </p>
         </div>
       </div>
     );
@@ -223,7 +225,9 @@ export default function PreConsultForm() {
         <div className="text-center max-w-md">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Submitted Successfully!</h2>
-          <p className="text-gray-600">Your documents have been sent to your doctor. You'll be called when it's your turn.</p>
+          <p className="text-gray-600">
+            Your documents have been sent to your doctor. You'll be called when it's your turn.
+          </p>
 
           {postSubmitNote && (
             <div className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
@@ -245,7 +249,9 @@ export default function PreConsultForm() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
-          <p className="text-gray-600 mb-6">Upload any prescriptions, reports, or medical documents (images or PDFs)</p>
+          <p className="text-gray-600 mb-6">
+            Upload any prescriptions, reports, or medical documents (images or PDFs)
+          </p>
 
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
             <Upload className="w-16 h-16 text-gray-400 mb-4" />
@@ -277,7 +283,9 @@ export default function PreConsultForm() {
             </div>
           )}
 
-          {submitError && <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{submitError}</div>}
+          {submitError && (
+            <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{submitError}</div>
+          )}
 
           <div className="mt-8">
             <button
@@ -293,7 +301,10 @@ export default function PreConsultForm() {
 
       {showConfirmation && (
         <div className="modal-overlay" onClick={() => setShowConfirmation(false)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Pre-Consult Documents</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to submit these documents? They will be sent to your doctor for review.

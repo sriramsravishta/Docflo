@@ -85,7 +85,6 @@ setIsUploading(true);
 setShowConfirmation(false);
 setSubmitError('');
 
-```
   // Step 1: Upload ALL files first
   const uploadedUrls: string[] = [];
 
@@ -140,7 +139,6 @@ setSubmitError('');
   setIsUploading(false);
 }
 
-```
 
 };
 

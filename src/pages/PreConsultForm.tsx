@@ -163,33 +163,6 @@ export default function PreConsultForm() {
       setIsUploading(false);
     }
   };
-        setIsSubmitted(true);
-        return;
-      }
-
-      const appointmentId = appts[0].id;
-
-      const { error: apptUpdateError } = await supabase
-        .from('appointments')
-        .update({ pre_consult_filled: true })
-        .eq('id', appointmentId);
-
-      if (apptUpdateError) {
-        console.error('Error updating appointments.pre_consult_filled:', apptUpdateError);
-        setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
-        setIsSubmitted(true);
-        return;
-      }
-
-      // Success UI
-      setIsSubmitted(true);
-    } catch (error) {
-      console.error('Error submitting pre-consult:', error);
-      setSubmitError('Failed to submit. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   if (formNotFound) {
     return (

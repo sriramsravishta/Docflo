@@ -107,16 +107,20 @@ export default function PreConsultForm() {
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: ONLY AFTER uploads complete → CREATE a NEW row with URLs already filled
+      // Step 2: Resolve docId + patientId
+      // ✅ IMPORTANT: docId/patientId are present in URL for /pre-consult/new
+      // Example: .../pre-consult/new?docId=...&patientId=...
+      const urlParams = new URLSearchParams(window.location.search);
+
       let docId: string | null = null;
       let patientId: string | null = null;
 
-      if (isNewForm) {
-        const urlParams = new URLSearchParams(window.location.search);
-        docId = urlParams.get('docId');
-        patientId = urlParams.get('patientId');
-      } else {
-        // For existing form link, derive docId & patientId from the loaded row
+      // Always prefer URL params if present (covers your "new" form URL case)
+      docId = urlParams.get('docId');
+      patientId = urlParams.get('patientId');
+
+      // Fallback: if opened via an existing preConsultId link, use the loaded row
+      if (!docId || !patientId) {
         docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
         patientId = preConsultData?.patient_id || null;
       }
@@ -125,10 +129,14 @@ export default function PreConsultForm() {
         throw new Error('Missing doctor/patient info. Please try again or request a new link.');
       }
 
+      // Step 3: Create pre-consult row with documents
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
-      // ✅ Step 3: Update today's appointment row -> pre_consult_filled = true
-      // (Assumes appointments table uses boolean columns: pre_consult_filled, completed)
+      // Step 4: Update TODAY'S appointment row -> pre_consult_filled = true
+      // Assumptions:
+      // - appointments table columns:
+      //   doc_id (uuid), patient_id (uuid), created_at (timestamp), completed (boolean), pre_consult_filled (boolean)
+      // - "today's appointment" means created_at within today's date window (local day)
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const startOfTomorrow = new Date(startOfToday);
@@ -137,8 +145,8 @@ export default function PreConsultForm() {
       const { error: appointmentUpdateError } = await supabase
         .from('appointments')
         .update({ pre_consult_filled: true })
-        .eq('patient_id', patientId)
         .eq('doc_id', docId)
+        .eq('patient_id', patientId)
         .eq('completed', false)
         .gte('created_at', startOfToday.toISOString())
         .lt('created_at', startOfTomorrow.toISOString());

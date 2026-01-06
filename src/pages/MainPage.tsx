@@ -1,62 +1,88 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MessageSquare, Search } from 'lucide-react';
+import { Plus, MessageSquare, Search, MoreVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import PatientCard from '../components/PatientCard';
 import Modal from '../components/Modal';
-import { createPatient, getPatients, getPreConsults } from '../lib/database';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment } from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function MainPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [patientsWithPreConsult, setPatientsWithPreConsult] = useState<any[]>([]);
+  const [todaysAppointments, setTodaysAppointments] = useState<any[]>([]);
   const [allPatients, setAllPatients] = useState<any[]>([]);
+  const [existingPatient, setExistingPatient] = useState<any>(null);
+  const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
+  const [appointmentToRemove, setAppointmentToRemove] = useState<any>(null);
+  const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
   const [newPatient, setNewPatient] = useState({
-    name: '',
-    case: '',
     phone: '',
+    name: '',
     age: '',
     gender: 'Male',
   });
 
   useEffect(() => {
-    loadPatients();
+    loadData();
   }, []);
 
-  const loadPatients = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const patients = await getPatients();
-      const today = new Date().toISOString().split('T')[0];
-
-      const patientsWithTodayPreConsult = [];
-      for (const patient of patients) {
-        const preConsults = await getPreConsults(patient.id);
-        const todaySubmitted = preConsults.find(pc =>
-          pc.status === 'Submitted' &&
-          pc.created_at.startsWith(today)
-        );
-        if (todaySubmitted) {
-          patientsWithTodayPreConsult.push(patient);
-        }
-      }
-
-      setPatientsWithPreConsult(patientsWithTodayPreConsult);
+      const [appointments, patients] = await Promise.all([
+        getTodaysAppointments(user!.id),
+        getPatients()
+      ]);
+      
+      setTodaysAppointments(appointments);
       setAllPatients(patients);
     } catch (error) {
-      console.error('Error loading patients:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredListA = patientsWithPreConsult.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const handlePhoneChange = async (phone: string) => {
+    setNewPatient({ ...newPatient, phone });
+    
+    if (phone.length >= 10) {
+      try {
+        const patient = await getPatientByPhone(phone, user!.id);
+        if (patient) {
+          setExistingPatient(patient);
+          setNewPatient({
+            phone,
+            name: patient.name,
+            age: patient.age.toString(),
+            gender: patient.gender,
+          });
+        } else {
+          setExistingPatient(null);
+          setNewPatient({
+            phone,
+            name: '',
+            age: '',
+            gender: 'Male',
+          });
+        }
+      } catch (error) {
+        console.error('Error checking patient:', error);
+      }
+    } else {
+      setExistingPatient(null);
+    }
+  };
+
+  const filteredTodaysAppointments = todaysAppointments.filter(appointment =>
+    appointment.patients?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredListB = allPatients.filter(p =>
+  const filteredAllPatients = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -69,24 +95,102 @@ export default function MainPage() {
     });
   };
 
-  const handleAddPatient = async () => {
+  const handleCreatePatient = async () => {
     try {
-      await createPatient({
+      const patient = await createPatient({
         name: newPatient.name,
         age: parseInt(newPatient.age),
         phone: newPatient.phone,
-        case: newPatient.case || undefined,
         gender: newPatient.gender,
       });
+      
+      // Create appointment for new patient
+      await createAppointment(patient.id, user!.id);
+      
       setShowAddPatient(false);
-      setNewPatient({ name: '', case: '', phone: '', age: '', gender: 'Male' });
-      await loadPatients();
+      setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+      setExistingPatient(null);
+      await loadData();
     } catch (error) {
       console.error('Error creating patient:', error);
       alert('Failed to create patient');
     }
   };
 
+  const handleAddToQueue = async () => {
+    try {
+      await createAppointment(existingPatient.id, user!.id);
+      setShowAddPatient(false);
+      setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+      setExistingPatient(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding to queue:', error);
+      alert('Failed to add to queue');
+    }
+  };
+
+  const handleMoveUp = async (appointment: any) => {
+    const currentIndex = todaysAppointments.findIndex(a => a.id === appointment.id);
+    if (currentIndex > 0) {
+      const aboveAppointment = todaysAppointments[currentIndex - 1];
+      
+      try {
+        await Promise.all([
+          updateAppointmentQueue(appointment.id, aboveAppointment.queue),
+          updateAppointmentQueue(aboveAppointment.id, appointment.queue)
+        ]);
+        await loadData();
+      } catch (error) {
+        console.error('Error moving appointment up:', error);
+        alert('Failed to move appointment');
+      }
+    }
+    setShowKebabMenu(null);
+  };
+
+  const handleMoveDown = async (appointment: any) => {
+    const currentIndex = todaysAppointments.findIndex(a => a.id === appointment.id);
+    if (currentIndex < todaysAppointments.length - 1) {
+      const belowAppointment = todaysAppointments[currentIndex + 1];
+      
+      try {
+        await Promise.all([
+          updateAppointmentQueue(appointment.id, belowAppointment.queue),
+          updateAppointmentQueue(belowAppointment.id, appointment.queue)
+        ]);
+        await loadData();
+      } catch (error) {
+        console.error('Error moving appointment down:', error);
+        alert('Failed to move appointment');
+      }
+    }
+    setShowKebabMenu(null);
+  };
+
+  const handleRemoveClick = (appointment: any) => {
+    setAppointmentToRemove(appointment);
+    setShowRemoveConfirmation(true);
+    setShowKebabMenu(null);
+  };
+
+  const handleConfirmRemove = async () => {
+    try {
+      await completeAppointment(appointmentToRemove.id);
+      setShowRemoveConfirmation(false);
+      setAppointmentToRemove(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error removing appointment:', error);
+      alert('Failed to remove appointment');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAddPatient(false);
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+    setExistingPatient(null);
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />

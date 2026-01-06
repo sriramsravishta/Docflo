@@ -455,3 +455,100 @@ export const updateConsultSummary = async (consultId: string, summaryUpdates: an
   if (error) throw error;
   return data;
 };
+
+// Appointments functions
+export const createAppointment = async (patientId: string, docId: string) => {
+  // Get next queue number for today
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data: existingAppointments } = await supabase
+    .from('appointments')
+    .select('queue')
+    .eq('doc_id', docId)
+    .gte('created_at', `${today}T00:00:00.000Z`)
+    .lt('created_at', `${today}T23:59:59.999Z`)
+    .order('queue', { ascending: false })
+    .limit(1);
+
+  const nextQueue = existingAppointments && existingAppointments.length > 0 
+    ? existingAppointments[0].queue + 1 
+    : 1;
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .insert({
+      patient_id: patientId,
+      doc_id: docId,
+      queue: nextQueue,
+      pre_consult_filled: 'no',
+      completed: 'no'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getTodaysAppointments = async (docId: string) => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(`
+      *,
+      patients (id, name, age, gender, phone)
+    `)
+    .eq('doc_id', docId)
+    .eq('completed', 'no')
+    .gte('created_at', `${today}T00:00:00.000Z`)
+    .lt('created_at', `${today}T23:59:59.999Z`)
+    .order('queue', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const updateAppointmentQueue = async (appointmentId: string, newQueue: number) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ queue: newQueue })
+    .eq('id', appointmentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const completeAppointment = async (appointmentId: string) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ completed: 'yes' })
+    .eq('id', appointmentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getPatientByPhone = async (phone: string, docId: string) => {
+  const { data: userData } = await supabase
+    .from('users')
+    .select('org_id')
+    .eq('auth_id', docId)
+    .single();
+
+  if (!userData) return null;
+
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .eq('phone', phone)
+    .eq('org_id', userData.org_id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};

@@ -541,7 +541,7 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
     .select('org_id')
     .eq('auth_id', docId)
     .limit(1)
-    .maybeSingle();
+    .single();
 
   if (!userData) return null;
 
@@ -550,8 +550,12 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
     .select('*')
     .eq('phone', phone)
     .eq('org_id', userData.org_id)
-    .maybeSingle();
+    .limit(1);
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error('Error fetching patient by phone:', error);
+    return null;
+  }
+  
+  return data && data.length > 0 ? data[0] : null;
 };

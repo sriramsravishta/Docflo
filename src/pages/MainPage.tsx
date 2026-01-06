@@ -388,7 +388,14 @@ export default function MainPage() {
         onClose={() => setShowAddPatient(false)}
         title="Add New Patient"
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleAddPatient(); }} className="space-y-4">
+        <form onSubmit={(e) => { 
+          e.preventDefault(); 
+          if (existingPatient) {
+            handleAddToQueue();
+          } else {
+            handleCreatePatient();
+          }
+        }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone <span className="text-red-500">*</span>

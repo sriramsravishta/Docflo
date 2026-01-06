@@ -257,7 +257,7 @@ export default function MainPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {appointment.pre_consult_filled === 'yes' && (
+                          {appointment.pre_consult_filled === true && (
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                           )}
                           <div className="relative">

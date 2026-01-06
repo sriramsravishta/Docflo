@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('organizations')
         .select('id')
         .eq('auth_id', authData.user.id)
+        .limit(1)
         .single();
 
       if (orgData) {

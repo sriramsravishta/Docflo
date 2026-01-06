@@ -14,6 +14,7 @@ export const createPatient = async (patientData: {
     .from('users')
     .select('org_id')
     .eq('auth_id', user.id)
+    .limit(1)
     .single();
 
   if (!userData) throw new Error('User not found');
@@ -40,6 +41,7 @@ export const getPatients = async () => {
     .from('users')
     .select('org_id')
     .eq('auth_id', user.id)
+    .limit(1)
     .single();
 
   if (!userData) throw new Error('User not found');
@@ -538,6 +540,7 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
     .from('users')
     .select('org_id')
     .eq('auth_id', docId)
+    .limit(1)
     .maybeSingle();
 
   if (!userData) return null;

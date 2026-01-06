@@ -249,12 +249,12 @@ export default function MainPage() {
                           
                           <div>
                             <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-                              {appointment.patients?.name}{appointment.pre_consult_filled === true && (
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          )}
+                              {appointment.patients?.name}
                             </h3>
                             <div className="text-sm text-gray-500">
-                              {appointment.patients?.age}yrs · {appointment.patients?.gender}
+                              {appointment.patients?.age}yrs · {appointment.patients?.gender} · {appointment.pre_consult_filled === true && (
+                            <h1 className="w-3 h-3 bg-green-500 rounded-full"></h1>
+                          )}
                             </div>
                           </div>
                         </div>

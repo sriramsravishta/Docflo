@@ -230,7 +230,7 @@ export default function MainPage() {
         <div className="space-y-8">
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-10">
-              Today's Pre-consult Completed
+              Today's Patients
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
               {loading ? (
@@ -252,14 +252,14 @@ export default function MainPage() {
                               {appointment.patients?.name}
                             </h3>
                             <div className="text-sm text-gray-500">
-                              {appointment.patients?.age}yrs · {appointment.patients?.gender}
+                              {appointment.patients?.age}yrs · {appointment.patients?.gender} {appointment.pre_consult_filled === true && (
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          )}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {appointment.pre_consult_filled === true && (
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          )}
+                          
                           <div className="relative">
                             <button
                               onClick={(e) => {

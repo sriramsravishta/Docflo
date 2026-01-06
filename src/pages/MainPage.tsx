@@ -253,7 +253,7 @@ export default function MainPage() {
                             </h3>
                             <div className="text-sm text-gray-500">
                               {appointment.patients?.age}yrs · {appointment.patients?.gender} · {appointment.pre_consult_filled === true && (
-                            <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                            <span className="w-3 h-3 bg-green-500 rounded-full"/>
                           )}
                             </div>
                           </div>

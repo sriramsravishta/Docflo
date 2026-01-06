@@ -251,11 +251,15 @@ export default function MainPage() {
                             <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
                               {appointment.patients?.name}
                             </h3>
-                            <div className="text-sm text-gray-500">
-                              {appointment.patients?.age}yrs · {appointment.patients?.gender} · {appointment.pre_consult_filled === true && (
-                            <span className="w-3 h-3 bg-green-500 rounded-full"/>
-                          )}
-                            </div>
+                            <div className="text-sm text-gray-500 flex items-center gap-2">
+  <span>
+    {appointment.patients?.age}yrs · {appointment.patients?.gender}
+  </span>
+
+  {appointment.pre_consult_filled === true && (
+    <span className="w-3 h-3 bg-green-500 rounded-full inline-block" />
+  )}
+</div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">

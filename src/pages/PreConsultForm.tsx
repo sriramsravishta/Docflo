@@ -114,47 +114,75 @@ export default function PreConsultForm() {
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: Resolve docId + patientId from URL query params
+      // Step 2: Resolve docId + patientId (prefer URL query params; fallback to loaded preConsult row)
       const urlParams = new URLSearchParams(window.location.search);
-      const docId = urlParams.get('docId');
-      const patientId = urlParams.get('patientId');
+
+      let docId: string | null = urlParams.get('docId');
+      let patientId: string | null = urlParams.get('patientId');
 
       if (!docId || !patientId) {
-        throw new Error('Missing doctor/patient info in URL. Please try again or request a new link.');
+        docId = preConsultData?.doc_id || preConsultData?.doctor_id || null;
+        patientId = preConsultData?.patient_id || null;
+      }
+
+      if (!docId || !patientId) {
+        throw new Error('Missing doctor/patient info. Please try again or request a new link.');
       }
 
       // Step 3: Create pre-consult row with documents
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
-      // Step 4: Update appointment pre_consult_filled if exists for today
+      // Step 4: If there exists an appointment for THIS patient+doctor created on the day of upload,
+      // update that row's pre_consult_filled boolean to true.
+      //
+      // NOTE: This uses created_at to detect "same day". If you instead store an explicit appointment_date,
+      // use that column instead (more reliable than timezone-sensitive created_at comparisons).
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
+
       const startOfTomorrow = new Date(startOfToday);
       startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-      const { data: appointments, error: appointmentError } = await supabase
+      // Find today's appointment (if multiple exist, update the latest one)
+      const { data: appts, error: apptFindError } = await supabase
         .from('appointments')
         .select('id')
         .eq('doc_id', docId)
         .eq('patient_id', patientId)
         .gte('created_at', startOfToday.toISOString())
         .lt('created_at', startOfTomorrow.toISOString())
+        .order('created_at', { ascending: false })
         .limit(1);
 
-      if (appointmentError) {
-        console.error('Error checking appointments:', appointmentError);
-      } else if (appointments && appointments.length > 0) {
-        const { error: updateError } = await supabase
-          .from('appointments')
-          .update({ pre_consult_filled: true })
-          .eq('id', appointments[0].id);
-
-        if (updateError) {
-          console.error('Error updating appointment:', updateError);
-        }
+      if (apptFindError) {
+        console.error('Error finding today appointment:', apptFindError);
+        // Do not block submission for patient
+        setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
+        setIsSubmitted(true);
+        return;
       }
 
-      // Success - show completion screen
+      if (!appts || appts.length === 0) {
+        // No appointment created today — nothing to update (as per your requirement)
+        setIsSubmitted(true);
+        return;
+      }
+
+      const appointmentId = appts[0].id;
+
+      const { error: apptUpdateError } = await supabase
+        .from('appointments')
+        .update({ pre_consult_filled: true })
+        .eq('id', appointmentId);
+
+      if (apptUpdateError) {
+        console.error('Error updating appointments.pre_consult_filled:', apptUpdateError);
+        setPostSubmitNote('Documents submitted, but appointment status could not be updated automatically.');
+        setIsSubmitted(true);
+        return;
+      }
+
+      // Success UI
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting pre-consult:', error);

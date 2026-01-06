@@ -102,9 +102,7 @@ export default function PreConsultForm() {
           throw new Error('Failed to upload document: ' + file.name);
         }
 
-        const { data: urlData } = supabase.storage
-          .from('pre-consultation-documents')
-          .getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
 
         uploadedUrls.push(urlData.publicUrl);
       }
@@ -129,13 +127,14 @@ export default function PreConsultForm() {
 
       await createPreConsultWithDocuments(docId, patientId, uploadedUrls);
 
-      // ✅ Step 3: Mark today's appointment pre_consult_filled = true for this patient
+      // ✅ Step 3: Update today's appointment row -> pre_consult_filled = true
+      // (Assumes appointments table uses boolean columns: pre_consult_filled, completed)
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const startOfTomorrow = new Date(startOfToday);
       startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-      const { error: apptUpdateError } = await supabase
+      const { error: appointmentUpdateError } = await supabase
         .from('appointments')
         .update({ pre_consult_filled: true })
         .eq('patient_id', patientId)
@@ -144,9 +143,9 @@ export default function PreConsultForm() {
         .gte('created_at', startOfToday.toISOString())
         .lt('created_at', startOfTomorrow.toISOString());
 
-      if (apptUpdateError) {
-        console.error('Error updating appointment pre_consult_filled:', apptUpdateError);
-        throw new Error('Failed to update appointment status. Please try again.');
+      if (appointmentUpdateError) {
+        console.error('Error updating appointments.pre_consult_filled:', appointmentUpdateError);
+        throw new Error('Failed to update appointment status.');
       }
 
       // Success UI

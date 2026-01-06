@@ -30,7 +30,6 @@ try {
 setLoading(true);
 setSubmitError('');
 
-```
   if (!preConsultId) {
     console.error('No pre-consult ID provided');
     setFormNotFound(true);
@@ -61,8 +60,6 @@ setSubmitError('');
 } finally {
   setLoading(false);
 }
-
-```
 
 };
 
@@ -277,8 +274,6 @@ Upload your medical documents to help your doctor prepare for your visit
     </div>
   )}
 </div>
-
-```
 
 );
 }

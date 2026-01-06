@@ -246,9 +246,7 @@ export default function MainPage() {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-3">
-                          <div className="flex items-center justify-center w-8 h-8 bg-[#024CDB] text-white rounded-full text-sm font-semibold">
-                            {appointment.queue}
-                          </div>
+                          
                           <div>
                             <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
                               {appointment.patients?.name}

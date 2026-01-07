@@ -38,6 +38,7 @@ import {
   deleteConsultMedicine,
   searchMedicines,
   updateConsultSummary,
+  completeTodaysAppointmentByPatientAndDoctor,
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -702,6 +703,11 @@ export default function PatientProfile() {
         });
 
         alert('Consultation recorded and saved successfully');
+        try {
+  await completeTodaysAppointmentByPatientAndDoctor(patientId!, user!.id);
+} catch (error) {
+  console.error('Error marking appointment as completed:', error);
+}
         await loadPatientData();
       } catch (error) {
         console.error('Error saving consultation:', error);

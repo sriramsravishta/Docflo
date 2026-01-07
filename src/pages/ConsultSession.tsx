@@ -177,6 +177,14 @@ export default function ConsultSession() {
           recordingFileUrl
         );
 
+        // Update appointment completed status if exists for today
+        try {
+          await updateTodaysAppointmentCompleted(user!.id, patientId!);
+        } catch (error) {
+          console.error('Error updating appointment status:', error);
+          // Don't block the consultation flow if appointment update fails
+        }
+
         console.log('Consultation created with recording URL:', recordingFileUrl);
         setConsultId(consult.id);
 

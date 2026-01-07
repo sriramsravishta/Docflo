@@ -33,7 +33,7 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
 
   const { error: updateError } = await supabase
     .from('appointments')
-    .update({ completed: 'yes' })
+    .update({ completed: 'TRUE' })
     .in('id', ids);
 
   if (updateError) throw updateError;

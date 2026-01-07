@@ -4,42 +4,34 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
   patientId: string,
   doctorId: string
 ): Promise<boolean> {
-  // Local "today" boundaries (converted to ISO for Supabase comparisons)
-  const now = new Date();
-  const startOfDayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const startOfNextDayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
-
-  const startISO = startOfDayLocal.toISOString();
-  const endISO = startOfNextDayLocal.toISOString();
-
-  // 1) Check if today's appointment exists (for this patient + doctor)
-  const { data: rows, error: fetchError } = await supabase
+  // 1) Fetch most recent appointment (for this patient + doctor)
+  const { data: row, error: fetchError } = await supabase
     .from('appointments')
     .select('id')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
-    .gte('created_at', startISO)
-    .lt('created_at', endISO);
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (fetchError) throw fetchError;
 
-  if (!rows || rows.length === 0) {
-    // No appointment today → do nothing
+  if (!row?.id) {
+    // No appointment exists → do nothing
     return false;
   }
 
-  // 2) Update the found row(s) → completed=true
-  const ids = rows.map((r) => r.id);
-
+  // 2) Update the found row → completed=true (BOOLEAN)
   const { error: updateError } = await supabase
     .from('appointments')
-    .update({ completed: 'yes' })
-    .in('id', ids);
+    .update({ completed: true })
+    .eq('id', row.id);
 
   if (updateError) throw updateError;
 
   return true;
 }
+
 
 export const createPatient = async (patientData: {
   name: string;

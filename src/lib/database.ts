@@ -17,7 +17,7 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
     .from('appointments')
     .select('id')
     .eq('patient_id', patientId)
-    .eq('doctor_id', doctorId)
+    .eq('doc_id', doctorId)
     .gte('created_at', startISO)
     .lt('created_at', endISO);
 
@@ -33,7 +33,7 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
 
   const { error: updateError } = await supabase
     .from('appointments')
-    .update({ completed: true })
+    .update({ completed: 'yes' })
     .in('id', ids);
 
   if (updateError) throw updateError;
@@ -606,7 +606,7 @@ export const updateTodaysAppointmentCompleted = async (docId: string, patientId:
   
   const { data, error } = await supabase
     .from('appointments')
-    .update({ completed: true })
+    .update({ completed: 'yes' })
     .eq('doc_id', docId)
     .eq('patient_id', patientId)
     .gte('created_at', `${today}T00:00:00.000Z`)

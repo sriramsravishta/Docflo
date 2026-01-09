@@ -1640,7 +1640,7 @@ const getViewModeMedicines = (summary: any) => {
   
   const tabs = [
   { id: 'history', label: 'History' },
-  { id: 'past', label: 'Past Summaries' },
+  { id: 'past', label: 'Past Consultations' },
 ];
 
 

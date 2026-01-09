@@ -55,7 +55,7 @@ export default function PatientProfile() {
   // Summary data
   const [latestSummary, setLatestSummary] = useState<any>(null);
   const [consultations, setConsultations] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [activeTab, setActiveTab] = useState('history');
 
   // UI states
   const [showEditModal, setShowEditModal] = useState(false);

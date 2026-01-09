@@ -1008,29 +1008,28 @@ export default function PatientProfile() {
         </div>
 
         {pastMeds.length > 0 && (
-          <details className="group">
-            <summary className="cursor-pointer font-semibold text-gray-900 mb-3 group-open:mb-3">
-              Past Medications ({pastMeds.length})
-            </summary>
-            <div className="space-y-3">
-              {pastMeds.map((med: any, index: number) => (
-                <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium text-gray-700">{med.drug_name}</h4>
-                      <p className="text-gray-600">
-                        {med.dose} • {med.frequency}
-                      </p>
-                      {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
-                    </div>
-                    <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
-                  </div>
-                  {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
-                </div>
-              ))}
+  <div>
+    <h3 className="font-semibold text-gray-900 mb-3">Past Medications</h3>
+    <div className="space-y-3">
+      {pastMeds.map((med: any, index: number) => (
+        <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-medium text-gray-700">{med.drug_name}</h4>
+              <p className="text-gray-600">
+                {med.dose} • {med.frequency}
+              </p>
+              {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
             </div>
-          </details>
-        )}
+            <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
+          </div>
+          {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
       </div>
     );
   };
@@ -1527,7 +1526,7 @@ const renderHistoryTab = () => {
 
       {/* RIGHT: 1 part (Medications) */}
       <div className="lg:col-span-1">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Medications</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Current Medications</h3>
         {renderMedicationsTab()}
       </div>
     </div>

@@ -1511,31 +1511,29 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
 
 const renderHistoryTab = () => {
   return (
-    <div className="space-y-6">
-      {/* 1) Diagnostic Trends */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
-        {renderDiagnosticTrendsTab()}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* LEFT: 2 parts (Diagnostic Trends + Timeline) */}
+      <div className="lg:col-span-2 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
+          {renderDiagnosticTrendsTab()}
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
+          {renderTimelineTab()}
+        </div>
       </div>
 
-      {/* 2) Medications (collapsed by default) */}
-      <details className="group">
-        <summary className="cursor-pointer text-lg font-semibold text-gray-900 mb-3">
-          Medications
-        </summary>
-        <div className="mt-2">
-          {renderMedicationsTab()}
-        </div>
-      </details>
-
-      {/* 3) Timeline */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
-        {renderTimelineTab()}
+      {/* RIGHT: 1 part (Medications) */}
+      <div className="lg:col-span-1">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Medications</h3>
+        {renderMedicationsTab()}
       </div>
     </div>
   );
 };
+
 
   
   // ✅ NEW: Normalize meds for VIEW mode (prefer summary.medications, else consultMedicines)

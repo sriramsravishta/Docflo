@@ -1526,7 +1526,7 @@ const renderHistoryTab = () => {
 
       {/* RIGHT: 1 part (Medications) */}
       <div className="lg:col-span-1">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Current Medications</h3>
+        
         {renderMedicationsTab()}
       </div>
     </div>

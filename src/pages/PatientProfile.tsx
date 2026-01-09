@@ -983,7 +983,7 @@ export default function PatientProfile() {
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="font-semibold text-gray-900 mb-3">Current Medications</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Current Medications</h3>
           {currentMeds.length === 0 ? (
             <p className="text-gray-500">No current medications</p>
           ) : (

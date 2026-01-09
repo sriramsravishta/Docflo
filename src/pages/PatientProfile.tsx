@@ -1651,7 +1651,7 @@ const getViewModeMedicines = (summary: any) => {
     <div className="min-h-screen bg-gray-50">
       <Navbar showBack />
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="w-full px-4 py-6 xl:px-[160px]">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>

@@ -1509,6 +1509,35 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     );
   };
 
+const renderHistoryTab = () => {
+  return (
+    <div className="space-y-6">
+      {/* 1) Diagnostic Trends */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
+        {renderDiagnosticTrendsTab()}
+      </div>
+
+      {/* 2) Medications (collapsed by default) */}
+      <details className="group">
+        <summary className="cursor-pointer text-lg font-semibold text-gray-900 mb-3">
+          Medications
+        </summary>
+        <div className="mt-2">
+          {renderMedicationsTab()}
+        </div>
+      </details>
+
+      {/* 3) Timeline */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
+        {renderTimelineTab()}
+      </div>
+    </div>
+  );
+};
+
+  
   // ✅ NEW: Normalize meds for VIEW mode (prefer summary.medications, else consultMedicines)
 const getViewModeMedicines = (summary: any) => {
   // 1) If AI summary has medications array, use it
@@ -1611,12 +1640,12 @@ const getViewModeMedicines = (summary: any) => {
     );
   }
 
+  
   const tabs = [
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'trends', label: 'Diagnostic Trends' },
-    { id: 'medications', label: 'Medications' },
-    { id: 'past', label: 'Past Summaries' },
-  ];
+  { id: 'history', label: 'History' },
+  { id: 'past', label: 'Past Summaries' },
+];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1710,11 +1739,10 @@ const getViewModeMedicines = (summary: any) => {
           </div>
 
           <div className="p-6">
-            {activeTab === 'timeline' && renderTimelineTab()}
-            {activeTab === 'trends' && renderDiagnosticTrendsTab()}
-            {activeTab === 'medications' && renderMedicationsTab()}
-            {activeTab === 'past' && renderPastSummariesTab()}
-          </div>
+  {activeTab === 'history' && renderHistoryTab()}
+  {activeTab === 'past' && renderPastSummariesTab()}
+</div>
+
         </div>
       </div>
 

@@ -741,6 +741,30 @@ useEffect(() => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+  // ✅ NEW: Processing helpers (60s estimate)
+const ESTIMATED_PROCESS_SECONDS = 60;
+
+const isConsultProcessed = (consult: any) => {
+  // processed = consult_summary_final exists and is parseable/object
+  const summary = getConsultSummary(consult);
+  return !!summary;
+};
+
+const getElapsedSeconds = (consult: any) => {
+  const createdAt = consult?.created_at ? new Date(consult.created_at).getTime() : null;
+  if (!createdAt || isNaN(createdAt)) return 0;
+  const elapsed = Math.floor((uiNow - createdAt) / 1000);
+  return Math.max(0, elapsed);
+};
+
+const getProgressPercent = (consult: any) => {
+  if (isConsultProcessed(consult)) return 100;
+  const elapsed = getElapsedSeconds(consult);
+  const pct = Math.floor((elapsed / ESTIMATED_PROCESS_SECONDS) * 100);
+  // cap at 99 until actually processed
+  return Math.max(0, Math.min(99, pct));
+};
+
 
   // ✅ Render timeline summary as bullets when it has "- " lines
   const renderBulletSummary = (text: any) => {

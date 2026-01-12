@@ -2186,43 +2186,49 @@ const getViewModeMedicines = (summary: any) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* ✅ CHANGE: higher z-index for header */}
-            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
-                <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
-              </div>
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
+  <div className="flex items-start justify-between gap-3">
+    <div>
+      <h2 className="text-xl font-semibold text-gray-900">Consultation Summary</h2>
+      <p className="text-sm text-gray-600">{formatDate(selectedConsult.created_at)}</p>
+    </div>
 
-              <div className="flex items-center gap-3">
-                {/* (kept) */}
-                <button
-                  onClick={handleEditConsult}
-                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
+    {/* Close stays on the right always */}
+    <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <X className="w-5 h-5 text-gray-600" />
+    </button>
+  </div>
 
-                <button
-                  onClick={handleDownloadPDF}
-                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
-                </button>
+  {/* Buttons move below title on mobile, stay right on desktop */}
+  <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={handleEditConsult}
+        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+      >
+        <Edit className="w-4 h-4" />
+        <span>Edit</span>
+      </button>
 
-                <button
-                  onClick={handleSendWhatsApp}
-                  className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Send via WhatsApp</span>
-                </button>
+      <button
+        onClick={handleDownloadPDF}
+        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+      >
+        <Download className="w-4 h-4" />
+        <span>Download PDF</span>
+      </button>
 
-                <button onClick={() => setSelectedConsult(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
+      <button
+        onClick={handleSendWhatsApp}
+        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+      >
+        <MessageSquare className="w-4 h-4" />
+        <span>Send via WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 
             {(() => {
               const summary = getConsultSummary(selectedConsult);

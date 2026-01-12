@@ -88,6 +88,49 @@ useEffect(() => {
   return () => clearInterval(t);
 }, []);
 
+// ✅ NEW: UI tick for progress loaders (updates every second)
+const [uiNow, setUiNow] = useState(Date.now());
+
+useEffect(() => {
+  const t = setInterval(() => setUiNow(Date.now()), 1000);
+  return () => clearInterval(t);
+}, []);
+
+// ✅ ADD THIS BLOCK EXACTLY HERE (right after uiNow effect)
+useEffect(() => {
+  if (!selectedConsult?.id) return;
+
+  // If already processed, stop
+  if (getConsultSummary(selectedConsult)) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('consult')
+        .select('id, consult_summary_final, created_at, updated_at')
+        .eq('id', selectedConsult.id)
+        .single();
+
+      if (error || !data) return;
+
+      // update the selectedConsult so popup updates
+      setSelectedConsult((prev: any) => ({ ...prev, ...data }));
+
+      // if now processed, stop polling and refresh list
+      const nowProcessed = !!getConsultSummary(data);
+      if (nowProcessed) {
+        clearInterval(interval);
+        loadPatientData(); // refresh cards
+      }
+    } catch {
+      // ignore
+    }
+  }, 3000);
+
+  return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [selectedConsult?.id]);
+
 
   // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({

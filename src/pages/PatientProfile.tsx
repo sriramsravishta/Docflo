@@ -1078,6 +1078,53 @@ const getProgressPercent = (consult: any) => {
     if (typeof summary.history === 'string' && summary.history.trim()) return 'History available';
     return 'Consultation summary';
   };
+  const isConsultProcessed = (consult: any) => {
+  const summary = getConsultSummary(consult);
+  return !!summary;
+};
+
+const getProcessingPercent = (createdAt: string) => {
+  const started = new Date(createdAt).getTime();
+  const now = Date.now();
+  const elapsedSec = Math.max(0, Math.floor((now - started) / 1000));
+  const pct = Math.min(99, Math.round((elapsedSec / 60) * 100));
+  return { elapsedSec, pct };
+};
+
+const CircularProgress = ({ percent }: { percent: number }) => {
+  const radius = 10;
+  const stroke = 3;
+  const normalizedRadius = radius - stroke * 0.5;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+
+  return (
+    <svg height={radius * 2} width={radius * 2} className="block">
+      <circle
+        stroke="currentColor"
+        fill="transparent"
+        strokeWidth={stroke}
+        r={normalizedRadius}
+        cx={radius}
+        cy={radius}
+        className="text-gray-200"
+      />
+      <circle
+        stroke="currentColor"
+        fill="transparent"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${circumference} ${circumference}`}
+        style={{ strokeDashoffset }}
+        r={normalizedRadius}
+        cx={radius}
+        cy={radius}
+        className="text-[#024CDB]"
+      />
+    </svg>
+  );
+};
+
 
   const renderPastSummariesTab = () => {
     if (consultations.length === 0) {

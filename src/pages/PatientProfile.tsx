@@ -2297,7 +2297,50 @@ const getViewModeMedicines = (summary: any) => {
                   </div>
                 </>
               ) : (
-                <div className="p-6 text-center text-gray-500">Consultation summary not available yet.</div>
+                <div className="p-6">
+  {(() => {
+    const elapsed = getElapsedSeconds(selectedConsult);
+    const pct = getProgressPercent(selectedConsult);
+    const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
+
+    return (
+      <div className="max-w-xl mx-auto">
+        {/* counter */}
+        <div className="text-center mb-3">
+          <p className="text-sm font-semibold text-gray-900">
+            Preparing consultation summary: {elapsed}s / {ESTIMATED_PROCESS_SECONDS}s
+          </p>
+        </div>
+
+        {/* horizontal loader */}
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            className="h-3 rounded-full bg-[#024CDB] transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        {/* guidance text */}
+        <div className="mt-3 text-center">
+          <p className="text-sm text-gray-600">
+            It takes around 60 sec to prepare the consultation summary.
+          </p>
+          {takingLonger && (
+            <p className="text-sm mt-1 font-medium text-red-600">
+              Taking longer than expected…
+            </p>
+          )}
+        </div>
+
+        {/* subtle hint */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          You can keep this open — it will auto-update when ready.
+        </div>
+      </div>
+    );
+  })()}
+</div>
+
               );
             })()}
           </div>

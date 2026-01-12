@@ -1079,53 +1079,7 @@ const getProgressPercent = (consult: any) => {
     return 'Consultation summary';
   };
 
-  const isConsultProcessed = (consult: any) => {
-  const summary = getConsultSummary(consult);
-  return !!summary;
-};
-
-const getProcessingPercent = (createdAt: string) => {
-  const started = new Date(createdAt).getTime();
-  const now = Date.now();
-  const elapsedSec = Math.max(0, Math.floor((now - started) / 1000));
-  const pct = Math.min(99, Math.round((elapsedSec / 60) * 100));
-  return { elapsedSec, pct };
-};
-
-const CircularProgress = ({ percent }: { percent: number }) => {
-  const radius = 10;
-  const stroke = 3;
-  const normalizedRadius = radius - stroke * 0.5;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percent / 100) * circumference;
-
-  return (
-    <svg height={radius * 2} width={radius * 2} className="block">
-      <circle
-        stroke="currentColor"
-        fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-        className="text-gray-200"
-      />
-      <circle
-        stroke="currentColor"
-        fill="transparent"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={`${circumference} ${circumference}`}
-        style={{ strokeDashoffset }}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-        className="text-[#024CDB]"
-      />
-    </svg>
-  );
-};
-
+  
 
   const renderPastSummariesTab = () => {
     if (consultations.length === 0) {
@@ -1138,69 +1092,46 @@ const CircularProgress = ({ percent }: { percent: number }) => {
 
     return (
       <div className="space-y-3">
-        {consultations.map((consult: any) => (
-          <div
-            key={consult.id}
-            onClick={() => setSelectedConsult(consult)}
-            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start gap-3">
-  <div className="min-w-0">
-    <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>
-    <p className="text-sm text-gray-600 mt-1">{getConsultPreviewText(consult)}</p>
-  </div>
+        {consultations.map((consult: any) => {
+  const processed = isConsultProcessed(consult);
+  const { pct } = getProcessingPercent(consult.created_at);
 
-  {/* ✅ NEW: Processing / Processed indicator */}
-  <div className="flex flex-col items-end shrink-0">
-    {isConsultProcessed(consult) ? (
-      <div className="flex items-center gap-2 text-sm text-[#024CDB]">
-        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50">
-          ✓
-        </span>
-        <span className="font-medium">Processed</span>
-      </div>
-    ) : (
-      <div className="flex items-center gap-3">
-        {/* Circular progress */}
-        <div className="relative w-9 h-9">
-          <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
-            <path
-              className="text-gray-200"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-            />
-            <path
-              className="text-[#024CDB]"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray={`${getProgressPercent(consult)}, 100`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">
-            {getProgressPercent(consult)}%
-          </div>
+  return (
+    <div
+      key={consult.id}
+      onClick={() => setSelectedConsult(consult)}
+      className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+    >
+      <div className="flex justify-between items-start gap-4">
+        <div className="min-w-0">
+          <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>
+          <p className="text-sm text-gray-600 mt-1 truncate">{getConsultPreviewText(consult)}</p>
         </div>
 
-        <div className="text-right">
-          <p className="text-xs font-medium text-gray-700">Processing</p>
-          <p className="text-[11px] text-gray-500">{getProgressPercent(consult)}% completed</p>
+        {/* Status */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {processed ? (
+            <div className="flex items-center gap-2 text-[#024CDB]">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50">
+                ✓
+              </span>
+              <span className="text-sm font-medium">Processed</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-gray-600">
+              <CircularProgress percent={pct} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-sm font-medium">Processing</span>
+                <span className="text-xs text-gray-500">{pct}% completed</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    )}
-  </div>
-</div>
+    </div>
+  );
+})}
 
-          </div>
-        ))}
       </div>
     );
   };

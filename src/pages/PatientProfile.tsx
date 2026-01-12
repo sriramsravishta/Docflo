@@ -86,7 +86,6 @@ const [uiNow, setUiNow] = useState(Date.now());
 useEffect(() => {
   const t = setInterval(() => setUiNow(Date.now()), 1000);
   return () => clearInterval(t);
-}, []);
 
 // ✅ NEW: UI tick for progress loaders (updates every second)
 const [uiNow, setUiNow] = useState(Date.now());
@@ -130,6 +129,10 @@ useEffect(() => {
   return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [selectedConsult?.id]);
+
+
+}, []);
+
 
 
   // Form states

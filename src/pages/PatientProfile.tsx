@@ -1078,6 +1078,7 @@ const getProgressPercent = (consult: any) => {
     if (typeof summary.history === 'string' && summary.history.trim()) return 'History available';
     return 'Consultation summary';
   };
+
   const isConsultProcessed = (consult: any) => {
   const summary = getConsultSummary(consult);
   return !!summary;

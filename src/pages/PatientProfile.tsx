@@ -387,15 +387,28 @@ useEffect(() => {
 
   // ✅ CHANGE #2: Normalize consult_summary_final (object OR JSON string)
   const getConsultSummary = (consult: any) => {
-    const raw = consult?.consult_summary_final;
-    if (!raw) return null;
-    if (typeof raw === 'string') {
-      const parsed = safeJsonParse(raw);
-      return parsed ?? null;
-    }
-    if (typeof raw === 'object') return raw;
-    return null;
-  };
+  const raw = consult?.consult_summary_final;
+  if (!raw) return null;
+
+  let obj: any = null;
+
+  if (typeof raw === 'string') {
+    const parsed = safeJsonParse(raw);
+    obj = parsed ?? null;
+  } else if (typeof raw === 'object') {
+    obj = raw;
+  }
+
+  if (!obj) return null;
+
+  // ✅ treat empty object {} as "not processed"
+  if (typeof obj === 'object' && !Array.isArray(obj)) {
+    if (Object.keys(obj).length === 0) return null;
+  }
+
+  return obj;
+};
+
 
   const handleEditConsult = () => {
     const summary = getConsultSummary(selectedConsult) || {};

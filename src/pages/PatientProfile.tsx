@@ -173,6 +173,43 @@ useEffect(() => {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
+  useEffect(() => {
+  if (!selectedConsult?.id) return;
+
+  const channel = supabase
+    .channel(`consult-watch-${selectedConsult.id}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'consult',
+        filter: `id=eq.${selectedConsult.id}`,
+      },
+      async () => {
+        // Re-fetch latest consult row from DB
+        const { data, error } = await supabase
+          .from('consult')
+          .select('*')
+          .eq('id', selectedConsult.id)
+          .single();
+
+        if (!error && data) {
+          setSelectedConsult(data);
+        }
+
+        // also refresh the list so the card status changes
+        await loadPatientData();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [selectedConsult?.id]);
+
+
   const loadPatientData = async () => {
     try {
       setLoading(true);

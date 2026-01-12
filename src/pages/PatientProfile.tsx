@@ -836,10 +836,15 @@ useEffect(() => {
 const ESTIMATED_PROCESS_SECONDS = 60;
 
 const isConsultProcessed = (consult: any) => {
-  // processed = consult_summary_final exists and is parseable/object
   const summary = getConsultSummary(consult);
-  return !!summary;
+  if (!summary) return false;
+
+  // treat empty object {} as NOT processed
+  if (typeof summary === 'object' && Object.keys(summary).length === 0) return false;
+
+  return true;
 };
+
 
 const getElapsedSeconds = (consult: any) => {
   const createdAt = consult?.created_at ? new Date(consult.created_at).getTime() : null;

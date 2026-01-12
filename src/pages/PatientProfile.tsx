@@ -80,6 +80,14 @@ export default function PatientProfile() {
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  // ✅ NEW: UI tick for progress loaders (updates every second)
+const [uiNow, setUiNow] = useState(Date.now());
+
+useEffect(() => {
+  const t = setInterval(() => setUiNow(Date.now()), 1000);
+  return () => clearInterval(t);
+}, []);
+
 
   // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({

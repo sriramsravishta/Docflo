@@ -467,8 +467,6 @@ useEffect(() => {
       setEditedTreatmentText('');
       setEditedInvestigationsText('');
       setMedicineSearchResults([]);
-
-      alert('Changes saved successfully');
     } catch (error) {
       console.error('Error saving consultation:', error);
       alert('Failed to save changes');

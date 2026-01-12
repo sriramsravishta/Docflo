@@ -709,8 +709,7 @@ useEffect(() => {
             'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
           consult_summary_ai: '',
         });
-
-        alert('Consultation recorded and saved successfully');
+        
         try {
   await completeTodaysAppointmentByPatientAndDoctor(patientId!, user!.id);
 } catch (error) {

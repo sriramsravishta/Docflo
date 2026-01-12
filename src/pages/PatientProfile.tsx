@@ -86,8 +86,12 @@ const [uiNow, setUiNow] = useState(Date.now());
 useEffect(() => {
   const t = setInterval(() => setUiNow(Date.now()), 1000);
   return () => clearInterval(t);
-}, []);
 
+
+useEffect(() => {
+  const t = setInterval(() => setUiNow(Date.now()), 1000);
+  return () => clearInterval(t);
+}, []);
 
 // ✅ ADD THIS BLOCK EXACTLY HERE (right after uiNow effect)
 useEffect(() => {

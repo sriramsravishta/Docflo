@@ -86,7 +86,6 @@ const [uiNow, setUiNow] = useState(Date.now());
 useEffect(() => {
   const t = setInterval(() => setUiNow(Date.now()), 1000);
   return () => clearInterval(t);
-
 }, []);
 
 

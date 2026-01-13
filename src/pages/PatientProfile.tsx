@@ -83,15 +83,13 @@ export default function PatientProfile() {
   // ✅ NEW: UI tick for progress loaders (updates every second)
 const [uiNow, setUiNow] = useState(Date.now());
 
-useEffect(() => {
-  const t = setInterval(() => setUiNow(Date.now()), 1000);
-  return () => clearInterval(t);
-
+const [uiNow, setUiNow] = useState(Date.now());
 
 useEffect(() => {
   const t = setInterval(() => setUiNow(Date.now()), 1000);
   return () => clearInterval(t);
 }, []);
+
 
 // ✅ ADD THIS BLOCK EXACTLY HERE (right after uiNow effect)
 useEffect(() => {

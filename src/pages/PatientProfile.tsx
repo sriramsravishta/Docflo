@@ -2481,6 +2481,7 @@ const getViewModeMedicines = (summary: any) => {
     const elapsed = getElapsedSeconds(selectedConsult);
     const pct = getProgressPercent(selectedConsult);
     const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
+    const isError = elapsed > MAX_PROCESS_SECONDS;
 
     return (
       <div className="max-w-xl mx-auto">
@@ -2504,11 +2505,29 @@ const getViewModeMedicines = (summary: any) => {
           <p className="text-sm text-gray-600">
             It takes around 60 sec to prepare the consultation summary.
           </p>
-          {takingLonger && (
-            <p className="text-sm mt-1 font-medium text-red-600">
-              Taking longer than expected…
-            </p>
-          )}
+          
+          {isError ? (
+  <div className="mt-3 text-center">
+    <p className="text-sm font-semibold text-red-600">
+      There was an issue analyzing the recording.
+    </p>
+    <p className="text-sm text-gray-600 mt-1">
+      Please try recording again.
+    </p>
+  </div>
+) : (
+  <div className="mt-3 text-center">
+    <p className="text-sm text-gray-600">
+      It takes around 60 sec to prepare the consultation summary.
+    </p>
+    {takingLonger && (
+      <p className="text-sm mt-1 font-medium text-red-600">
+        Taking longer than expected…
+      </p>
+    )}
+  </div>
+)}
+
         </div>
 
         {/* subtle hint */}

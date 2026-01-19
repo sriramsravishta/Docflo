@@ -371,11 +371,6 @@ export default function MainPage() {
                 ))
               )}
             </div>
-            {filteredAllPatients.length > 12 && (
-              <button className="text-[#024CDB] hover:underline text-sm font-medium">
-                View all ({filteredAllPatients.length})
-              </button>
-            )}
             {filteredAllPatients.length === 0 && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                 <p className="text-gray-500">No patients found</p>

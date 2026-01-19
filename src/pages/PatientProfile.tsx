@@ -2521,9 +2521,6 @@ const getViewModeMedicines = (summary: any) => {
     <p className="text-sm font-semibold text-red-600">
       There was an issue analyzing the recording.
     </p>
-    <p className="text-sm text-gray-600 mt-1">
-      Please try recording again.
-    </p>
   </div>
 ) : (
   <div className="mt-3 text-center">

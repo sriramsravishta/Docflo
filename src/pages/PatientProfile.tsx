@@ -88,6 +88,40 @@ useEffect(() => {
   return () => clearInterval(t);
 }, []);
 
+// ✅ NEW: Keep consultation cards auto-updated (even when popup is NOT opened)
+useEffect(() => {
+  if (!patientId) return;
+
+  const channel = supabase
+    .channel(`consult-watch-patient-${patientId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'consult',
+        filter: `patient_id=eq.${patientId}`,
+      },
+      (payload) => {
+        const updated = payload.new as any;
+
+        // ✅ Update cards list
+        setConsultations((prev) =>
+          prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
+        );
+
+        // ✅ If popup is open for this consult, update popup too
+        setSelectedConsult((prev: any) =>
+          prev?.id === updated.id ? { ...prev, ...updated } : prev
+        );
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [patientId]);
 
 
   // Form states

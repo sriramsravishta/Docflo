@@ -164,6 +164,30 @@ useEffect(() => {
   };
 }, [selectedConsult?.id]);
 
+useEffect(() => {
+  if (!selectedConsult?.id) return;
+
+  // ✅ If already processed, stop polling
+  if (isConsultProcessed(selectedConsult)) return;
+
+  const interval = setInterval(async () => {
+    const { data, error } = await supabase
+      .from('consult')
+      .select('id, consult_summary_final, created_at')
+      .eq('id', selectedConsult.id)
+      .single();
+
+    if (!error && data) {
+      // ✅ Update popup
+      setSelectedConsult((prev: any) => (prev?.id === data.id ? { ...prev, ...data } : prev));
+
+      // ✅ Update cards list
+      setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
+    }
+  }, 3000); // poll every 3 seconds
+
+  return () => clearInterval(interval);
+}, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
 
 
   const loadPatientData = async () => {

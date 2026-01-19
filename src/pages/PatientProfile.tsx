@@ -160,6 +160,46 @@ useEffect(() => {
     }
   }, [patientId]);
 
+  // ✅ NEW: Auto-refresh CONSULTATION CARDS until all are processed
+useEffect(() => {
+  if (!patientId) return;
+
+  // If nothing is processing, no need to poll
+  if (!hasAnyProcessingConsult(consultations)) return;
+
+  const interval = setInterval(async () => {
+    try {
+      // Fetch latest consult rows (only fields needed for "Processed" status)
+      const { data, error } = await supabase
+        .from('consult')
+        .select('id, consult_summary_final, created_at')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) {
+        console.error('Error polling consult cards:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) return;
+
+      // Merge into existing consultations list
+      setConsultations((prev) =>
+        prev.map((c) => {
+          const updated = data.find((d: any) => d.id === c.id);
+          return updated ? { ...c, ...updated } : c;
+        })
+      );
+    } catch (e) {
+      console.error('Error polling consult cards (catch):', e);
+    }
+  }, 3000); // every 3 seconds
+
+  return () => clearInterval(interval);
+}, [patientId, consultations]);
+
+
   useEffect(() => {
     if (selectedConsult && selectedConsult.id) {
       loadConsultMedicines(selectedConsult.id);

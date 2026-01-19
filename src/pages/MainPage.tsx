@@ -337,7 +337,7 @@ export default function MainPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              All Patients
+              All Patients ({filteredAllPatients.length})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
               {loading ? (

@@ -345,7 +345,7 @@ export default function MainPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
                 </div>
               ) : (
-                filteredAllPatients.slice(0, 12).map((patient) => (
+                filteredAllPatients.map((patient) => (
                   <div
                     key={patient.id}
                     onClick={() => navigate(`/patient/${patient.id}`)}

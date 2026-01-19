@@ -2532,8 +2532,9 @@ const getViewModeMedicines = (summary: any) => {
 
         {/* subtle hint */}
         <div className="mt-4 text-center text-xs text-gray-500">
-          You can keep this open — it will auto-update when ready.
-        </div>
+  {isError ? 'Please retry the recording.' : 'You can keep this open — it will auto-update when ready.'}
+</div>
+
       </div>
     );
   })()}

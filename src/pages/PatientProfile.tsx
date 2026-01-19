@@ -55,6 +55,10 @@ export default function PatientProfile() {
   // Summary data
   const [latestSummary, setLatestSummary] = useState<any>(null);
   const [consultations, setConsultations] = useState<any[]>([]);
+  // ✅ NEW: check if any consult is still processing (cards refresher should run)
+const hasAnyProcessingConsult = (list: any[]) => {
+  return (list || []).some((c) => !isConsultProcessed(c));
+};
   const [activeTab, setActiveTab] = useState('history');
 
   // UI states

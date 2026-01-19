@@ -165,7 +165,12 @@ useEffect(() => {
   if (!patientId) return;
 
   // If nothing is processing, no need to poll
-  if (!hasAnyProcessingConsult(consultations)) return;
+  const hasAnyStillPending = (consultations || []).some(
+  (c) => !isConsultProcessed(c) && !isConsultError(c)
+);
+
+if (!hasAnyStillPending) return;
+
 
   const interval = setInterval(async () => {
     try {

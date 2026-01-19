@@ -246,7 +246,7 @@ useEffect(() => {
   if (!selectedConsult?.id) return;
 
   // ✅ If already processed, stop polling
-  if (isConsultProcessed(selectedConsult)) return;
+  if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult)) return;
 
   const interval = setInterval(async () => {
     const { data, error } = await supabase

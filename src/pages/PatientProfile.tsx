@@ -143,20 +143,18 @@ useEffect(() => {
         table: 'consult',
         filter: `id=eq.${selectedConsult.id}`,
       },
-      async () => {
-        // Re-fetch latest consult row from DB
-        const { data, error } = await supabase
-          .from('consult')
-          .select('*')
-          .eq('id', selectedConsult.id)
-          .single();
+      async (payload) => {
+        // ✅ payload.new has the updated row
+        const updated = payload.new as any;
 
-        if (!error && data) {
-          setSelectedConsult(data);
-        }
+        // ✅ Update popup consult immediately
+        setSelectedConsult((prev: any) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
 
-        // also refresh the list so the card status changes
-        await loadPatientData();
+        // ✅ Update cards list immediately (so status flips to Processed)
+        setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+
+        // (optional) if you want full refresh too, keep this:
+        // await loadPatientData();
       }
     )
     .subscribe();
@@ -165,6 +163,7 @@ useEffect(() => {
     supabase.removeChannel(channel);
   };
 }, [selectedConsult?.id]);
+
 
 
   const loadPatientData = async () => {

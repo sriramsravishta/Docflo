@@ -2506,7 +2506,7 @@ const getViewModeMedicines = (summary: any) => {
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
           <div
             className="h-3 rounded-full bg-[#024CDB] transition-all"
-            style={{ width: `${pct}%` }}
+            style={{ width: `${isError ? 100 : pct}%` }}
           />
         </div>
 
@@ -2537,6 +2537,7 @@ const getViewModeMedicines = (summary: any) => {
     )}
   </div>
 )}
+
 
         </div>
 

@@ -1273,49 +1273,55 @@ const getProgressPercent = (consult: any) => {
   {/* ✅ NEW: Processing / Processed indicator */}
   <div className="flex flex-col items-end shrink-0">
     {isConsultProcessed(consult) ? (
-      <div className="flex items-center gap-2 text-sm text-[#024CDB]">
-        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50">
-          ✓
-        </span>
-        <span className="font-medium">Processed</span>
+  <div className="flex items-center gap-2 text-sm text-[#024CDB]">
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50">
+      ✓
+    </span>
+    <span className="font-medium">Processed</span>
+  </div>
+) : isConsultError(consult) ? (
+  <div className="flex items-center gap-2 text-sm text-red-600">
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-50">
+      !
+    </span>
+    <span className="font-medium">Error</span>
+  </div>
+) : (
+  <div className="flex items-center gap-3">
+    <div className="relative w-9 h-9">
+      <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+        <path
+          className="text-gray-200"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+        />
+        <path
+          className="text-[#024CDB]"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeDasharray={`${getProgressPercent(consult)}, 100`}
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">
+        {getProgressPercent(consult)}%
       </div>
-    ) : (
-      <div className="flex items-center gap-3">
-        {/* Circular progress */}
-        <div className="relative w-9 h-9">
-          <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
-            <path
-              className="text-gray-200"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-            />
-            <path
-              className="text-[#024CDB]"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray={`${getProgressPercent(consult)}, 100`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">
-            {getProgressPercent(consult)}%
-          </div>
-        </div>
+    </div>
 
-        <div className="text-right">
-          <p className="text-xs font-medium text-gray-700">Processing</p>
-          <p className="text-[11px] text-gray-500">{getProgressPercent(consult)}% completed</p>
-        </div>
-      </div>
-    )}
+    <div className="text-right">
+      <p className="text-xs font-medium text-gray-700">Processing</p>
+      <p className="text-[11px] text-gray-500">{getProgressPercent(consult)}% completed</p>
+    </div>
+  </div>
+)}
   </div>
 </div>
 

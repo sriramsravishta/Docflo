@@ -2493,7 +2493,12 @@ const getViewModeMedicines = (summary: any) => {
         {/* counter */}
         <div className="text-center mb-3">
           <p className="text-sm font-semibold text-gray-900">
-            Preparing consultation summary: {elapsed}s / {ESTIMATED_PROCESS_SECONDS}s
+            <p className="text-sm font-semibold text-gray-900">
+  {isError
+    ? 'Consultation summary failed'
+    : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
+</p>
+
           </p>
         </div>
 

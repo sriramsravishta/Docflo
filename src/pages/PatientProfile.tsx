@@ -2156,7 +2156,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* Diagnosis */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className=" rounded-lg p-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
                       value={editedDiagnosisText}

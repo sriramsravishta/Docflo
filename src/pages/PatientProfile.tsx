@@ -2196,7 +2196,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* Treatment Suggested */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Treatment Suggested</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
                       value={editedTreatmentText}
@@ -2317,8 +2317,8 @@ const getViewModeMedicines = (summary: any) => {
 
                 {/* Investigations */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Investigations</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Investigations</h3>
+                  <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
                       value={editedInvestigationsText}
@@ -2331,8 +2331,8 @@ const getViewModeMedicines = (summary: any) => {
 
                 {/* Follow-up Recommendations */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Follow-up Recommendations</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Follow-up Recommendations</h3>
+                  <div className="rounded-lg py-4">
                     <textarea
                       value={editedConsult?.followup_recommendations || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}

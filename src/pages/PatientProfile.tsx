@@ -2161,7 +2161,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedDiagnosisText}
                       onChange={(e) => setEditedDiagnosisText(e.target.value)}
-                      className="input-field min-h-20"
+                      className="input-field min-h-40"
                       rows={4}
                     />
                   </div>

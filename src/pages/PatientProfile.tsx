@@ -2183,7 +2183,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* Chief Complaints */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
-                  <div className="rounded-lg py-4">
+                  <div className="bg-gray-10 rounded-lg py-4">
                     <textarea
                       value={editedConsult?.chief_complaints || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}

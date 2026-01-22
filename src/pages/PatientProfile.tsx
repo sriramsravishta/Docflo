@@ -2156,7 +2156,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* Diagnosis */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
                       value={editedDiagnosisText}
@@ -2170,7 +2170,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* History */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">History</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="rounded-lg py-4">
                     <textarea
                       value={editedConsult?.history || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
@@ -2183,7 +2183,7 @@ const getViewModeMedicines = (summary: any) => {
                 {/* Chief Complaints */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
-                  <div className="bg-gray-40 rounded-lg py-4">
+                  <div className="rounded-lg py-4">
                     <textarea
                       value={editedConsult?.chief_complaints || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}

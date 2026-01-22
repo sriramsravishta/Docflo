@@ -2155,7 +2155,7 @@ const getViewModeMedicines = (summary: any) => {
               <div className="space-y-6">
                 {/* Diagnosis */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Diagnosis</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
@@ -2169,7 +2169,7 @@ const getViewModeMedicines = (summary: any) => {
 
                 {/* History */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">History</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">History</h3>
                   <div className="rounded-lg py-4">
                     <textarea
                       value={editedConsult?.history || ''}
@@ -2182,7 +2182,7 @@ const getViewModeMedicines = (summary: any) => {
 
                 {/* Chief Complaints */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Chief Complaints</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Chief Complaints</h3>
                   <div className="rounded-lg py-4">
                     <textarea
                       value={editedConsult?.chief_complaints || ''}
@@ -2195,7 +2195,7 @@ const getViewModeMedicines = (summary: any) => {
 
                 {/* Treatment Suggested */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Treatment Suggested</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Treatment Suggested</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea

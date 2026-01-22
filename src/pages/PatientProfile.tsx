@@ -2161,7 +2161,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedDiagnosisText}
                       onChange={(e) => setEditedDiagnosisText(e.target.value)}
-                      className="input-field min-h-40"
+                      className="input-field min-h-60"
                       rows={4}
                     />
                   </div>
@@ -2174,7 +2174,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedConsult?.history || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
-                      className="input-field min-h-20"
+                      className="input-field min-h-60"
                       rows={3}
                     />
                   </div>
@@ -2187,7 +2187,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedConsult?.chief_complaints || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
-                      className="input-field min-h-20"
+                      className="input-field min-h-60"
                       rows={3}
                     />
                   </div>
@@ -2201,7 +2201,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedTreatmentText}
                       onChange={(e) => setEditedTreatmentText(e.target.value)}
-                      className="input-field min-h-20"
+                      className="input-field min-h-60"
                       rows={5}
                     />
                   </div>
@@ -2323,7 +2323,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedInvestigationsText}
                       onChange={(e) => setEditedInvestigationsText(e.target.value)}
-                      className="input-field min-h-20"
+                      className="input-field min-h-60"
                       rows={5}
                     />
                   </div>
@@ -2336,7 +2336,7 @@ const getViewModeMedicines = (summary: any) => {
                     <textarea
                       value={editedConsult?.followup_recommendations || ''}
                       onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
-                      className="input-field min-h-20"
+                      className="input-field min-h-60"
                       rows={3}
                     />
                   </div>

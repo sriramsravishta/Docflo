@@ -1810,7 +1810,7 @@ const renderHistoryTab = () => {
 
       {/* 2) Medications in between (two collapsibles) */}
       {renderCollapsible(
-        <h3 className="text-base font-semibold text-gray-900">Current Medications (${currentMeds.length})</h3>,
+        <h3 className="text-base font-semibold text-gray-900">Current Medications ({currentMeds.length})</h3>,
         currentOpen,
         () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
         currentMeds.length === 0 ? (
@@ -1837,7 +1837,7 @@ const renderHistoryTab = () => {
       )}
 
       {renderCollapsible(
-        <h3 className="text-base font-semibold text-gray-900">Past Medications (${pastMeds.length})</h3>,
+        <h3 className="text-base font-semibold text-gray-900">Past Medications ({pastMeds.length})</h3>,
         pastOpen,
         () => setExpandedSections((prev) => ({ ...prev, pastMeds: !pastOpen })),
         pastMeds.length === 0 ? (

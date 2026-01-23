@@ -1190,7 +1190,7 @@ const getProgressPercent = (consult: any) => {
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="!text-sm font-semibold text-gray-900 mb-3">Current Medications</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Current Medications</h3>
           {currentMeds.length === 0 ? (
             <p className="text-gray-500">No current medications</p>
           ) : (
@@ -1810,7 +1810,7 @@ const renderHistoryTab = () => {
 
       {/* 2) Medications in between (two collapsibles) */}
       {renderCollapsible(
-        `Current Medications (${currentMeds.length})`,
+        `Current Medication (${currentMeds.length})`,
         currentOpen,
         () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
         currentMeds.length === 0 ? (

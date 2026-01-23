@@ -1190,7 +1190,7 @@ const getProgressPercent = (consult: any) => {
     return (
       <div className="space-y-6">
         <div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-3">Current Medications</h4>
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Current Medications</h4>
           {currentMeds.length === 0 ? (
             <p className="text-gray-500">No current medications</p>
           ) : (

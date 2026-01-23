@@ -1768,29 +1768,107 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
   };
 
 const renderHistoryTab = () => {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* LEFT: 2 parts (Diagnostic Trends + Timeline) */}
-      <div className="lg:col-span-2 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
-          {renderDiagnosticTrendsTab()}
-        </div>
+  // meds from latestSummary (same as your existing renderMedicationsTab)
+  const medications = latestSummary?.summary?.medications || {};
+  const currentMeds = medications.current || [];
+  const pastMeds = medications.past || [];
 
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
-          {renderTimelineTab()}
-        </div>
+  // local toggles for collapsibles (reuse expandedSections state you already have)
+  const currentOpen = !!expandedSections.currentMeds;
+  const pastOpen = !!expandedSections.pastMeds;
+
+  const renderCollapsible = (title: string, open: boolean, onToggle: () => void, body: React.ReactNode) => {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <button
+          onClick={onToggle}
+          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          {open ? (
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-500" />
+          )}
+        </button>
+
+        {open && <div className="px-4 pb-4">{body}</div>}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* 1) Diagnostic Trends */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
+        {renderDiagnosticTrendsTab()}
       </div>
 
-      {/* RIGHT: 1 part (Medications) */}
-      <div className="lg:col-span-1">
-        
-        {renderMedicationsTab()}
+      {/* 2) Medications in between (two collapsibles) */}
+      {renderCollapsible(
+        `Current Medications (${currentMeds.length})`,
+        currentOpen,
+        () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
+        currentMeds.length === 0 ? (
+          <p className="text-gray-500">No current medications</p>
+        ) : (
+          <div className="space-y-3">
+            {currentMeds.map((med: any, index: number) => (
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{med.drug_name}</h4>
+                    <p className="text-gray-600">
+                      {med.dose} • {med.frequency}
+                    </p>
+                    {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
+                  </div>
+                  <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
+                </div>
+                {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {renderCollapsible(
+        `Past Medications (${pastMeds.length})`,
+        pastOpen,
+        () => setExpandedSections((prev) => ({ ...prev, pastMeds: !pastOpen })),
+        pastMeds.length === 0 ? (
+          <p className="text-gray-500">No past medications</p>
+        ) : (
+          <div className="space-y-3">
+            {pastMeds.map((med: any, index: number) => (
+              <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium text-gray-700">{med.drug_name}</h4>
+                    <p className="text-gray-600">
+                      {med.dose} • {med.frequency}
+                    </p>
+                    {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
+                  </div>
+                  <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
+                </div>
+                {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* 3) Timeline */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
+        {renderTimelineTab()}
       </div>
     </div>
   );
 };
+
 
 
   

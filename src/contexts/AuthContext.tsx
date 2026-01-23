@@ -17,9 +17,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Session retrieval error:', error.message);
+          setUser(null);
+        } else {
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.warn('Unexpected session error:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

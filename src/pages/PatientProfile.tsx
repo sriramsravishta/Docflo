@@ -2593,9 +2593,6 @@ const getViewModeMedicines = (summary: any) => {
 
         {/* guidance text */}
         <div className="mt-3 text-center">
-          <p className="text-sm text-gray-600">
-            It takes around 60 sec to prepare the consultation summary.
-          </p>
           
           {isError ? (
   <div className="mt-3 text-center">

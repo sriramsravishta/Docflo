@@ -1194,7 +1194,7 @@ const getProgressPercent = (consult: any) => {
           {currentMeds.length === 0 ? (
             <p className="text-gray-500">No current medications</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {currentMeds.map((med: any, index: number) => (
                 <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
@@ -1217,7 +1217,7 @@ const getProgressPercent = (consult: any) => {
         {pastMeds.length > 0 && (
   <div>
     <h3 className="!text-sm font-semibold text-gray-900 mb-3">Past Medications</h3>
-    <div className="space-y-3">
+    <div className="space-y-4">
       {pastMeds.map((med: any, index: number) => (
         <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <div className="flex justify-between items-start">

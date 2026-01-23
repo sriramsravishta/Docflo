@@ -139,6 +139,9 @@ useEffect(() => {
     followupRecommendations: false,
     keyPersonalInsights: false,
     flagsForReview: false,
+    currentMeds: false,
+    pastMeds: false,
+
   });
 
   const [editForm, setEditForm] = useState({

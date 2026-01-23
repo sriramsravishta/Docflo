@@ -1216,7 +1216,7 @@ const getProgressPercent = (consult: any) => {
 
         {pastMeds.length > 0 && (
   <div>
-    <h3 className="!text-sm font-semibold text-gray-900 mb-3">Past Medications</h3>
+    <h3 className="text-sm font-semibold text-gray-900 mb-3">Past Medications</h3>
     <div className="space-y-3">
       {pastMeds.map((med: any, index: number) => (
         <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -1810,7 +1810,7 @@ const renderHistoryTab = () => {
 
       {/* 2) Medications in between (two collapsibles) */}
       {renderCollapsible(
-        `Current Medication (${currentMeds.length})`,
+        `Current Medications (${currentMeds.length})`,
         currentOpen,
         () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
         currentMeds.length === 0 ? (

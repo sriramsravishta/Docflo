@@ -1837,7 +1837,7 @@ const renderHistoryTab = () => {
       )}
 
       {renderCollapsible(
-        <h3 className="text-base font-semibold text-gray-900 mb-3">Past Medications (${pastMeds.length})</h3>>,
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Past Medications (${pastMeds.length})</h3></>,
         pastOpen,
         () => setExpandedSections((prev) => ({ ...prev, pastMeds: !pastOpen })),
         pastMeds.length === 0 ? (

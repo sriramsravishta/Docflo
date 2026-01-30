@@ -191,7 +191,7 @@ export default function ConsultSession() {
         // Set empty AI summary initially - will be filled by n8n workflow
         await updateConsult(consult.id, {
           recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
-          consult_summary_ai: ''
+          consult_summary_ai: {}
         });
 
         setIsAnalyzing(false);

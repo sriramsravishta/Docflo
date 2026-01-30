@@ -21,12 +21,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Session retrieval error:', error.message);
+          // If refresh token is invalid, clear the session
+          if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
+            await supabase.auth.signOut();
+          }
           setUser(null);
         } else {
           setUser(session?.user ?? null);
         }
       } catch (error) {
         console.warn('Unexpected session error:', error);
+        // Clear any invalid session state
+        await supabase.auth.signOut();
         setUser(null);
       } finally {
         setLoading(false);

@@ -1556,7 +1556,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     printWindow.document.open();
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html>
+      <html> 
       <head>
         <meta charset="UTF-8" />
         <style>

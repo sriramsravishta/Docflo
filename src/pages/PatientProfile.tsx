@@ -1559,7 +1559,6 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
       <html>
       <head>
         <meta charset="UTF-8" />
-        <title>Consultation Summary</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.6; color: #111; }
           h1 { font-size: 20px; margin: 0 0 8px 0; border-bottom: 2px solid #111; padding-bottom: 8px; }

@@ -1360,7 +1360,6 @@ const getProgressPercent = (consult: any) => {
 
     let content = `
       <div class="header">
-        <h1>CONSULTATION SUMMARY</h1>
         <p><strong>Patient:</strong> ${escapeHtml(patient?.name)}</p>
         <p><strong>Date:</strong> ${escapeHtml(formatDate(consult.created_at))}</p>
         <p><strong>Doctor:</strong> ${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</p>

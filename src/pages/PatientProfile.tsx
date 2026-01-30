@@ -1572,7 +1572,12 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
           .table { width: 100%; border-collapse: collapse; margin-top: 8px; }
           .table th, .table td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; }
           .table th { background: #f3f4f6; text-align: left; }
-          @page { margin: 12mm; }
+          @page {
+  margin-top: 160px;
+  margin-bottom: 120px;
+  margin-left: 12mm;
+  margin-right: 12mm;
+}
           @media print { body { margin: 0; } }
         </style>
       </head>

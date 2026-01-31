@@ -84,6 +84,29 @@ const hasAnyProcessingConsult = (list: any[]) => {
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+
+  const FREQUENCY_OPTIONS = [
+  '1x everyday',
+  '2x everyday',
+  '3x everyday',
+  '1x week',
+  '2x week',
+  '3x week',
+  '4x week',
+];
+
+const FOOD_OPTIONS = [
+  'Before food',
+  'After food',
+];
+
+const TIME_OPTIONS = [
+  'Morning',
+  'Afternoon',
+  'Night',
+  'Not applicable',
+];
+
   // ✅ NEW: UI tick for progress loaders (updates every second)
 const [uiNow, setUiNow] = useState(Date.now());
 

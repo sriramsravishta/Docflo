@@ -339,10 +339,17 @@ useEffect(() => {
 
  const loadConsultMedicines = async (consultId: string) => {
   try {
-    const medicines = await getConsultMedicines(consultId);
+    const medicinesRaw = await getConsultMedicines(consultId);
+
+    // ✅ 1) Normalize time for every medicine row (prevents ugly JSON in UI)
+    const medicines = (medicinesRaw || []).map((m: any) => ({
+      ...m,
+      time: normalizeTime(m?.time), // always string[]
+    }));
+
     setConsultMedicines(medicines);
 
-    // init drafts (only if not already present)
+    // ✅ 2) init drafts (only if not already present)
     setMedicineDrafts((prev) => {
       const next = { ...prev };
       medicines.forEach((m: any) => {
@@ -360,6 +367,7 @@ useEffect(() => {
     console.error('Error loading consult medicines:', error);
   }
 };
+
 
 
   const handleEditPatient = async () => {

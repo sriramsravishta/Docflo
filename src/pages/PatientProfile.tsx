@@ -1012,41 +1012,36 @@ const getProgressPercent = (consult: any) => {
   </p>
 )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-  {/* LEFT: Event summary */}
-  <div className="md:col-span-2">
-    {renderBulletSummary(event.summary)}
+            {renderBulletSummary(event.summary)}
+            {event.important_findings && (
+  <div className="mt-3 p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
+    {(() => {
+      const txt = String(event.important_findings || '').trim();
+
+      // Split by lines, keep only lines that start with "-"
+      const bullets = txt
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => l.replace(/^[-•]\s*/, '').trim())
+        .filter(Boolean);
+
+      // If it looks like multiple bullet lines, render as bullets
+      if (bullets.length >= 2) {
+        return (
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+            {bullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+        );
+      }
+
+      // Otherwise render as normal text (single sentence case)
+      return <p className="text-sm text-gray-800 whitespace-pre-line">{txt}</p>;
+    })()}
   </div>
-
-  {/* RIGHT: Important findings */}
-  {event.important_findings && (
-    <div className="md:col-span-1">
-      <div className="p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
-        {(() => {
-          const txt = String(event.important_findings || '').trim();
-
-          const bullets = txt
-            .split('\n')
-            .map((l) => l.trim())
-            .filter(Boolean)
-            .map((l) => l.replace(/^[-•]\s*/, '').trim())
-            .filter(Boolean);
-
-          return bullets.length >= 1 ? (
-            <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
-              {bullets.map((b, i) => (
-                <li key={i}>{b}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-800">{txt}</p>
-          );
-        })()}
-      </div>
-    </div>
-  )}
-</div>
-
+)}
 
           </div>
         ))}

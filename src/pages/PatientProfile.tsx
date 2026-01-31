@@ -690,6 +690,30 @@ useEffect(() => {
       console.error('Error updating medicine:', error);
     }
   };
+  const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
+  // 1) instant local typing (no lag)
+  setMedicineDrafts((prev) => ({
+    ...prev,
+    [medicineId]: {
+      ...(prev[medicineId] || {}),
+      [field]: value,
+    },
+  }));
+
+  // 2) debounce DB save
+  if (medicineSaveTimers.current[medicineId]?.[field]) {
+    clearTimeout(medicineSaveTimers.current[medicineId][field]);
+  }
+
+  if (!medicineSaveTimers.current[medicineId]) {
+    medicineSaveTimers.current[medicineId] = {};
+  }
+
+  medicineSaveTimers.current[medicineId][field] = setTimeout(() => {
+    handleUpdateMedicine(medicineId, { [field]: value });
+  }, 400);
+};
+
 
   const handleDeleteMedicine = async (medicineId: string) => {
     try {

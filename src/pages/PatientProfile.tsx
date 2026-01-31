@@ -1511,7 +1511,7 @@ const getProgressPercent = (consult: any) => {
       }
     }
 
-   // ✅ FIX: Use normalized meds (summary.medications OR consultMedicines fallback)
+  
 // ✅ FIX: Use normalized meds (consultMedicines first; else AI fallback)
 const pdfMeds = getViewModeMedicines(summary);
 

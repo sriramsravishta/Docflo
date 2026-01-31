@@ -394,35 +394,34 @@ useEffect(() => {
   };
 
   const normalizeTime = (value: any): string[] => {
-  if (Array.isArray(value)) return value.filter(Boolean);
+  const out: string[] = [];
 
-  if (typeof value === 'string') {
-    const t = value.trim();
-    if (!t) return [];
+  const pushMany = (arr: any[]) => {
+    arr.forEach((x) => {
+      if (x === null || x === undefined) return;
 
-    // Postgres text[] often comes like "{Morning,Afternoon}"
-    if (t.startsWith('{') && t.endsWith('}')) {
-      return t
-        .slice(1, -1)
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean);
-    }
+      // if element is already array -> flatten
+      if (Array.isArray(x)) return pushMany(x);
 
-    // fallback: comma separated
-    if (t.includes(',')) {
-      return t
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean);
-    }
+      if (typeof x === "string") {
+        let s = x.trim();
+        if (!s) return;
 
-    // single value
-    return [t];
-  }
+        // remove wrapping quotes like "\"Morning\""
+        if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+          s = s.slice(1, -1).trim();
+        }
 
-  return [];
-};
+        // if string itself is a JSON array: '["Morning","Night"]'
+        if (s.startsWith("[") && s.endsWith("]")) {
+          try {
+            const parsed = JSON.parse(s);
+            if (Array.isArray(parsed)) return pushMany(parsed);
+          } catch {}
+        }
+
+        // if postgres array st
+
 
 
   const timeDropdownRef = useRef<HTMLDivElement | null>(null);

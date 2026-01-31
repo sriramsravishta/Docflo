@@ -392,6 +392,13 @@ useEffect(() => {
       return null;
     }
   };
+
+  const selectedTimes = normalizeTime(medicine.time);
+
+<span className="text-gray-900">
+  {selectedTimes.length ? selectedTimes.join(", ") : "Select time"}
+</span>
+
   
 
   const normalizeTime = (value: any): string[] => {

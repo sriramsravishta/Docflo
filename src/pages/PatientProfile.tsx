@@ -1814,36 +1814,42 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
   };
 
   // Helper function to render medications (view popup - unchanged)
-  const renderMedications = (medications: any[]) => {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Dosage</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Route</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
-              <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Purpose</th>
+const renderMedications = (medications: any[]) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse border border-gray-300">
+        <thead>
+          <tr className="bg-gray-50">
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Time</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Food</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Instructions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {medications.map((med: any, idx: number) => (
+            <tr key={idx} className="hover:bg-gray-50">
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.quantity || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">
+                {Array.isArray(med.time) && med.time.length ? med.time.join(', ') : '-'}
+              </td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.food || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.instructions || '-'}</td>
             </tr>
-          </thead>
-          <tbody>
-            {medications.map((med: any, idx: number) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.route || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.purpose || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 
 const renderHistoryTab = () => {
   // meds from latestSummary (same as your existing renderMedicationsTab)

@@ -2666,26 +2666,30 @@ const getViewModeMedicines = (summary: any) => {
     {openTimeDropdownId === medicine.id && (
       <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
         {TIME_OPTIONS.map((opt) => {
-          const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
-          const checked = current.includes(opt);
+  const current = normalizeTime(medicine.time);
+  const checked = current.includes(opt);
 
-          return (
-            <label
-              key={opt}
-              className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => {
-                  const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                  handleUpdateMedicine(medicine.id, { time: next });
-                }}
-              />
-              <span className="text-sm text-gray-800">{opt}</span>
-            </label>
-          );
-        })}
+  return (
+    <label
+      key={opt}
+      className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => {
+          const next = checked
+            ? current.filter((x) => x !== opt)
+            : [...current, opt];
+
+          handleUpdateMedicine(medicine.id, { time: next });
+        }}
+      />
+      <span className="text-sm text-gray-800">{opt}</span>
+    </label>
+  );
+})}
+
       </div>
     )}
   </div>

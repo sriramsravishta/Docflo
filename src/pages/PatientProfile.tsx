@@ -2669,9 +2669,15 @@ onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.valu
                           {Array.isArray(summary.chief_complaints) ? summary.chief_complaints.length : 1} Complaints
                         </span>
                       )}
-                      {Array.isArray(summary.medications) && (
-                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">{summary.medications.length} Medications</span>
-                      )}
+                      {(() => {
+  const meds = getViewModeMedicines(summary);
+  return meds.length ? (
+    <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+      {meds.length} Medications
+    </span>
+  ) : null;
+})()}
+
                       {summary.investigations?.ordered && Array.isArray(summary.investigations.ordered) && (
                         <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                           {summary.investigations.ordered.length} Investigations

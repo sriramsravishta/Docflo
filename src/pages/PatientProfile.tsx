@@ -2561,10 +2561,15 @@ const getViewModeMedicines = (summary: any) => {
                            <div className="md:col-span-2">
   <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
 
-  <div className="relative">
+  <div
+    ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
+    className="relative"
+  >
     <button
       type="button"
-      onClick={() => setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)}
+      onClick={() =>
+        setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
+      }
       className="input-field flex items-center justify-between"
     >
       <span className="text-gray-900">
@@ -2591,27 +2596,18 @@ const getViewModeMedicines = (summary: any) => {
                 checked={checked}
                 onChange={() => {
                   const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                  handleUpdateMedicine(medicine.id, { time: next }); // ✅ array saved to DB
+                  handleUpdateMedicine(medicine.id, { time: next });
                 }}
               />
               <span className="text-sm text-gray-800">{opt}</span>
             </label>
           );
         })}
-
-        <div className="flex justify-end pt-2 border-t border-gray-100 mt-2">
-          <button
-            type="button"
-            onClick={() => setOpenTimeDropdownId(null)}
-            className="text-sm text-[#024CDB] hover:underline"
-          >
-            Done
-          </button>
-        </div>
       </div>
     )}
   </div>
 </div>
+
                             
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>

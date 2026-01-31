@@ -1514,6 +1514,9 @@ const getProgressPercent = (consult: any) => {
    // ✅ FIX: Use normalized meds (summary.medications OR consultMedicines fallback)
 const pdfMeds = getViewModeMedicines(summary);
 
+// ✅ FIX: Use normalized meds (consultMedicines first; else AI fallback)
+const pdfMeds = getViewModeMedicines(summary);
+
 if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
   content += `
     <div class="section">
@@ -1521,29 +1524,40 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
       <table class="table">
         <thead>
           <tr>
-            <th>Name</th><th>Dosage</th><th>Route</th><th>Frequency</th><th>Duration</th><th>Purpose</th>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Frequency</th>
+            <th>Time</th>
+            <th>Food</th>
+            <th>Duration</th>
+            <th>Instructions</th>
           </tr>
         </thead>
         <tbody>
           ${pdfMeds
-            .map(
-              (m: any) => `
-            <tr>
-              <td>${escapeHtml(m?.name || '-')}</td>
-              <td>${escapeHtml(m?.dosage || '-')}</td>
-              <td>${escapeHtml(m?.route || '-')}</td>
-              <td>${escapeHtml(m?.frequency || '-')}</td>
-              <td>${escapeHtml(m?.duration || '-')}</td>
-              <td>${escapeHtml(m?.purpose || '-')}</td>
-            </tr>
-          `
-            )
+            .map((m: any) => {
+              const timeText =
+                Array.isArray(m?.time) && m.time.length > 0 ? m.time.join(', ') : '-';
+
+              return `
+                <tr>
+                  <td>${escapeHtml(m?.name || '-')}</td>
+                  <td>${escapeHtml(m?.quantity || '-')}</td>
+                  <td>${escapeHtml(m?.frequency || '-')}</td>
+                  <td>${escapeHtml(timeText)}</td>
+                  <td>${escapeHtml(m?.food || '-')}</td>
+                  <td>${escapeHtml(m?.duration || '-')}</td>
+                  <td>${escapeHtml(m?.instructions || '-')}</td>
+                </tr>
+              `;
+            })
             .join('')}
         </tbody>
       </table>
     </div>
   `;
 }
+
 
 
     if (summary.investigations && typeof summary.investigations === 'object') {

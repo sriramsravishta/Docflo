@@ -1048,6 +1048,12 @@ const getProgressPercent = (consult: any) => {
 </div>
 
 
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderDiagnosticTrendsTab = () => {
   const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
     ? latestSummary.summary.diagnostic_trends

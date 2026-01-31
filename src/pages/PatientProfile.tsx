@@ -724,6 +724,12 @@ useEffect(() => {
       console.error('Error deleting medicine:', error);
     }
   };
+  setMedicineDrafts((prev) => {
+  const next = { ...prev };
+  delete next[medicineId];
+  return next;
+});
+
 
   const handleMedicineSearch = async (query: string) => {
     if (query.trim().length < 1) {

@@ -2431,14 +2431,21 @@ const getViewModeMedicines = (summary: any) => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                              <input
-                                type="text"
-                                value={medicine.frequency}
-                                onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
-                                className="input-field"
-                                placeholder="e.g., Twice daily"
-                              />
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+<input
+  list={`freq-options-${medicine.id}`}
+  type="text"
+  value={medicine.frequency || ''}
+  onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+  className="input-field"
+  placeholder="Select or type"
+/>
+<datalist id={`freq-options-${medicine.id}`}>
+  {FREQUENCY_OPTIONS.map((opt) => (
+    <option key={opt} value={opt} />
+  ))}
+</datalist>
+
                             </div>
 
                             <div>

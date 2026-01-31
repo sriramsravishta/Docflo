@@ -987,9 +987,23 @@ const getProgressPercent = (consult: any) => {
           <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <h4 className="font-semibold text-gray-900">{event.event_type}</h4>
-              <span className="text-sm text-gray-500">{formatDate(event.event_datetime)}</span>
+              <button
+    type="button"
+    className="text-sm text-[#024CDB] hover:underline"
+    // later we can hook this to a modal if needed
+    onClick={() => {}}
+  >
+    View details 
+  </button>
+</div>
             </div>
-            {event.location && <p className="text-sm text-gray-600 mb-2">{event.location}</p>}
+            {(event.location || event.event_datetime) && (
+  <p className="text-sm text-gray-600 mb-2">
+    {event.location ? event.location : '—'}
+    {event.location && event.event_datetime ? ' • ' : ''}
+    {event.event_datetime ? formatDate(event.event_datetime) : ''}
+  </p>
+)}
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">

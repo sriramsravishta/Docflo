@@ -393,6 +393,26 @@ useEffect(() => {
     }
   };
 
+  const timeDropdownRef = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  const onMouseDown = (e: MouseEvent) => {
+    if (!openTimeDropdownId) return;
+
+    const el = timeDropdownRef.current;
+    if (!el) return;
+
+    // if click happened outside dropdown wrapper -> close
+    if (!el.contains(e.target as Node)) {
+      setOpenTimeDropdownId(null);
+    }
+  };
+
+  document.addEventListener('mousedown', onMouseDown);
+  return () => document.removeEventListener('mousedown', onMouseDown);
+}, [openTimeDropdownId]);
+
+
   const bulletify = (arr: any[]) => arr.map((x) => `- ${String(x ?? '').trim()}`).filter((l) => l.trim() !== '-');
 
   const diagnosisToEditableText = (diagnosis: any) => {
@@ -2592,8 +2612,6 @@ const getViewModeMedicines = (summary: any) => {
     )}
   </div>
 </div>
-
-
                             
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>

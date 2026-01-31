@@ -985,7 +985,7 @@ const getProgressPercent = (consult: any) => {
       <div className="space-y-4">
         {timeline.map((event: any, index: number) => (
           <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-0">
+            <div className="flex justify-between items-start mb-0.5">
   <h4 className="font-semibold text-gray-900">{event.event_type}</h4>
 
   {/* Replace date with View details */}

@@ -638,7 +638,6 @@ useEffect(() => {
   }
 };
 
-
   const handleUpdateMedicine = async (medicineId: string, updates: any) => {
     try {
       const updatedMedicine = await updateConsultMedicine(medicineId, updates);
@@ -2396,33 +2395,25 @@ const getViewModeMedicines = (summary: any) => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-<input
-  type="text"
-  value={medicine.quantity || ''}
-  onChange={(e) => handleUpdateMedicine(medicine.id, { quantity: e.target.value })}
-  className="input-field"
-  placeholder="e.g., 10 MG / 10 ml / 1 tab"
-/>
-
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                              <input
+                                type="text"
+                                value={medicine.dosage}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { dosage: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., 500mg"
+                              />
                             </div>
 
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-<input
-  list={`freq-options-${medicine.id}`}
-  type="text"
-  value={medicine.frequency || ''}
-  onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
-  className="input-field"
-  placeholder="Select or type"
-/>
-<datalist id={`freq-options-${medicine.id}`}>
-  {FREQUENCY_OPTIONS.map((opt) => (
-    <option key={opt} value={opt} />
-  ))}
-</datalist>
-
+                              <input
+                                type="text"
+                                value={medicine.frequency}
+                                onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+                                className="input-field"
+                                placeholder="e.g., Twice daily"
+                              />
                             </div>
 
                             <div>

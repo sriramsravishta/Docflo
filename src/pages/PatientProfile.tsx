@@ -98,6 +98,7 @@ const hasAnyProcessingConsult = (list: any[]) => {
 const FOOD_OPTIONS = [
   'Before food',
   'After food',
+  'Not applicable',
 ];
 
 const TIME_OPTIONS = [

@@ -736,13 +736,35 @@ useEffect(() => {
 };
 
   const handleUpdateMedicine = async (medicineId: string, updates: any) => {
-    try {
-      const updatedMedicine = await updateConsultMedicine(medicineId, updates);
-      setConsultMedicines(consultMedicines.map((med) => (med.id === medicineId ? updatedMedicine : med)));
-    } catch (error) {
-      console.error('Error updating medicine:', error);
-    }
-  };
+  // ✅ optimistic UI update first (instant checkbox feedback)
+  setConsultMedicines((prev) =>
+    prev.map((m) =>
+      m.id === medicineId
+        ? {
+            ...m,
+            ...updates,
+            // normalize time if present
+            ...(updates?.time !== undefined ? { time: normalizeTime(updates.time) } : {}),
+          }
+        : m
+    )
+  );
+
+  try {
+    const updatedMedicine = await updateConsultMedicine(medicineId, updates);
+
+    // ✅ normalize DB return as well
+    const normalized = {
+      ...updatedMedicine,
+      time: normalizeTime(updatedMedicine?.time),
+    };
+
+    setConsultMedicines((prev) => prev.map((m) => (m.id === medicineId ? normalized : m)));
+  } catch (error) {
+    console.error('Error updating medicine:', error);
+  }
+};
+
   const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
   // 1) instant local typing (no lag)
   setMedicineDrafts((prev) => ({

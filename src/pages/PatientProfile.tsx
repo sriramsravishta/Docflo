@@ -1011,7 +1011,7 @@ const getProgressPercent = (consult: any) => {
 
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-[#024CDB]/60 rounded">
+              <div className="mt-2 p-2 bg-yellow-50 border border-[#024CDB]/60 bg-[#024CDB]/5 rounded">
                 <p className="text-sm text-yellow-800">{event.important_findings}</p>
               </div>
             )}

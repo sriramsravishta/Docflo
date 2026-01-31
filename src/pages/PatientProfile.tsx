@@ -2464,6 +2464,67 @@ const getViewModeMedicines = (summary: any) => {
   ))}
 </datalist>
 </div>
+
+<label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+
+<div className="flex flex-wrap gap-2">
+  {TIME_OPTIONS.map((opt) => {
+    const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+    const checked = current.includes(opt);
+
+    return (
+      <label
+        key={opt}
+        className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${
+          checked ? 'border-[#024CDB] bg-[#024CDB]/10 text-[#024CDB]' : 'border-gray-300 bg-white text-gray-700'
+        }`}
+      >
+        <input
+          type="checkbox"
+          className="hidden"
+          checked={checked}
+          onChange={() => {
+            const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+            handleUpdateMedicine(medicine.id, { time: next }); // ✅ array saved to DB
+          }}
+        />
+        {opt}
+      </label>
+    );
+  })}
+</div>
+
+                            <div>
+<label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+
+<div className="flex flex-wrap gap-2">
+  {TIME_OPTIONS.map((opt) => {
+    const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+    const checked = current.includes(opt);
+
+    return (
+      <label
+        key={opt}
+        className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${
+          checked ? 'border-[#024CDB] bg-[#024CDB]/10 text-[#024CDB]' : 'border-gray-300 bg-white text-gray-700'
+        }`}
+      >
+        <input
+          type="checkbox"
+          className="hidden"
+          checked={checked}
+          onChange={() => {
+            const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+            handleUpdateMedicine(medicine.id, { time: next }); // ✅ array saved to DB
+          }}
+        />
+        {opt}
+      </label>
+    );
+  })}
+</div>
+</div>
+                            
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                               <input

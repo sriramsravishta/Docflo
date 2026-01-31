@@ -967,7 +967,6 @@ const getProgressPercent = (consult: any) => {
 
     return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
   };
-
   
 
   const renderTimelineTab = () => {
@@ -1012,10 +1011,10 @@ const getProgressPercent = (consult: any) => {
 
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
-              <div className="mt-3 p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
-    {renderImportantFindingsBullets(event.important_findings) || (
-      <p className="text-sm text-gray-800 whitespace-pre-line">{String(event.important_findings)}</p>
-    )}
+              <div className="mt-2 p-2 bg-yellow-50 border border-[#024CDB]/60 bg-[#024CDB]/5">
+                <p className="text-sm text-yellow-800">{event.important_findings}</p>
+              </div>
+            )}
           </div>
         ))}
       </div>

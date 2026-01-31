@@ -393,6 +393,38 @@ useEffect(() => {
     }
   };
 
+  const normalizeTime = (value: any): string[] => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+
+  if (typeof value === 'string') {
+    const t = value.trim();
+    if (!t) return [];
+
+    // Postgres text[] often comes like "{Morning,Afternoon}"
+    if (t.startsWith('{') && t.endsWith('}')) {
+      return t
+        .slice(1, -1)
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    // fallback: comma separated
+    if (t.includes(',')) {
+      return t
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    // single value
+    return [t];
+  }
+
+  return [];
+};
+
+
   const timeDropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {

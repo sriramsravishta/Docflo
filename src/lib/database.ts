@@ -418,21 +418,32 @@ export const getConsultMedicines = async (consultId: string) => {
 export const createConsultMedicine = async (medicineData: {
   consult_id: string;
   name: string;
-  dosage?: string;
+  quantity?: string;
   frequency?: string;
+  time?: string[];        // ✅ array
+  food?: string;
   duration?: string;
-  route?: string;
   instructions?: string;
 }) => {
   const { data, error } = await supabase
     .from('consult_medicine')
-    .insert(medicineData)
+    .insert({
+      consult_id: medicineData.consult_id,
+      name: medicineData.name ?? '',
+      quantity: medicineData.quantity ?? '',
+      frequency: medicineData.frequency ?? '',
+      time: Array.isArray(medicineData.time) ? medicineData.time : [],  // ✅ force array
+      food: medicineData.food ?? '',
+      duration: medicineData.duration ?? '',
+      instructions: medicineData.instructions ?? '',
+    })
     .select()
     .single();
 
   if (error) throw error;
   return data;
 };
+
 
 export const updateConsultMedicine = async (id: string, updates: {
   name?: string;

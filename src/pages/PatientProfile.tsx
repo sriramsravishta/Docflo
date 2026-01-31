@@ -1958,32 +1958,35 @@ const renderHistoryTab = () => {
   
   // ✅ NEW: Normalize meds for VIEW mode (prefer summary.medications, else consultMedicines)
 const getViewModeMedicines = (summary: any) => {
-  // 1) If AI summary has medications array, use it
-  if (Array.isArray(summary?.medications) && summary.medications.length > 0) {
-    return summary.medications.map((m: any) => ({
-      name: m?.name || m?.drug_name || '',
-      dosage: m?.dosage || m?.dose || '',
-      route: m?.route || '',
-      frequency: m?.frequency || '',
-      duration: m?.duration || m?.duration_or_quantity || '',
-      purpose: m?.purpose || m?.indication || '',
-    }));
-  }
-
-  // 2) Else fallback to consult_medicine table (edit mode source)
+  // ✅ 1) Prefer consult_medicine table always (this is what doctor edits)
   if (Array.isArray(consultMedicines) && consultMedicines.length > 0) {
     return consultMedicines.map((m: any) => ({
       name: m?.name || '',
-      dosage: m?.dosage || '',
-      route: m?.route || '',
+      quantity: m?.quantity || '',
       frequency: m?.frequency || '',
+      time: Array.isArray(m?.time) ? m.time : [],  // ensure array
+      food: m?.food || '',
       duration: m?.duration || '',
-      purpose: m?.instructions || '', // use instructions as purpose column fallback
+      instructions: m?.instructions || '',
+    }));
+  }
+
+  // ✅ 2) Fallback: if AI summary has medications, try to map (best effort)
+  if (Array.isArray(summary?.medications) && summary.medications.length > 0) {
+    return summary.medications.map((m: any) => ({
+      name: m?.name || m?.drug_name || '',
+      quantity: m?.quantity || m?.dosage || m?.dose || '',
+      frequency: m?.frequency || '',
+      time: Array.isArray(m?.time) ? m.time : [], // AI may not give time
+      food: m?.food || '',
+      duration: m?.duration || m?.duration_or_quantity || '',
+      instructions: m?.instructions || m?.purpose || m?.indication || '',
     }));
   }
 
   return [];
 };
+
 
 
   // ✅ CHANGE: Investigations should NOT display raw JSON in view mode

@@ -968,34 +968,7 @@ const getProgressPercent = (consult: any) => {
     return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
   };
 
-  // ✅ NEW: Convert important_findings "- X, - Y" into bullet list
-const renderImportantFindingsBullets = (text: any) => {
-  if (typeof text !== 'string') return null;
-
-  // Example input: "- ECG: ... , - 2D Echo: ..."
-  // Make a safe split
-  const cleaned = text.trim();
-
-  // Split on patterns like ", -", " - ", "\n-"
-  const parts = cleaned
-    .replace(/\n/g, ' ')
-    .replace(/,\s*-\s*/g, '||')   // ", - " → separator
-    .replace(/\s+-\s*/g, '||')    // " - " → separator (fallback)
-    .split('||')
-    .map((p) => p.replace(/^-\s*/, '').trim())
-    .filter(Boolean);
-
-  if (!parts.length) return null;
-
-  return (
-    <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
-      {parts.map((p, i) => (
-        <li key={i}>{p}</li>
-      ))}
-    </ul>
-  );
-};
-
+  
 
   const renderTimelineTab = () => {
     const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events)
@@ -1039,10 +1012,10 @@ const renderImportantFindingsBullets = (text: any) => {
 
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-sm text-yellow-800">{event.important_findings}</p>
-              </div>
-            )}
+              <div className="mt-3 p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
+    {renderImportantFindingsBullets(event.important_findings) || (
+      <p className="text-sm text-gray-800 whitespace-pre-line">{String(event.important_findings)}</p>
+    )}
           </div>
         ))}
       </div>

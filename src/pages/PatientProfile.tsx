@@ -973,7 +973,7 @@ const getProgressPercent = (consult: any) => {
 
   // Split on "- " but ignore the first empty split
   const points = text
-    .split(' -')
+    .split('-')
     .map(t => t.trim())
     .filter(Boolean);
 

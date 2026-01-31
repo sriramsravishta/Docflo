@@ -968,6 +968,35 @@ const getProgressPercent = (consult: any) => {
     return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
   };
 
+  // ✅ NEW: Convert important_findings "- X, - Y" into bullet list
+const renderImportantFindingsBullets = (text: any) => {
+  if (typeof text !== 'string') return null;
+
+  // Example input: "- ECG: ... , - 2D Echo: ..."
+  // Make a safe split
+  const cleaned = text.trim();
+
+  // Split on patterns like ", -", " - ", "\n-"
+  const parts = cleaned
+    .replace(/\n/g, ' ')
+    .replace(/,\s*-\s*/g, '||')   // ", - " → separator
+    .replace(/\s+-\s*/g, '||')    // " - " → separator (fallback)
+    .split('||')
+    .map((p) => p.replace(/^-\s*/, '').trim())
+    .filter(Boolean);
+
+  if (!parts.length) return null;
+
+  return (
+    <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+      {parts.map((p, i) => (
+        <li key={i}>{p}</li>
+      ))}
+    </ul>
+  );
+};
+
+
   const renderTimelineTab = () => {
     const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events)
       ? latestSummary.summary.timeline_of_medical_events

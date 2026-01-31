@@ -762,15 +762,14 @@ useEffect(() => {
   }
 };
 
-  const handleUpdateMedicine = async (medicineId: string, updates: any) => {
-  // ✅ optimistic UI update first (instant checkbox feedback)
+const handleUpdateMedicine = async (medicineId: string, updates: any) => {
+  // ✅ optimistic UI update first
   setConsultMedicines((prev) =>
     prev.map((m) =>
       m.id === medicineId
         ? {
             ...m,
             ...updates,
-            // normalize time if present
             ...(updates?.time !== undefined ? { time: normalizeTime(updates.time) } : {}),
           }
         : m
@@ -778,9 +777,13 @@ useEffect(() => {
   );
 
   try {
-    const updatedMedicine = await updateConsultMedicine(medicineId, updates);
+    const safeUpdates = {
+      ...updates,
+      ...(updates?.time !== undefined ? { time: normalizeTime(updates.time) } : {}),
+    };
 
-    // ✅ normalize DB return as well
+    const updatedMedicine = await updateConsultMedicine(medicineId, safeUpdates);
+
     const normalized = {
       ...updatedMedicine,
       time: normalizeTime(updatedMedicine?.time),
@@ -792,6 +795,7 @@ useEffect(() => {
   }
 };
 
+  
   const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
   // 1) instant local typing (no lag)
   setMedicineDrafts((prev) => ({

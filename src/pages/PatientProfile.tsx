@@ -402,7 +402,6 @@ useEffect(() => {
     arr.forEach((x) => {
       if (x === null || x === undefined) return;
 
-      // if element is already array -> flatten
       if (Array.isArray(x)) return pushMany(x);
 
       if (typeof x === "string") {
@@ -410,11 +409,14 @@ useEffect(() => {
         if (!s) return;
 
         // remove wrapping quotes like "\"Morning\""
-        if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+        if (
+          (s.startsWith('"') && s.endsWith('"')) ||
+          (s.startsWith("'") && s.endsWith("'"))
+        ) {
           s = s.slice(1, -1).trim();
         }
 
-        // if string itself is a JSON array: '["Morning","Night"]'
+        // JSON array string '["Morning","Night"]'
         if (s.startsWith("[") && s.endsWith("]")) {
           try {
             const parsed = JSON.parse(s);
@@ -422,7 +424,7 @@ useEffect(() => {
           } catch {}
         }
 
-        // if postgres array string: "{Morning,Night}"
+        // postgres array string "{Morning,Night}"
         if (s.startsWith("{") && s.endsWith("}")) {
           const parts = s
             .slice(1, -1)
@@ -436,7 +438,6 @@ useEffect(() => {
         return;
       }
 
-      // fallback
       out.push(String(x));
     });
   };
@@ -444,10 +445,10 @@ useEffect(() => {
   if (Array.isArray(value)) pushMany(value);
   else pushMany([value]);
 
-  // ✅ dedupe + keep only allowed values
   const allowed = new Set(["Morning", "Afternoon", "Night", "Not applicable"]);
   return Array.from(new Set(out)).filter((x) => allowed.has(x));
 };
+
 
 
 

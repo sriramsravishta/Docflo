@@ -2542,8 +2542,9 @@ onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })
                               <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
                               <input
                                 type="text"
-                                value={medicine.instructions}
-                                onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
+                                value={medicine.instructions || ''}
+onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
+
                                 className="input-field"
                                 placeholder="e.g., After meals"
                               />

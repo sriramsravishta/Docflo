@@ -1003,7 +1003,7 @@ const getProgressPercent = (consult: any) => {
 {(event.location || event.event_datetime) && (
   <p className="text-sm text-gray-600 mb-2">
     {event.location && event.event_datetime ? ' • ' : ''}
-    {event.event_datetime ? formatDate(event.event_datetime) : ''}
+    {event.event_datetime ? formatDate(event.event_datetime) ? ' • ' : ''}
     {event.location ? event.location : '—'}
   </p>
 )}

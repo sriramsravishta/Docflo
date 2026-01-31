@@ -383,7 +383,7 @@ useEffect(() => {
   // Helpers: JSON safe parse + pretty/editable conversions
   // -------------------------
   const safeJsonParse = (value: any) => {
-    if (typeof value !== 'string') return null;
+    if (typeof value !== 'string') return null; 
     const t = value.trim();
     if (!(t.startsWith('{') || t.startsWith('['))) return null;
     try {
@@ -392,17 +392,7 @@ useEffect(() => {
       return null;
     }
   };
-  const selectedTimes = normalizeTime(medicine.time);
-
-<span className="text-gray-900">
-  {selectedTimes.length ? selectedTimes.join(", ") : "Select time"}
-</span>
-const current = normalizeTime(medicine.time);
-const checked = current.includes(opt);
-
-const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-handleUpdateMedicine(medicine.id, { time: next });
-
+  
 
   const normalizeTime = (value: any): string[] => {
   const out: string[] = [];

@@ -967,6 +967,25 @@ const getProgressPercent = (consult: any) => {
 
     return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
   };
+
+  const renderDashedTextAsBullets = (text?: string) => {
+  if (!text) return null;
+
+  // Split on "- " but ignore the first empty split
+  const points = text
+    .split('- ')
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  return (
+    <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+      {points.map((point, index) => (
+        <li key={index}>{point}</li>
+      ))}
+    </ul>
+  );
+};
+
   
 
   const renderTimelineTab = () => {

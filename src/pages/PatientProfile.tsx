@@ -397,6 +397,11 @@ useEffect(() => {
 <span className="text-gray-900">
   {selectedTimes.length ? selectedTimes.join(", ") : "Select time"}
 </span>
+const current = normalizeTime(medicine.time);
+const checked = current.includes(opt);
+
+const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+handleUpdateMedicine(medicine.id, { time: next });
 
 
   const normalizeTime = (value: any): string[] => {

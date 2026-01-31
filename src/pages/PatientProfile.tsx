@@ -1866,7 +1866,7 @@ const renderHistoryTab = () => {
         currentMeds.length === 0 ? (
           <p className="text-gray-500">No current medications</p>
         ) : (
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
             {currentMeds.map((med: any, index: number) => (
               <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-start">

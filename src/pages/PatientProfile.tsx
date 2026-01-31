@@ -716,19 +716,21 @@ useEffect(() => {
 
 
   const handleDeleteMedicine = async (medicineId: string) => {
-    try {
-      await deleteConsultMedicine(medicineId);
-      setConsultMedicines(consultMedicines.filter((med) => med.id !== medicineId));
-      setMedicineSearchResults([]);
-    } catch (error) {
-      console.error('Error deleting medicine:', error);
-    }
-  };
-  setMedicineDrafts((prev) => {
-  const next = { ...prev };
-  delete next[medicineId];
-  return next;
-});
+  try {
+    await deleteConsultMedicine(medicineId);
+    setConsultMedicines(consultMedicines.filter((med) => med.id !== medicineId));
+
+    setMedicineDrafts((prev) => {
+      const next = { ...prev };
+      delete next[medicineId];
+      return next;
+    });
+
+    setMedicineSearchResults([]);
+  } catch (error) {
+    console.error('Error deleting medicine:', error);
+  }
+};
 
 
   const handleMedicineSearch = async (query: string) => {

@@ -2469,19 +2469,17 @@ const getViewModeMedicines = (summary: any) => {
 
                             <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Food</label>
-<input
-  list={`food-options-${medicine.id}`}
-  type="text"
+<select
   value={medicine.food || ''}
   onChange={(e) => handleUpdateMedicine(medicine.id, { food: e.target.value })}
   className="input-field"
-  placeholder="Select or type"
-/>
-<datalist id={`food-options-${medicine.id}`}>
+>
+  <option value="" disabled>Select food instruction</option>
   {FOOD_OPTIONS.map((opt) => (
-    <option key={opt} value={opt} />
+    <option key={opt} value={opt}>{opt}</option>
   ))}
-</datalist>
+</select>
+
 </div>
 
 

@@ -2529,8 +2529,9 @@ const getViewModeMedicines = (summary: any) => {
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                               <input
                                 type="text"
-                                value={medicine.duration}
-                                onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })}
+                                value={medicine.duration || ''}
+onChange={(e) => handleUpdateMedicine(medicine.id, { duration: e.target.value })}
+
                                 className="input-field"
                                 placeholder="e.g., 7 days"
                               />

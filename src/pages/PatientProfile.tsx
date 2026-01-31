@@ -968,23 +968,7 @@ const getProgressPercent = (consult: any) => {
     return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
   };
 
-  const renderDashedTextAsBullets = (text?: string) => {
-  if (!text) return null;
-
-  // Split on "- " but ignore the first empty split
-  const points = text
-    .split('-')
-    .map(t => t.trim())
-    .filter(Boolean);
-
-  return (
-    <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
-      {points.map((point, index) => (
-        <li key={index}>{point}</li>
-      ))}
-    </ul>
-  );
-};
+  
 
   
 
@@ -1030,10 +1014,35 @@ const getProgressPercent = (consult: any) => {
 
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
-              <div className="mt-4 p-2 bg-yellow-50 border border-[#4B7FE3] bg-[#024CDB]/5 rounded">
-                <p className="text-sm text-[#024CDB]">{event.important_findings}</p>
-              </div>
-            )}
+  <div className="mt-3 p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
+    {(() => {
+      const txt = String(event.important_findings || '').trim();
+
+      // Split by lines, keep only lines that start with "-"
+      const bullets = txt
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => l.replace(/^[-•]\s*/, '').trim())
+        .filter(Boolean);
+
+      // If it looks like multiple bullet lines, render as bullets
+      if (bullets.length >= 2) {
+        return (
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+            {bullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+        );
+      }
+
+      // Otherwise render as normal text (single sentence case)
+      return <p className="text-sm text-gray-800 whitespace-pre-line">{txt}</p>;
+    })()}
+  </div>
+)}
+
           </div>
         ))}
       </div>

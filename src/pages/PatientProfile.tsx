@@ -81,6 +81,7 @@ const [medicineDrafts, setMedicineDrafts] = useState<Record<string, any>>({});
 const medicineSaveTimers = useRef<Record<string, any>>({});
 
   const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
+  const [openTimeDropdownId, setOpenTimeDropdownId] = useState<string | null>(null);
   const [searchingMedicine, setSearchingMedicine] = useState(false);
 
   // Recording states

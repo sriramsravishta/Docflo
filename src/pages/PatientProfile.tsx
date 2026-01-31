@@ -76,6 +76,10 @@ const hasAnyProcessingConsult = (list: any[]) => {
   const [editedInvestigationsText, setEditedInvestigationsText] = useState('');
 
   const [consultMedicines, setConsultMedicines] = useState<any[]>([]);
+  // ✅ Local drafts for lag-free typing (saved to DB with debounce)
+const [medicineDrafts, setMedicineDrafts] = useState<Record<string, any>>({});
+const medicineSaveTimers = useRef<Record<string, any>>({});
+
   const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
   const [searchingMedicine, setSearchingMedicine] = useState(false);
 

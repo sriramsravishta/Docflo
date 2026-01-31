@@ -2539,60 +2539,32 @@ const getViewModeMedicines = (summary: any) => {
 
 
                            <div className="md:col-span-2">
-  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
 
-  <div className="relative">
-    <button
-      type="button"
-      onClick={() => setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)}
-      className="input-field flex items-center justify-between"
-    >
-      <span className="text-gray-900">
-        {Array.isArray(medicine.time) && medicine.time.length > 0
-          ? medicine.time.join(', ')
-          : 'Select time'}
-      </span>
-      <ChevronDown className="w-4 h-4 text-gray-500" />
-    </button>
-
-    {openTimeDropdownId === medicine.id && (
-      <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
-        {TIME_OPTIONS.map((opt) => {
-          const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
-          const checked = current.includes(opt);
-
-          return (
-            <label
-              key={opt}
-              className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => {
-                  const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                  handleUpdateMedicine(medicine.id, { time: next }); // ✅ array saved to DB
-                }}
-              />
-              <span className="text-sm text-gray-800">{opt}</span>
-            </label>
-          );
-        })}
-
-        <div className="flex justify-end pt-2 border-t border-gray-100 mt-2">
-          <button
-            type="button"
-            onClick={() => setOpenTimeDropdownId(null)}
-            className="text-sm text-[#024CDB] hover:underline"
-          >
-            Done
-          </button>
-        </div>
-      </div>
-    )}
+  <div className="flex flex-wrap gap-2">
+    {TIME_OPTIONS.map((opt) => {
+      const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+      const checked = current.includes(opt);
+ 
+      return (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => {
+            const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+            handleUpdateMedicine(medicine.id, { time: next }); // array saved
+          }}
+          className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+            checked
+              ? 'border-[#024CDB] bg-[#024CDB]/10 text-[#024CDB]'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {opt}
+        </button>
+      );
+    })}
   </div>
-</div>
-
 
   {/* optional helper text */}
   <p className="text-xs text-gray-500 mt-2">

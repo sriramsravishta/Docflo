@@ -2483,36 +2483,40 @@ const getViewModeMedicines = (summary: any) => {
 </div>
 
 
-                            <div>
-<label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                           <div className="md:col-span-2">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
 
-<div className="flex flex-wrap gap-2">
-  {TIME_OPTIONS.map((opt) => {
-    const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
-    const checked = current.includes(opt);
+  <div className="flex flex-wrap gap-2">
+    {TIME_OPTIONS.map((opt) => {
+      const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+      const checked = current.includes(opt);
 
-    return (
-      <label
-        key={opt}
-        className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${
-          checked ? 'border-[#024CDB] bg-[#024CDB]/10 text-[#024CDB]' : 'border-gray-300 bg-white text-gray-700'
-        }`}
-      >
-        <input
-          type="checkbox"
-          className="hidden"
-          checked={checked}
-          onChange={() => {
+      return (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => {
             const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-            handleUpdateMedicine(medicine.id, { time: next }); // ✅ array saved to DB
+            handleUpdateMedicine(medicine.id, { time: next }); // array saved
           }}
-        />
-        {opt}
-      </label>
-    );
-  })}
+          className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+            checked
+              ? 'border-[#024CDB] bg-[#024CDB]/10 text-[#024CDB]'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {opt}
+        </button>
+      );
+    })}
+  </div>
+
+  {/* optional helper text */}
+  <p className="text-xs text-gray-500 mt-2">
+    Select one or more times (stored as array).
+  </p>
 </div>
-</div>
+
                             
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>

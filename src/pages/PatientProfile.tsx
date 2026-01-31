@@ -992,18 +992,12 @@ const getProgressPercent = (consult: any) => {
     className="text-sm text-[#024CDB] hover:underline"
     // later we can hook this to a modal if needed
     onClick={() => {}}
-  >
+  > 
     View details 
   </button>
 </div>
             </div>
-            {(event.location || event.event_datetime) && (
-  <p className="text-sm text-gray-600 mb-2">
-    {event.location ? event.location : '—'}
-    {event.location && event.event_datetime ? ' • ' : ''}
-    {event.event_datetime ? formatDate(event.event_datetime) : ''}
-  </p>
-)}
+            {event.location && <p className="text-sm text-gray-600 mb-2">{event.location}</p>}
             {renderBulletSummary(event.summary)}
             {event.important_findings && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">

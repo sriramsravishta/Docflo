@@ -2579,13 +2579,13 @@ const getViewModeMedicines = (summary: any) => {
                             <div className="md:col-span-2">
                               <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
                               <input
-                                type="text"
-                                value={medicine.instructions || ''}
-onChange={(e) => handleUpdateMedicine(medicine.id, { instructions: e.target.value })}
+  type="text"
+  value={medicineDrafts[medicine.id]?.instructions ?? (medicine.instructions || '')}
+  onChange={(e) => updateDraftAndDebounceSave(medicine.id, 'instructions', e.target.value)}
+  className="input-field"
+  placeholder="e.g., After meals"
+/>
 
-                                className="input-field"
-                                placeholder="e.g., After meals"
-                              />
                             </div>
                           </div>
                         </div>

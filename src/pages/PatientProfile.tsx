@@ -2396,14 +2396,15 @@ const getViewModeMedicines = (summary: any) => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                              <input
-                                type="text"
-                                value={medicine.dosage}
-                                onChange={(e) => handleUpdateMedicine(medicine.id, { dosage: e.target.value })}
-                                className="input-field"
-                                placeholder="e.g., 500mg"
-                              />
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+<input
+  type="text"
+  value={medicine.quantity || ''}
+  onChange={(e) => handleUpdateMedicine(medicine.id, { quantity: e.target.value })}
+  className="input-field"
+  placeholder="e.g., 10 MG / 10 ml / 1 tab"
+/>
+
                             </div>
 
                             <div>

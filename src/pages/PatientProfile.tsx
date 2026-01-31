@@ -336,14 +336,30 @@ useEffect(() => {
     }
   };
 
-  const loadConsultMedicines = async (consultId: string) => {
-    try {
-      const medicines = await getConsultMedicines(consultId);
-      setConsultMedicines(medicines);
-    } catch (error) {
-      console.error('Error loading consult medicines:', error);
-    }
-  };
+ const loadConsultMedicines = async (consultId: string) => {
+  try {
+    const medicines = await getConsultMedicines(consultId);
+    setConsultMedicines(medicines);
+
+    // init drafts (only if not already present)
+    setMedicineDrafts((prev) => {
+      const next = { ...prev };
+      medicines.forEach((m: any) => {
+        if (!next[m.id]) {
+          next[m.id] = {
+            quantity: m.quantity || '',
+            duration: m.duration || '',
+            instructions: m.instructions || '',
+          };
+        }
+      });
+      return next;
+    });
+  } catch (error) {
+    console.error('Error loading consult medicines:', error);
+  }
+};
+
 
   const handleEditPatient = async () => {
     try {

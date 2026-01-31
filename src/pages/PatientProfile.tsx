@@ -621,21 +621,23 @@ useEffect(() => {
   };
 
   const handleAddMedicine = async () => {
-    try {
-      const newMedicine = await createConsultMedicine({
-        consult_id: selectedConsult.id,
-        name: '',
-        dosage: '',
-        frequency: '',
-        duration: '',
-        route: '',
-        instructions: '',
-      });
-      setConsultMedicines([...consultMedicines, newMedicine]);
-    } catch (error) {
-      console.error('Error adding medicine:', error);
-    }
-  };
+  try {
+    const newMedicine = await createConsultMedicine({
+      consult_id: selectedConsult.id,
+      name: '',
+      quantity: '',
+      frequency: '',
+      time: [],            // IMPORTANT: array
+      food: '',
+      duration: '',
+      instructions: '',
+    });
+    setConsultMedicines([...consultMedicines, newMedicine]);
+  } catch (error) {
+    console.error('Error adding medicine:', error);
+  }
+};
+
 
   const handleUpdateMedicine = async (medicineId: string, updates: any) => {
     try {

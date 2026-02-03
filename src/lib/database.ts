@@ -538,7 +538,7 @@ completed: false
 
 export const getTodaysAppointments = async (docId: string) => {
   const today = new Date().toISOString().split('T')[0];
-  
+
   const { data, error } = await supabase
     .from('appointments')
     .select(`
@@ -546,14 +546,17 @@ export const getTodaysAppointments = async (docId: string) => {
       patients (id, name, age, gender, phone)
     `)
     .eq('doc_id', docId)
-    .eq('completed', 'no')
+    // ✅ IMPORTANT: DO NOT filter completed here
     .gte('created_at', `${today}T00:00:00.000Z`)
     .lt('created_at', `${today}T23:59:59.999Z`)
+    // ✅ pending first, then completed
+    .order('completed', { ascending: true })
     .order('queue', { ascending: true });
 
   if (error) throw error;
   return data || [];
 };
+
 
 export const updateAppointmentQueue = async (appointmentId: string, newQueue: number) => {
   const { data, error } = await supabase

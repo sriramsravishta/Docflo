@@ -2015,7 +2015,7 @@ const renderMedications = (medications: any[]) => {
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Time</th>
-            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Food</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">AF/BF</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Instructions</th>
           </tr>

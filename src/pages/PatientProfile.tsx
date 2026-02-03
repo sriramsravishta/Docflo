@@ -369,6 +369,15 @@ useEffect(() => {
   }
 };
 
+const updateMedicineDraft = (medicineId: string, patch: any) => {
+  setMedicineDrafts((prev) => ({
+    ...prev,
+    [medicineId]: {
+      ...(prev[medicineId] || {}),
+      ...patch,
+    },
+  }));
+};
 
 
 

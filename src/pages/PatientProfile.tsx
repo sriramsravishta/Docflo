@@ -2155,7 +2155,7 @@ const getViewModeMedicines = (summary: any) => {
       name: m?.name || '',
       quantity: m?.quantity || '',
       frequency: m?.frequency || '',
-      time: Array.isArray(m?.time) ? m.time : [],  // ensure array
+      time: normalizeTime(m?.time),
       food: m?.food || '',
       duration: m?.duration || '',
       instructions: m?.instructions || '',

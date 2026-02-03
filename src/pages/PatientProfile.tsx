@@ -815,15 +815,7 @@ const handleUpdateMedicine = async (medicineId: string, updates: any) => {
 };
 
   
-  const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
-  // 1) instant local typing (no lag)
-  setMedicineDrafts((prev) => ({
-    ...prev,
-    [medicineId]: {
-      ...(prev[medicineId] || {}),
-      [field]: value,
-    },
-  }));
+  
 
   // 2) debounce DB save
   if (medicineSaveTimers.current[medicineId]?.[field]) {

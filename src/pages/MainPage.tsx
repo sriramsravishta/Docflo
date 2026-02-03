@@ -81,6 +81,9 @@ export default function MainPage() {
   const filteredTodaysAppointments = todaysAppointments.filter(appointment =>
     appointment.patients?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const pendingTodaysAppointments = filteredTodaysAppointments.filter(a => a.completed !== true);
+const completedTodaysAppointments = filteredTodaysAppointments.filter(a => a.completed === true);
+
 
   const filteredAllPatients = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())

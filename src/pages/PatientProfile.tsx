@@ -2668,7 +2668,7 @@ onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
     {openTimeDropdownId === medicine.id && (
       <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
         {TIME_OPTIONS.map((opt) => {
-          const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+          const current: string[] = Array.isArray(d.time) ? d.time : [];
           const checked = current.includes(opt);
 
           return (
@@ -2681,7 +2681,7 @@ onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
                 checked={checked}
                 onChange={() => {
                   const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                  handleUpdateMedicine(medicine.id, { time: next });
+                  updateMedicineDraft(medicine.id, { time: next });
                 }}
               />
               <span className="text-sm text-gray-800">{opt}</span>

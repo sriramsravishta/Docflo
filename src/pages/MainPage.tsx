@@ -344,7 +344,7 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter(a => a.com
           {appointment.patients?.name}
         </h3>
 
-        {appointment.patients?.case && ( 
+        {appointment.patients?.case && (
           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
             {appointment.patients?.case}
           </div>

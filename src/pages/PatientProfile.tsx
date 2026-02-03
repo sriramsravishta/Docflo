@@ -2657,9 +2657,10 @@ onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
       className="input-field flex items-center justify-between"
     >
       <span className="text-gray-900">
-        {Array.isArray(medicine.time) && medicine.time.length > 0
-          ? medicine.time.join(', ')
-          : 'Select time'}
+        {Array.isArray(d.time) && d.time.length > 0
+  ? d.time.join(', ')
+  : 'Select time'}
+
       </span>
       <ChevronDown className="w-4 h-4 text-gray-500" />
     </button>

@@ -1705,7 +1705,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
             <th>Quantity</th>
             <th>Frequency</th>
             <th>Time</th>
-            <th>Food</th>
+            <th>AF/BF</th>
             <th>Duration</th>
             <th>Instructions</th>
           </tr>

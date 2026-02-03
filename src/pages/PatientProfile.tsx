@@ -2563,11 +2563,12 @@ const getViewModeMedicines = (summary: any) => {
                               <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
                               <input
                                 type="text"
-                                value={medicine.name}
-                                onChange={(e) => {
-                                  handleUpdateMedicine(medicine.id, { name: e.target.value });
-                                  handleMedicineSearch(e.target.value);
-                                }}
+                              value={d.name}
+onChange={(e) => {
+  updateMedicineDraft(medicine.id, { name: e.target.value });
+  handleMedicineSearch(e.target.value);
+}}
+
                                 className="input-field"
                                 placeholder="Search medicine..."
                               />

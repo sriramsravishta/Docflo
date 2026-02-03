@@ -2581,7 +2581,8 @@ onChange={(e) => {
                                       key={idx}
                                       type="button"
                                       onClick={() => {
-                                        handleUpdateMedicine(medicine.id, { name: result.name });
+                                        updateMedicineDraft(medicine.id, { name: result.name });
+
                                         setMedicineSearchResults([]);
                                       }}
                                       className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"

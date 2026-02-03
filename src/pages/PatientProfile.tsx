@@ -2598,8 +2598,9 @@ onChange={(e) => {
                              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
 <input
   type="text"
-  value={medicineDrafts[medicine.id]?.quantity ?? (medicine.quantity || '')}
-  onChange={(e) => updateDraftAndDebounceSave(medicine.id, 'quantity', e.target.value)}
+  value={d.quantity}
+onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
+
   className="input-field"
   placeholder="e.g., 10 MG / 10 ml / 1 tab"
 />

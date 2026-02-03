@@ -78,7 +78,7 @@ const hasAnyProcessingConsult = (list: any[]) => {
   const [consultMedicines, setConsultMedicines] = useState<any[]>([]);
   // ✅ Local drafts for lag-free typing (saved to DB with debounce)
 const [medicineDrafts, setMedicineDrafts] = useState<Record<string, any>>({});
-const medicineSaveTimers = useRef<Record<string, any>>({});
+
 
   const [medicineSearchResults, setMedicineSearchResults] = useState<any[]>([]);
   const [openTimeDropdownId, setOpenTimeDropdownId] = useState<string | null>(null);
@@ -342,20 +342,21 @@ useEffect(() => {
     const medicines = await getConsultMedicines(consultId);
     setConsultMedicines(medicines);
 
-    // init drafts (only if not already present)
-    setMedicineDrafts((prev) => {
-      const next = { ...prev };
-      medicines.forEach((m: any) => {
-        if (!next[m.id]) {
-          next[m.id] = {
-            quantity: m.quantity || '',
-            duration: m.duration || '',
-            instructions: m.instructions || '',
-          };
-        }
-      });
-      return next;
-    });
+    // ✅ ALWAYS reset drafts from DB (so popup default values match DB)
+const drafts: Record<string, any> = {};
+medicines.forEach((m: any) => {
+  drafts[m.id] = {
+    name: m.name || '',
+    quantity: m.quantity || '',
+    frequency: m.frequency || '',
+    food: m.food || '',
+    time: normalizeTime(m.time),
+    duration: m.duration || '',
+    instructions: m.instructions || '',
+  };
+});
+setMedicineDrafts(drafts);
+
   } catch (error) {
     console.error('Error loading consult medicines:', error);
   }
@@ -790,29 +791,7 @@ useEffect(() => {
   }
 };
 
-  const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
-  // 1) instant local typing (no lag)
-  setMedicineDrafts((prev) => ({
-    ...prev,
-    [medicineId]: {
-      ...(prev[medicineId] || {}),
-      [field]: value,
-    },
-  }));
-
-  // 2) debounce DB save
-  if (medicineSaveTimers.current[medicineId]?.[field]) {
-    clearTimeout(medicineSaveTimers.current[medicineId][field]);
-  }
-
-  if (!medicineSaveTimers.current[medicineId]) {
-    medicineSaveTimers.current[medicineId] = {};
-  }
-
-  medicineSaveTimers.current[medicineId][field] = setTimeout(() => {
-    handleUpdateMedicine(medicineId, { [field]: value });
-  }, 400);
-}; 
+  
 
 
   const handleDeleteMedicine = async (medicineId: string) => {

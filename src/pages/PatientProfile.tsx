@@ -754,6 +754,8 @@ const saveMedicineDraftsToDB = async () => {
       const { id, ...payload } = toSave || {};
 
       await updateConsultSummary(selectedConsult.id, payload);
+      await saveMedicineDraftsToDB();
+
 
       // Refresh lists + keep this consult selected
       const { consultsData } = await loadPatientData();

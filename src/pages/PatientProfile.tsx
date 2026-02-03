@@ -339,46 +339,27 @@ useEffect(() => {
 
  const loadConsultMedicines = async (consultId: string) => {
   try {
-    const medicinesRaw = await getConsultMedicines(consultId);
-
-    const medicines = (medicinesRaw || []).map((m: any) => ({
-      ...m,
-      time: normalizeTime(m?.time),
-    }));
-
+    const medicines = await getConsultMedicines(consultId);
     setConsultMedicines(medicines);
 
-    // ✅ Reset drafts from DB every time (so defaults always match DB)
-    const drafts: Record<string, any> = {};
-    medicines.forEach((m: any) => {
-      drafts[m.id] = {
-        name: m.name || '',
-        quantity: m.quantity || '',
-        frequency: m.frequency || '',
-        food: m.food || '',
-        time: normalizeTime(m.time),
-        duration: m.duration || '',
-        instructions: m.instructions || '',
-        _isNew: false,
-        _isDeleted: false,
-      };
+    // init drafts (only if not already present)
+    setMedicineDrafts((prev) => {
+      const next = { ...prev };
+      medicines.forEach((m: any) => {
+        if (!next[m.id]) {
+          next[m.id] = {
+            quantity: m.quantity || '',
+            duration: m.duration || '',
+            instructions: m.instructions || '',
+          };
+        }
+      });
+      return next;
     });
-    setMedicineDrafts(drafts);
   } catch (error) {
     console.error('Error loading consult medicines:', error);
   }
 };
-
-const updateMedicineDraft = (medicineId: string, patch: any) => {
-  setMedicineDrafts((prev) => ({
-    ...prev,
-    [medicineId]: {
-      ...(prev[medicineId] || {}),
-      ...patch,
-    },
-  }));
-};
-
 
 
   const handleEditPatient = async () => {
@@ -411,7 +392,6 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
       return null;
     }
   };
-
   
 
   const normalizeTime = (value: any): string[] => {
@@ -421,6 +401,7 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
     arr.forEach((x) => {
       if (x === null || x === undefined) return;
 
+      // if element is already array -> flatten
       if (Array.isArray(x)) return pushMany(x);
 
       if (typeof x === "string") {
@@ -428,14 +409,11 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
         if (!s) return;
 
         // remove wrapping quotes like "\"Morning\""
-        if (
-          (s.startsWith('"') && s.endsWith('"')) ||
-          (s.startsWith("'") && s.endsWith("'"))
-        ) {
+        if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
           s = s.slice(1, -1).trim();
         }
 
-        // JSON array string '["Morning","Night"]'
+        // if string itself is a JSON array: '["Morning","Night"]'
         if (s.startsWith("[") && s.endsWith("]")) {
           try {
             const parsed = JSON.parse(s);
@@ -443,7 +421,7 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
           } catch {}
         }
 
-        // postgres array string "{Morning,Night}"
+        // if postgres array string: "{Morning,Night}"
         if (s.startsWith("{") && s.endsWith("}")) {
           const parts = s
             .slice(1, -1)
@@ -457,6 +435,7 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
         return;
       }
 
+      // fallback
       out.push(String(x));
     });
   };
@@ -464,10 +443,10 @@ const updateMedicineDraft = (medicineId: string, patch: any) => {
   if (Array.isArray(value)) pushMany(value);
   else pushMany([value]);
 
+  // ✅ dedupe + keep only allowed values
   const allowed = new Set(["Morning", "Afternoon", "Night", "Not applicable"]);
   return Array.from(new Set(out)).filter((x) => allowed.has(x));
 };
-
 
 
 
@@ -781,14 +760,15 @@ useEffect(() => {
   }
 };
 
-const handleUpdateMedicine = async (medicineId: string, updates: any) => {
-  // ✅ optimistic UI update first
+  const handleUpdateMedicine = async (medicineId: string, updates: any) => {
+  // ✅ optimistic UI update first (instant checkbox feedback)
   setConsultMedicines((prev) =>
     prev.map((m) =>
       m.id === medicineId
         ? {
             ...m,
             ...updates,
+            // normalize time if present
             ...(updates?.time !== undefined ? { time: normalizeTime(updates.time) } : {}),
           }
         : m
@@ -796,13 +776,9 @@ const handleUpdateMedicine = async (medicineId: string, updates: any) => {
   );
 
   try {
-    const safeUpdates = {
-      ...updates,
-      ...(updates?.time !== undefined ? { time: normalizeTime(updates.time) } : {}),
-    };
+    const updatedMedicine = await updateConsultMedicine(medicineId, updates);
 
-    const updatedMedicine = await updateConsultMedicine(medicineId, safeUpdates);
-
+    // ✅ normalize DB return as well
     const normalized = {
       ...updatedMedicine,
       time: normalizeTime(updatedMedicine?.time),
@@ -814,8 +790,15 @@ const handleUpdateMedicine = async (medicineId: string, updates: any) => {
   }
 };
 
-  
-  
+  const updateDraftAndDebounceSave = (medicineId: string, field: string, value: string) => {
+  // 1) instant local typing (no lag)
+  setMedicineDrafts((prev) => ({
+    ...prev,
+    [medicineId]: {
+      ...(prev[medicineId] || {}),
+      [field]: value,
+    },
+  }));
 
   // 2) debounce DB save
   if (medicineSaveTimers.current[medicineId]?.[field]) {
@@ -2669,42 +2652,36 @@ const getViewModeMedicines = (summary: any) => {
       className="input-field flex items-center justify-between"
     >
       <span className="text-gray-900">
-  {(() => {
-    const selectedTimes = normalizeTime(medicine.time);
-    return selectedTimes.length ? selectedTimes.join(", ") : "Select time";
-  })()}
-</span>
-
+        {Array.isArray(medicine.time) && medicine.time.length > 0
+          ? medicine.time.join(', ')
+          : 'Select time'}
+      </span>
       <ChevronDown className="w-4 h-4 text-gray-500" />
     </button>
 
     {openTimeDropdownId === medicine.id && (
       <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
         {TIME_OPTIONS.map((opt) => {
-  const current = normalizeTime(medicine.time);
-  const checked = current.includes(opt);
+          const current: string[] = Array.isArray(medicine.time) ? medicine.time : [];
+          const checked = current.includes(opt);
 
-  return (
-    <label
-      key={opt}
-      className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={() => {
-          const next = checked
-            ? current.filter((x) => x !== opt)
-            : [...current, opt];
-
-          handleUpdateMedicine(medicine.id, { time: next });
-        }}
-      />
-      <span className="text-sm text-gray-800">{opt}</span>
-    </label>
-  );
-})}
-
+          return (
+            <label
+              key={opt}
+              className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => {
+                  const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+                  handleUpdateMedicine(medicine.id, { time: next });
+                }}
+              />
+              <span className="text-sm text-gray-800">{opt}</span>
+            </label>
+          );
+        })}
       </div>
     )}
   </div>

@@ -2642,8 +2642,9 @@ onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
                             <div>
                              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
 <select
-  value={medicine.frequency || ''}
-onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+  value={d.frequency}
+onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
+
 
   className="input-field"
 >

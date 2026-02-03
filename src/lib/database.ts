@@ -609,7 +609,7 @@ export const updateTodaysAppointmentCompleted = async (docId: string, patientId:
   
   const { data, error } = await supabase
     .from('appointments')
-    .update({ completed: 'yes' })
+    .update({ completed: true })
     .eq('doc_id', docId)
     .eq('patient_id', patientId)
     .gte('created_at', `${today}T00:00:00.000Z`)

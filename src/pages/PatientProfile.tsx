@@ -2698,8 +2698,9 @@ onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
                               <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                               <input
   type="text"
-  value={medicineDrafts[medicine.id]?.duration ?? (medicine.duration || '')}
-  onChange={(e) => updateDraftAndDebounceSave(medicine.id, 'duration', e.target.value)}
+  value={d.duration}
+onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
+
   className="input-field"
   placeholder="e.g., 7 days"
 />

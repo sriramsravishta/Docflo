@@ -2537,7 +2537,19 @@ const getViewModeMedicines = (summary: any) => {
 
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-4">
-                      {consultMedicines.map((medicine, index) => (
+                      {consultMedicines.map((medicine, index) => {
+  const d = medicineDrafts[medicine.id] || {
+    name: medicine.name || '',
+    quantity: medicine.quantity || '',
+    frequency: medicine.frequency || '',
+    food: medicine.food || '',
+    time: normalizeTime(medicine.time),
+    duration: medicine.duration || '',
+    instructions: medicine.instructions || '',
+  };
+
+  return (
+
                         <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <span className="font-medium text-gray-900">Medicine {index + 1}</span>
@@ -2702,7 +2714,9 @@ const getViewModeMedicines = (summary: any) => {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+})}
+
 
                       {consultMedicines.length === 0 && <p className="text-gray-500 text-center py-4">No medicines added yet</p>}
                     </div>

@@ -240,89 +240,127 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter(a => a.com
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
                 </div>
               ) : (
-                filteredTodaysAppointments.slice(0, 5).map((appointment) => (
-                  <div key={appointment.id} className="relative">
-                    <div
-                      onClick={() => navigate(`/patient/${appointment.patient_id}`)}
-                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          
-                          <div>
-                            <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-                              {appointment.patients?.name}
-                            </h3>
-                            <div className="text-sm text-gray-500 flex items-center gap-2">
-  <span>
-    {appointment.patients?.age}yrs · {appointment.patients?.gender}
-  </span>
+                <>
+  {/* 1) PENDING (completed = false) — keep your current card + kebab menu */}
+  {pendingTodaysAppointments.slice(0, 5).map((appointment) => (
+    <div key={appointment.id} className="relative">
+      <div
+        onClick={() => navigate(`/patient/${appointment.patient_id}`)}
+        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            <div>
+              <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
+                {appointment.patients?.name}
+              </h3>
 
-  {appointment.pre_consult_filled === true && (
-    <span className="w-3 h-3 bg-green-500 rounded-full inline-block" />
-  )}
-</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowKebabMenu(showKebabMenu === appointment.id ? null : appointment.id);
-                              }}
-                              className="p-1 hover:bg-gray-100 rounded-full"
-                            >
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
-                            </button>
-                            {showKebabMenu === appointment.id && (
-                              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveUp(appointment);
-                                  }}
-                                  disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === 0}
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                                >
-                                  <ChevronUp className="w-4 h-4" />
-                                  <span>Move Up</span>
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveDown(appointment);
-                                  }}
-                                  disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === todaysAppointments.length - 1}
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                                >
-                                  <ChevronDown className="w-4 h-4" />
-                                  <span>Move Down</span>
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveClick(appointment);
-                                  }}
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center space-x-2"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Remove</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      {appointment.patients?.case && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                          {appointment.patients?.case}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
+              <div className="text-sm text-gray-500 flex items-center gap-2">
+                <span>
+                  {appointment.patients?.age}yrs · {appointment.patients?.gender}
+                </span>
+
+                {appointment.pre_consult_filled === true && (
+                  <span className="w-3 h-3 bg-green-500 rounded-full inline-block" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ keep kebab menu only for pending */}
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowKebabMenu(showKebabMenu === appointment.id ? null : appointment.id);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <MoreVertical className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {showKebabMenu === appointment.id && (
+                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveUp(appointment);
+                    }}
+                    disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === 0}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    <span>Move Up</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveDown(appointment);
+                    }}
+                    disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === todaysAppointments.length - 1}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    <span>Move Down</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveClick(appointment);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Remove</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {appointment.patients?.case && (
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+            {appointment.patients?.case}
+          </div>
+        )}
+      </div>
+    </div>
+  ))}
+
+  {/* 2) COMPLETED (completed = true) — new simple card design, NO kebab */}
+  {completedTodaysAppointments.map((appointment) => (
+    <div
+      key={appointment.id}
+      onClick={() => navigate(`/patient/${appointment.patient_id}`)}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
+    >
+      <div className="flex items-start justify-between">
+        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
+          {appointment.patients?.name}
+        </h3>
+
+        {appointment.patients?.case && (
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+            {appointment.patients?.case}
+          </div>
+        )}
+      </div>
+
+      <div className="text-sm text-gray-500">
+        {appointment.patients?.age}yrs · {appointment.patients?.gender}
+      </div>
+
+      <div className="mt-5 pt-3 border-t border-gray-100">
+        <p className="text-sm font-medium text-green-600">Consultation completed</p>
+      </div>
+    </div>
+  ))}
+</>
+
               )}
             </div>
             {filteredTodaysAppointments.length > 5 && (

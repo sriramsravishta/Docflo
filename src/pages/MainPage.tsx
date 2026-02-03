@@ -331,6 +331,16 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
             {appointment.patients?.case}
           </div>
         )}
+        <div className="mt-5 pt-3 border-t border-gray-100">
+  {appointment.patients?.last_visit_at ? (
+    <p className="text-sm text-gray-500">
+      Last visit: {formatDate(appointment.patients.last_visit_at)}
+    </p>
+  ) : (
+    <p className="text-sm text-gray-400">Last visit: —</p>
+  )}
+</div>
+
       </div>
     </div>
   ))}

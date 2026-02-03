@@ -2665,7 +2665,7 @@ onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })
                             </div>
 
                             <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Food</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
 <select
   value={d.food}
 onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}

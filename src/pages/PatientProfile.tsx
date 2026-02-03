@@ -341,32 +341,34 @@ useEffect(() => {
   try {
     const medicinesRaw = await getConsultMedicines(consultId);
 
-    // ✅ 1) Normalize time for every medicine row (prevents ugly JSON in UI)
     const medicines = (medicinesRaw || []).map((m: any) => ({
       ...m,
-      time: normalizeTime(m?.time), // always string[]
+      time: normalizeTime(m?.time),
     }));
 
     setConsultMedicines(medicines);
 
-    // ✅ 2) init drafts (only if not already present)
-    setMedicineDrafts((prev) => {
-      const next = { ...prev };
-      medicines.forEach((m: any) => {
-        if (!next[m.id]) {
-          next[m.id] = {
-            quantity: m.quantity || '',
-            duration: m.duration || '',
-            instructions: m.instructions || '',
-          };
-        }
-      });
-      return next;
+    // ✅ Reset drafts from DB every time (so defaults always match DB)
+    const drafts: Record<string, any> = {};
+    medicines.forEach((m: any) => {
+      drafts[m.id] = {
+        name: m.name || '',
+        quantity: m.quantity || '',
+        frequency: m.frequency || '',
+        food: m.food || '',
+        time: normalizeTime(m.time),
+        duration: m.duration || '',
+        instructions: m.instructions || '',
+        _isNew: false,
+        _isDeleted: false,
+      };
     });
+    setMedicineDrafts(drafts);
   } catch (error) {
     console.error('Error loading consult medicines:', error);
   }
 };
+
 
 
 

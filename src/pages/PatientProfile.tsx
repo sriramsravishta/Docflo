@@ -2612,7 +2612,8 @@ onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
                              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
 <select
   value={medicine.frequency || ''}
-  onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+onChange={(e) => handleUpdateMedicine(medicine.id, { frequency: e.target.value })}
+
   className="input-field"
 >
   <option value="" disabled>Select frequency</option>

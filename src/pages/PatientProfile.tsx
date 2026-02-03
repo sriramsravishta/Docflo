@@ -340,7 +340,14 @@ useEffect(() => {
  const loadConsultMedicines = async (consultId: string) => {
   try {
     const medicines = await getConsultMedicines(consultId);
-    setConsultMedicines(medicines);
+
+const normalized = (medicines || []).map((m: any) => ({
+  ...m,
+  time: normalizeTime(m?.time),
+}));
+
+setConsultMedicines(normalized);
+
 
     // ✅ ALWAYS reset drafts from DB (so popup default values match DB)
 const drafts: Record<string, any> = {};

@@ -570,7 +570,7 @@ export const updateAppointmentQueue = async (appointmentId: string, newQueue: nu
 export const completeAppointment = async (appointmentId: string) => {
   const { data, error } = await supabase
     .from('appointments')
-    .update({ completed: 'yes' })
+    .update({ completed: true })
     .eq('id', appointmentId)
     .select()
     .single();

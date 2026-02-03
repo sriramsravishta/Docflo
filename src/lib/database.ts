@@ -526,8 +526,8 @@ export const createAppointment = async (patientId: string, docId: string) => {
       patient_id: patientId,
       doc_id: docId,
       queue: nextQueue,
-      pre_consult_filled: 'no',
-      completed: 'no'
+     pre_consult_filled: false,
+completed: false
     })
     .select()
     .single();

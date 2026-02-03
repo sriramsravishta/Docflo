@@ -707,6 +707,35 @@ useEffect(() => {
     setMedicineSearchResults([]);
   };
 
+const saveMedicineDraftsToDB = async () => {
+  // consultMedicines = what you loaded from DB
+  // medicineDrafts   = what user edited in popup
+
+  for (const m of consultMedicines) {
+    const d = medicineDrafts[m.id];
+    if (!d) continue;
+
+    const updates: any = {
+      name: d.name || '',
+      quantity: d.quantity || '',
+      frequency: d.frequency || '',
+      food: d.food || '',
+      time: normalizeTime(d.time),
+      duration: d.duration || '',
+      instructions: d.instructions || '',
+    };
+
+    // ✅ Update DB for this medicine row
+    await updateConsultMedicine(m.id, updates);
+  }
+
+  // ✅ reload from DB so view mode shows updated values
+  if (selectedConsult?.id) {
+    await loadConsultMedicines(selectedConsult.id);
+  }
+};
+
+  
   // ✅ CHANGE: Save should exit edit mode but keep popup open (show view mode)
   const handleSaveConsult = async () => {
     try {

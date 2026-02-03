@@ -543,7 +543,7 @@ export const getTodaysAppointments = async (docId: string) => {
     .from('appointments')
     .select(`
       *,
-      patients (id, name, age, gender, phone)
+      patients (id, name, age, gender, phone, last_visit_at)
     `)
     .eq('doc_id', docId)
     // ✅ IMPORTANT: DO NOT filter completed here

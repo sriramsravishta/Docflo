@@ -78,11 +78,15 @@ export default function MainPage() {
     }
   };
 
-  const filteredTodaysAppointments = todaysAppointments.filter(appointment =>
-    appointment.patients?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-const pendingTodaysAppointments = filteredTodaysAppointments.filter(a => a.completed !== true);
-const completedTodaysAppointments = filteredTodaysAppointments.filter(a => a.completed === true);
+  const filteredTodaysAppointments = todaysAppointments.filter((appointment) => {
+  const name = (appointment.patients?.name ?? '').toLowerCase();
+  return name.includes(searchQuery.toLowerCase());
+});
+
+// since DB is boolean, this is enough (also handles undefined/null safely)
+const pendingTodaysAppointments = filteredTodaysAppointments.filter((a) => a.completed !== true);
+const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.completed === true);
+
 
   const filteredAllPatients = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())

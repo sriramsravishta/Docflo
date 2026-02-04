@@ -1778,28 +1778,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
       `;
     }
 
-    if (summary.key_personal_insights) {
-      content += `
-        <div class="section">
-          <h2>KEY PERSONAL INSIGHTS</h2>
-          ${
-            Array.isArray(summary.key_personal_insights)
-              ? toHtmlList(summary.key_personal_insights)
-              : `<p>${escapeHtml(summary.key_personal_insights)}</p>`
-          }
-        </div>
-      `;
-    }
-
-    if (Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0) {
-      content += `
-        <div class="section">
-          <h2>FLAGS FOR REVIEW</h2>
-          ${toHtmlList(summary.flags_for_review)}
-        </div>
-      `;
-    }
-
+  
     return content;
   };
 

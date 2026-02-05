@@ -1199,8 +1199,9 @@ const getProgressPercent = (consult: any) => {
   {/* Replace date with View details */}
   <button
     type="button"
-    className="text-sm text-[#024CDB] hover:underline"
+    //className="text-sm text-[#024CDB] hover:underline"
     // later we can hook this to a modal if needed
+    className="hidden"
     onClick={() => {}}
   >
     View details

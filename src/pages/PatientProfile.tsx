@@ -1117,6 +1117,7 @@ const handleDocumentUploadRetry = () => {
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
 const MAX_PROCESS_SECONDS = 300; // ✅ 5 min hard limit
+  const PRE_CONSULT_ESTIMATED_SECONDS = 100;
 
 const isConsultProcessed = (consult: any) => {
   const summary = getConsultSummary(consult);

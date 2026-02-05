@@ -240,7 +240,7 @@ useEffect(() => {
               } catch (e) {
                 console.error('Error refreshing summary after pre-consult:', e);
               }
-            }, 2000); 
+            }, 2000);
           } else {
             // Just update the record
             setProcessingPreConsults((prev) =>

@@ -2990,23 +2990,85 @@ onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value
         </div>
       )}
 
-      <ConfirmationModal
-  isOpen={showConfirmation}
+      {/* Document Upload Confirmation/Status Modal */}
+{showConfirmation && confirmationType === 'documents' && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      {documentUploadState === 'confirming' && (
+        <>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Documents</h3>
+          <p className="text-gray-600 mb-6">Upload selected documents for this patient?</p>
+          <div className="flex space-x-3 justify-end">
+            <button
+              onClick={() => setShowConfirmation(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDocumentSubmit}
+              className="px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+            >
+              Confirm
+            </button>
+          </div>
+        </>
+      )}
+
+      {documentUploadState === 'uploading' && (
+        <div className="text-center py-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Documents being uploaded...</p>
+        </div>
+      )}
+
+      {documentUploadState === 'success' && (
+        <div className="text-center py-6">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-green-600 text-2xl">✓</span>
+          </div>
+          <p className="text-gray-700 font-medium mb-6">Documents uploaded</p>
+          <button
+            onClick={handleDocumentUploadOkay}
+            className="px-6 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+          >
+            Okay
+          </button>
+        </div>
+      )}
+
+      {documentUploadState === 'error' && (
+        <div className="text-center py-6">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-600 text-2xl">✕</span>
+          </div>
+          <p className="text-gray-700 font-medium mb-6">Upload failed</p>
+          <button
+            onClick={handleDocumentUploadRetry}
+            className="px-6 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Keep original ConfirmationModal for non-document types */}
+<ConfirmationModal
+  isOpen={showConfirmation && confirmationType !== 'documents'}
   onClose={() => setShowConfirmation(false)}
   onConfirm={handleConfirmAction}
   title={
     confirmationType === 'preConsult'
       ? 'Send Pre-Consult Link'
-      : confirmationType === 'followUp'
-      ? 'Send Follow-Up Link'
-      : 'Upload Documents'
+      : 'Send Follow-Up Link'
   }
   message={
     confirmationType === 'preConsult'
       ? 'Create and send pre-consultation form link to patient?'
-      : confirmationType === 'followUp'
-      ? 'Create and send follow-up form link to patient?'
-      : 'Upload selected documents for this patient?'
+      : 'Create and send follow-up form link to patient?'
   }
 />
     </div>

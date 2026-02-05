@@ -2990,24 +2990,24 @@ onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value
       )}
 
       <ConfirmationModal
-        isOpen={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmAction}
-        title={
-          confirmationType === 'preConsult'
-            ? 'Send Pre-Consult Link'
-            : confirmationType === 'followUp'
-            ? 'Send Follow-Up Link'
-            : 'Upload Documents'
-        }
-        message={
-          confirmationType === 'preConsult'
-            ? 'Create and send pre-consultation form link to patient?'
-            : confirmationType === 'followUp'
-            ? 'Create and send follow-up form link to patient?'
-            : 'Upload selected documents for this patient?'
-        }
-      />
+  isOpen={showConfirmation}
+  onClose={() => setShowConfirmation(false)}
+  onConfirm={handleConfirmAction}
+  title={
+    confirmationType === 'preConsult'
+      ? 'Send Pre-Consult Link'
+      : confirmationType === 'followUp'
+      ? 'Send Follow-Up Link'
+      : 'Upload Documents'
+  }
+  message={
+    confirmationType === 'preConsult'
+      ? 'Create and send pre-consultation form link to patient?'
+      : confirmationType === 'followUp'
+      ? 'Create and send follow-up form link to patient?'
+      : 'Upload selected documents for this patient?'
+  }
+/>
     </div>
   );
 }

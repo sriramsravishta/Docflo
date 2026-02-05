@@ -938,52 +938,48 @@ const saveMedicineDraftsToDB = async () => {
   };
 
   const confirmDocumentSubmit = async () => {
-    if (documentsToUpload.length === 0) return;
+  if (documentsToUpload.length === 0) return;
 
-    try {
-      setIsUploading(true);
-      setUploadError('');
+  try {
+    setDocumentUploadState('uploading');
+    setUploadError('');
 
-      // Upload ALL files first before creating any DB records
-      const uploadedUrls: string[] = [];
+    // Upload ALL files first before creating any DB records
+    const uploadedUrls: string[] = [];
 
-      for (const file of documentsToUpload) {
-        const fileName = `${patientId}-${Date.now()}-${file.name}`;
+    for (const file of documentsToUpload) {
+      const fileName = `${patientId}-${Date.now()}-${file.name}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('pre-consultation-documents')
-          .upload(fileName, file, {
-            contentType: file.type || 'application/octet-stream',
-            upsert: false,
-          });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('pre-consultation-documents')
+        .upload(fileName, file, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false,
+        });
 
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          throw new Error('Failed to upload document: ' + file.name);
-        }
-
-        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
-
-        uploadedUrls.push(urlData.publicUrl);
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error('Failed to upload document: ' + file.name);
       }
 
-      // ONLY AFTER all uploads complete, create DB record with URLs
-      const preConsult = await createPreConsult(user!.id, patientId!);
-      await updatePreConsult(preConsult.id, {
-        documents_uploaded: uploadedUrls,
-        status: 'Draft',
-      });
+      const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
 
-      alert('Documents uploaded successfully');
-      setShowConfirmation(false);
-      handleCloseDocumentUpload();
-    } catch (error) {
-      console.error('Error uploading documents:', error);
-      alert('Failed to upload documents. Please try again.');
-    } finally {
-      setIsUploading(false);
+      uploadedUrls.push(urlData.publicUrl);
     }
-  };
+
+    // ONLY AFTER all uploads complete, create DB record with URLs
+    const preConsult = await createPreConsult(user!.id, patientId!);
+    await updatePreConsult(preConsult.id, {
+      documents_uploaded: uploadedUrls,
+      status: 'Draft',
+    });
+
+    setDocumentUploadState('success');
+  } catch (error) {
+    console.error('Error uploading documents:', error);
+    setDocumentUploadState('error');
+  }
+};
 
   const handleCloseDocumentUpload = () => {
     setShowDocumentUpload(false);

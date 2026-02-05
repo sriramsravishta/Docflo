@@ -185,6 +185,7 @@ useEffect(() => {
   const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
 
   useEffect(() => {
     if (patientId) {
@@ -973,7 +974,7 @@ const saveMedicineDraftsToDB = async () => {
         status: 'Draft',
       });
 
-      
+      alert('Documents uploaded successfully');
       setShowConfirmation(false);
       handleCloseDocumentUpload();
     } catch (error) {

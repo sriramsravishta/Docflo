@@ -2305,23 +2305,21 @@ const getViewModeMedicines = (summary: any) => {
         </div>
 
        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-  <div className="border-b border-gray-200">
-    <div className="flex overflow-x-auto">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className={`...`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  </div>
+  <div className="p-6 space-y-8">
 
-  <div className="p-6">
-    {activeTab === 'history' && renderHistoryTab()}
-    {activeTab === 'past' && renderPastSummariesTab()}
+    {/* Past Consultations section (before Diagnostic Trends) */}
+    <section>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        Past Consultations
+      </h2>
+      {renderPastSummariesTab()}
+    </section>
+
+    {/* Everything else (includes Diagnostic Trends, Medications, Timeline) */}
+    <section>
+      {renderHistoryTab()}
+    </section>
+
   </div>
 </div>
 

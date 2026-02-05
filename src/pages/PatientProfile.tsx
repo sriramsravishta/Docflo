@@ -59,7 +59,7 @@ export default function PatientProfile() {
 const hasAnyProcessingConsult = (list: any[]) => {
   return (list || []).some((c) => !isConsultProcessed(c));
 };
-  const [activeTab, setActiveTab] = useState('history');
+
 
   // UI states
   const [showEditModal, setShowEditModal] = useState(false);

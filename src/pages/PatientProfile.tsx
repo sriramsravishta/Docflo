@@ -291,7 +291,7 @@ useEffect(() => {
   const [isUploading, setIsUploading] = useState(false);
   const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
   // Pre-consult processing tracking
-const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
+const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 const [preConsultRemovalTimers, setPreConsultRemovalTimers] =
   useState<Record<string, ReturnType<typeof setTimeout>>>({});
 

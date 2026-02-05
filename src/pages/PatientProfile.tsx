@@ -973,7 +973,7 @@ const saveMedicineDraftsToDB = async () => {
         status: 'Draft',
       });
 
-      alert('Documents uploaded successfully');
+      
       setShowConfirmation(false);
       handleCloseDocumentUpload();
     } catch (error) {

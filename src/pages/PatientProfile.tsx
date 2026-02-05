@@ -1183,7 +1183,7 @@ const getProgressPercent = (consult: any) => {
 
     if (timeline.length === 0) {
       return (
-        <div className="text-center py-12">
+        <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg">
           <p className="text-gray-500">No timeline events available</p>
         </div>
       );

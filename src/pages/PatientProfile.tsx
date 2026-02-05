@@ -228,7 +228,7 @@ useEffect(() => {
 
 
             // Update the record in our list to show it's complete
-            setProcessingPreConsults((prev) =
+            setProcessingPreConsults((prev) =>
               prev.map((pc) => (pc.id === record.id ? { ...pc, ...record } : pc))
             );
 

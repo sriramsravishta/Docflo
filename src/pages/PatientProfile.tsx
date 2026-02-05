@@ -220,11 +220,8 @@ useEffect(() => {
             // Pre-consult processing complete - schedule removal after 60 seconds
             const timerId = setTimeout(() => {
               setProcessingPreConsults((prev) => prev.filter((pc) => pc.id !== record.id));
-              setPreConsultRemovalTimers((prev) => {
-                const next = { ...prev };
-                delete next[record.id];
-                return next;
-              });
+              delete preConsultRemovalTimersRef.current[record.id];
+
             }, 60000); // 60 seconds = 1 minute
 
             preConsultRemovalTimersRef.current[record.id] = timerId;

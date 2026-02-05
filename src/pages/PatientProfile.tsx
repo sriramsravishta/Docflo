@@ -227,7 +227,8 @@ useEffect(() => {
               });
             }, 60000); // 60 seconds = 1 minute
 
-            setPreConsultRemovalTimers((prev) => ({ ...prev, [record.id]: timerId }));
+            preConsultRemovalTimersRef.current[record.id] = timerId;
+
 
             // Update the record in our list to show it's complete
             setProcessingPreConsults((prev) =>

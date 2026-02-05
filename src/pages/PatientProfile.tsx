@@ -981,6 +981,17 @@ const saveMedicineDraftsToDB = async () => {
   }
 };
 
+  const handleDocumentUploadOkay = () => {
+  setShowConfirmation(false);
+  handleCloseDocumentUpload();
+  setDocumentUploadState('confirming');
+};
+
+const handleDocumentUploadRetry = () => {
+  setShowConfirmation(false);
+  setDocumentUploadState('confirming');
+};
+
   const handleCloseDocumentUpload = () => {
     setShowDocumentUpload(false);
     setDocumentsToUpload([]);

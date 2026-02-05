@@ -186,6 +186,9 @@ useEffect(() => {
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
+  // Pre-consult processing tracking
+const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
+const [preConsultRemovalTimers, setPreConsultRemovalTimers] = useState<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     if (patientId) {

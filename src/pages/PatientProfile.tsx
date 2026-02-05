@@ -2515,6 +2515,15 @@ const getViewModeMedicines = (summary: any) => {
       {renderPastSummariesTab()}
     </section>
 
+    {/* ✅ NEW: Patient History (Diagnostic Trends + Medications + Timeline) */}
+<section>
+  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    Patient History
+  </h2>
+  {renderHistoryTab()}
+</section>
+
+
   </div>
 </div>
 

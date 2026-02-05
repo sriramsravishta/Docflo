@@ -948,7 +948,8 @@ const saveMedicineDraftsToDB = async () => {
     const uploadedUrls: string[] = [];
 
     for (const file of documentsToUpload) {
-      const fileName = `${patientId}-${Date.now()}-${file.name}`;
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('pre-consultation-documents')

@@ -2373,31 +2373,21 @@ const getViewModeMedicines = (summary: any) => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-  <button onClick={handleUploadDocuments} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-    <Upload className="w-4 h-4" />
-    <span className="text-sm font-medium">Upload</span>
-  </button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button onClick={handleUploadDocuments} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
+              <Upload className="w-4 h-4" />
+              <span className="text-sm font-medium">Upload</span>
+            </button>
 
-  <button
-    onClick={isRecording ? handleEndRecording : handleStartRecording}
-    className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-colors font-medium ${
-      isRecording ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
-    }`}
-  >
-    {isRecording ? (
-      <>
-        <Square className="w-4 h-4" />
-        <span className="text-sm font-medium">{formatTime(recordingTime)}</span>
-      </>
-    ) : (
-      <>
-        <Mic className="w-4 h-4" />
-        <span className="text-sm font-medium">Start</span>
-      </>
-    )}
-  </button>
-</div>
+          // button onClick={handleOpenForm} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
+              ExternalLink className="w-4 h-4" />
+              span className="text-sm font-medium">Form</span>
+            /button>
+
+            button onClick={handleSendPreConsultLink} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
+              Send className="w-4 h-4" />
+              span className="text-sm font-medium">Link</span>
+            /button>
 
             <button
               onClick={isRecording ? handleEndRecording : handleStartRecording}

@@ -285,15 +285,18 @@ preConsultRemovalTimersRef.current = {};
     gender: 'Male',
   });
 
-  const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
-  const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
-  const [uploadError, setUploadError] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
-  // Pre-consult processing tracking
+const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
+const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
+const [uploadError, setUploadError] = useState('');
+const [isUploading, setIsUploading] = useState(false);
+const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
+
+// ✅ Pre-consult processing list (MUST exist)
+const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
+
+// ✅ Timers (you can keep either ref OR state — I recommend ref only)
 const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-const [preConsultRemovalTimers, setPreConsultRemovalTimers] =
-  useState<Record<string, ReturnType<typeof setTimeout>>>({});
+
 
   useEffect(() => {
     if (patientId) {

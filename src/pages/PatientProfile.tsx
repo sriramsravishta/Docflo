@@ -2379,12 +2379,12 @@ const getViewModeMedicines = (summary: any) => {
               <span className="text-sm font-medium">Upload</span>
             </button>
 
-          <button onClick={handleOpenForm} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
+          <button onClick={handleOpenForm} className="hidden btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <ExternalLink className="w-4 h-4" />
               <span className="text-sm font-medium">Form</span>
             </button>
 
-            <button onClick={handleSendPreConsultLink} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
+            <button onClick={handleSendPreConsultLink} className="hidden btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <Send className="w-4 h-4" />
               <span className="text-sm font-medium">Link</span>
             </button>

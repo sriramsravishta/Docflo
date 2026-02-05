@@ -1518,11 +1518,11 @@ const getProgressPercent = (consult: any) => {
     return (
       <div className="space-y-3">
         {consultations.map((consult: any) => (
-          <div
-            key={consult.id}
-            onClick={() => setSelectedConsult(consult)}
-            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
-          >
+      <div
+        key={consult.id}
+        onClick={() => setSelectedConsult(consult)}
+        className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+      >
             <div className="flex justify-between items-start gap-3">
   <div className="min-w-0">
     <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>

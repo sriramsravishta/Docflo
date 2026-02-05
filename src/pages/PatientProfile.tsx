@@ -292,7 +292,8 @@ useEffect(() => {
   const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
   // Pre-consult processing tracking
 const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
-const [preConsultRemovalTimers, setPreConsultRemovalTimers] = useState<Record<string, NodeJS.Timeout>>({});
+const [preConsultRemovalTimers, setPreConsultRemovalTimers] =
+  useState<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     if (patientId) {

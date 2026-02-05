@@ -2449,9 +2449,10 @@ const getViewModeMedicines = (summary: any) => {
             </button>
             <button
               onClick={() => {
-                setConfirmationType('documents');
-                setShowConfirmation(true);
-              }}
+  setConfirmationType('documents');
+  setDocumentUploadState('confirming');
+  setShowConfirmation(true);
+}}
               disabled={documentsToUpload.length === 0 || isUploading}
               className="px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors disabled:opacity-50"
             >

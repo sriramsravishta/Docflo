@@ -106,9 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
+  await supabase.auth.signOut({ scope: 'local' });
+};
 
   return (
     <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>

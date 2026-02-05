@@ -142,6 +142,21 @@ useEffect(() => {
         setConsultations((prev) =>
           prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
         );
+        // ✅ If consultation just became processed, refresh history section after 2 seconds
+const wasProcessed = updated.consult_summary_final && 
+  typeof updated.consult_summary_final === 'object' && 
+  Object.keys(updated.consult_summary_final).length > 0;
+
+if (wasProcessed) {
+  setTimeout(async () => {
+    try {
+      const summaryData = await getLatestSummary(patientId!);
+      setLatestSummary(summaryData);
+    } catch (e) {
+      console.error('Error refreshing summary after consultation:', e);
+    }
+  }, 2000);
+}
 
         // ✅ If popup is open for this consult, update popup too
         setSelectedConsult((prev: any) =>

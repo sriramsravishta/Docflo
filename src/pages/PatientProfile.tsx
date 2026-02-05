@@ -255,7 +255,9 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel);
     // Clear any pending removal timers
-    Object.values(preConsultRemovalTimers).forEach((timer) => clearTimeout(timer));
+    Object.values(preConsultRemovalTimersRef.current).forEach(clearTimeout);
+preConsultRemovalTimersRef.current = {};
+
   };
 }, [patientId]);
 

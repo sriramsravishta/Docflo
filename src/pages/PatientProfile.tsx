@@ -2425,17 +2425,94 @@ const getViewModeMedicines = (summary: any) => {
        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
   <div className="p-6 space-y-8">
 
-    {/* Past Consultations section (before Diagnostic Trends) */}
+    {/* ✅ NEW: Pre-Consult Processing Cards */}
+    {processingPreConsults.length > 0 && (
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Pre-Consultation Processing
+        </h2>
+        <div className="space-y-3">
+          {processingPreConsults.map((preConsult) => {
+            const isComplete = !!preConsult.ai_summary;
+            const createdAt = preConsult.created_at ? new Date(preConsult.created_at).getTime() : Date.now();
+            const elapsed = Math.floor((uiNow - createdAt) / 1000);
+            const pct = isComplete ? 100 : Math.min(99, Math.floor((elapsed / PRE_CONSULT_ESTIMATED_SECONDS) * 100));
+            const docCount = Array.isArray(preConsult.documents_uploaded) ? preConsult.documents_uploaded.length : 0;
+
+            return (
+              <div
+                key={preConsult.id}
+                className="bg-white border border-gray-200 rounded-lg p-4"
+              >
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900">
+                      {isComplete ? 'Pre-consultation processed' : 'Processing pre-consultation documents...'}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {docCount} {docCount === 1 ? 'file' : 'files'} uploaded
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end shrink-0">
+                    {isComplete ? (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-50">
+                          ✓
+                        </span>
+                        <span className="font-medium">Complete</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-9 h-9">
+                          <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              className="text-gray-200"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                            />
+                            <path
+                              className="text-[#024CDB]"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeDasharray={`${pct}, 100`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">
+                            {pct}%
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xs font-medium text-gray-700">Processing</p>
+                          <p className="text-[11px] text-gray-500">{pct}% completed</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    )}
+
+    {/* Past Consultations section */}
     <section>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
         Past Consultations
       </h2>
       {renderPastSummariesTab()}
-    </section>
-
-    {/* Everything else (includes Diagnostic Trends, Medications, Timeline) */}
-    <section>
-      {renderHistoryTab()}
     </section>
 
   </div>

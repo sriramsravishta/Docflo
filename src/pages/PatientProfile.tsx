@@ -156,6 +156,95 @@ useEffect(() => {
   };
 }, [patientId]);
 
+  // ✅ NEW: Load and watch pre-consult processing status
+useEffect(() => {
+  if (!patientId) return;
+
+  // Load existing pre-consults that are still processing (no ai_summary yet)
+  const loadProcessingPreConsults = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pre_consult')
+        .select('id, documents_uploaded, ai_summary, created_at')
+        .eq('patient_id', patientId)
+        .is('ai_summary', null)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setProcessingPreConsults(data);
+      }
+    } catch (e) {
+      console.error('Error loading processing pre-consults:', e);
+    }
+  };
+
+  loadProcessingPreConsults();
+
+  // Subscribe to pre_consult changes
+  const channel = supabase
+    .channel(`pre-consult-watch-patient-${patientId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'pre_consult',
+        filter: `patient_id=eq.${patientId}`,
+      },
+      async (payload) => {
+        const record = payload.new as any;
+
+        if (payload.eventType === 'INSERT') {
+          // New pre-consult created, add to processing list if no ai_summary
+          if (!record.ai_summary) {
+            setProcessingPreConsults((prev) => [record, ...prev]);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          // Check if ai_summary was just populated
+          if (record.ai_summary) {
+            // Pre-consult processing complete - schedule removal after 60 seconds
+            const timerId = setTimeout(() => {
+              setProcessingPreConsults((prev) => prev.filter((pc) => pc.id !== record.id));
+              setPreConsultRemovalTimers((prev) => {
+                const next = { ...prev };
+                delete next[record.id];
+                return next;
+              });
+            }, 60000); // 60 seconds = 1 minute
+
+            setPreConsultRemovalTimers((prev) => ({ ...prev, [record.id]: timerId }));
+
+            // Update the record in our list to show it's complete
+            setProcessingPreConsults((prev) =>
+              prev.map((pc) => (pc.id === record.id ? { ...pc, ...record } : pc))
+            );
+
+            // ✅ Auto-refresh history section after 2 seconds
+            setTimeout(async () => {
+              try {
+                const summaryData = await getLatestSummary(patientId);
+                setLatestSummary(summaryData);
+              } catch (e) {
+                console.error('Error refreshing summary after pre-consult:', e);
+              }
+            }, 2000);
+          } else {
+            // Just update the record
+            setProcessingPreConsults((prev) =>
+              prev.map((pc) => (pc.id === record.id ? { ...pc, ...record } : pc))
+            );
+          }
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+    // Clear any pending removal timers
+    Object.values(preConsultRemovalTimers).forEach((timer) => clearTimeout(timer));
+  };
+}, [patientId]);
 
   // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({

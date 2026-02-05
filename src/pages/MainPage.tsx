@@ -246,7 +246,7 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
               ) : (
                 <>
   {/* 1) PENDING (completed = false) — keep your current card + kebab menu */}
-  {pendingTodaysAppointments.slice(0, 5).map((appointment) => (
+  {pendingTodaysAppointments.map((appointment) => (
     <div key={appointment.id} className="relative">
       <div
         onClick={() => navigate(`/patient/${appointment.patient_id}`)}
@@ -377,11 +377,7 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
 
               )}
             </div>
-            {filteredTodaysAppointments.length > 5 && (
-              <button className="text-[#024CDB] hover:underline text-sm font-medium">
-                View all ({filteredTodaysAppointments.length})
-              </button>
-            )}
+            
             {filteredTodaysAppointments.length === 0 && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                 <p className="text-gray-500">No appointments scheduled for today</p>

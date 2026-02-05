@@ -1261,7 +1261,7 @@ const getProgressPercent = (consult: any) => {
 
   if (!trends.length) {
     return (
-      <div className="text-center py-12 bg-white border border-gray-200 rounded-lg" >
+      <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg" >
         <p className="text-gray-500">No diagnostic trends available</p>
       </div>
     );

@@ -1117,6 +1117,11 @@ setDocumentUploadState('success');
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');
 
+    // ✅ scroll to processing section after modal closes
+  requestAnimationFrame(() => {
+    preConsultSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
 };
 
 const handleDocumentUploadRetry = () => {

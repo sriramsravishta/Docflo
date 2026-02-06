@@ -55,6 +55,14 @@ export default function PatientProfile() {
   // Summary data
   const [latestSummary, setLatestSummary] = useState<any>(null);
   const [consultations, setConsultations] = useState<any[]>([]);
+
+  // ✅ Pre-consult processing list (MUST exist)
+const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
+
+// ✅ Timers (you can keep either ref OR state — I recommend ref only)
+const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  
+const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
   // ✅ NEW: check if any consult is still processing (cards refresher should run)
 const hasAnyProcessingConsult = (list: any[]) => {
   return (list || []).some((c) => !isConsultProcessed(c));
@@ -331,13 +339,7 @@ const [uploadError, setUploadError] = useState('');
 const [isUploading, setIsUploading] = useState(false);
 const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
 
-// ✅ Pre-consult processing list (MUST exist)
-const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
 
-// ✅ Timers (you can keep either ref OR state — I recommend ref only)
-const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  
-const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
 
 
   // ✅ NEW: Optimistic add so the card appears instantly

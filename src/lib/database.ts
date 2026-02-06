@@ -522,7 +522,8 @@ export const updateConsultSummary = async (consultId: string, summaryUpdates: an
 // Appointments functions
 export const createAppointment = async (patientId: string, docId: string) => {
   // Get next queue number for today
-  const today = new Date().toISOString().split('T')[0];
+  const { startISO, endISO } = getTodayBoundsISO();
+
   
   const { data: existingAppointments } = await supabase
     .from('appointments')

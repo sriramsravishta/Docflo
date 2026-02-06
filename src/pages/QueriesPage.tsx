@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar'; 
+import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import { Send, Paperclip, X } from 'lucide-react';
 import { getQueries, getMessages, createMessage, updateQuery } from '../lib/database';
@@ -9,9 +9,6 @@ import { useAuth } from '../contexts/AuthContext';
 export default function QueriesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  // ✅ NEW: ref to scroll to processing section
-const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
-
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedQuery, setSelectedQuery] = useState<any>(null);
   const [replyText, setReplyText] = useState('');

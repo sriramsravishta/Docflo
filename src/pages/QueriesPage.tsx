@@ -9,6 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 export default function QueriesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // ✅ NEW: ref to scroll to processing section
+const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
+
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedQuery, setSelectedQuery] = useState<any>(null);
   const [replyText, setReplyText] = useState('');

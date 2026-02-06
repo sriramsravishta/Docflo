@@ -1,25 +1,54 @@
 import { supabase } from './supabase';
 
+import { supabase } from './supabase';
+
+/** ✅ IST-safe "today" bounds based on user's local time (browser/clinic timezone). */
+function getTodayBoundsISO() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  return {
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+  };
+}
+
 export async function completeTodaysAppointmentByPatientAndDoctor(
   patientId: string,
-  doctorId: string 
+  doctorId: string
 ): Promise<boolean> {
-  // 1) Fetch most recent appointment (for this patient + doctor)
+  const { startISO, endISO } = getTodayBoundsISO();
+
+  // 1) Fetch today’s most recent appointment for this patient + doctor
   const { data: row, error: fetchError } = await supabase
     .from('appointments')
-    .select('id')
+    .select('id, completed')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (fetchError) throw fetchError;
+  if (!row?.id) return false;          // no appointment today
+  if (row.completed) return true;      // already completed → ok
 
-  if (!row?.id) {
-    // No appointment exists → do nothing
-    return false;
-  }
+  // 2) Update that row
+  const { error: updateError } = await supabase
+    .from('appointments')
+    .update({ completed: true })
+    .eq('id', row.id);
+
+  if (updateError) throw updateError;
+
+  return true;
+}
+
 
   // 2) Update the found row → completed=true (BOOLEAN)
   const { error: updateError } = await supabase

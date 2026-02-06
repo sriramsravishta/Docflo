@@ -297,6 +297,15 @@ const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
 // ✅ Timers (you can keep either ref OR state — I recommend ref only)
 const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  // ✅ NEW: Optimistic add so the card appears instantly
+const addProcessingPreConsultOptimistic = (row: any) => {
+  setProcessingPreConsults((prev) => {
+    if (prev.some((x) => x.id === row.id)) {
+      return prev.map((x) => (x.id === row.id ? { ...x, ...row } : x));
+    }
+    return [row, ...prev];
+  });
+};
 
   useEffect(() => {
     if (patientId) {
@@ -417,38 +426,37 @@ useEffect(() => {
 }, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
 
 
-  async function loadPatientData() {
-  try {
-    setLoading(true);
-    const [patientData, summaryData, consultsData] = await Promise.all([
-      getPatientById(patientId!),
-      getLatestSummary(patientId!),
-      getConsults(patientId!),
-    ]);
+  const loadPatientData = async () => {
+    try {
+      setLoading(true);
+      const [patientData, summaryData, consultsData] = await Promise.all([
+        getPatientById(patientId!),
+        getLatestSummary(patientId!),
+        getConsults(patientId!),
+      ]);
 
-    setPatient(patientData);
-    setLatestSummary(summaryData);
-    setConsultations(consultsData);
+      setPatient(patientData);
+      setLatestSummary(summaryData);
+      setConsultations(consultsData);
 
-    if (patientData) {
-      setEditForm({
-        name: patientData.name,
-        age: patientData.age.toString(),
-        phone: patientData.phone,
-        case: patientData.case || '',
-        gender: patientData.gender,
-      });
+      if (patientData) {
+        setEditForm({
+          name: patientData.name,
+          age: patientData.age.toString(),
+          phone: patientData.phone,
+          case: patientData.case || '',
+          gender: patientData.gender,
+        });
+      }
+
+      return { patientData, summaryData, consultsData };
+    } catch (error) {
+      console.error('Error loading patient data:', error);
+      return { patientData: null, summaryData: null, consultsData: [] as any[] };
+    } finally {
+      setLoading(false);
     }
-
-    return { patientData, summaryData, consultsData };
-  } catch (error) {
-    console.error('Error loading patient data:', error);
-    return { patientData: null, summaryData: null, consultsData: [] as any[] };
-  } finally {
-    setLoading(false);
-  }
-}
-
+  };
 
  const loadConsultMedicines = async (consultId: string) => {
   try {
@@ -1094,12 +1102,10 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
   }
 };
 
-  const handleDocumentUploadOkay = async () => {
+  const handleDocumentUploadOkay = () => {
   setShowConfirmation(false);
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');
-    await new Promise((res) => setTimeout(res, 4000));
-  await loadPatientData();
 
 };
 

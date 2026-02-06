@@ -1094,7 +1094,7 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
   }
 };
 
-  const handleDocumentUploadOkay = () => {
+  const handleDocumentUploadOkay = async () => {
   setShowConfirmation(false);
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');

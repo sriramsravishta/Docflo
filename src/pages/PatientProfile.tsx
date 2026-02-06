@@ -417,37 +417,38 @@ useEffect(() => {
 }, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
 
 
-  const loadPatientData = async () => {
-    try {
-      setLoading(true);
-      const [patientData, summaryData, consultsData] = await Promise.all([
-        getPatientById(patientId!),
-        getLatestSummary(patientId!),
-        getConsults(patientId!),
-      ]);
+  async function loadPatientData() {
+  try {
+    setLoading(true);
+    const [patientData, summaryData, consultsData] = await Promise.all([
+      getPatientById(patientId!),
+      getLatestSummary(patientId!),
+      getConsults(patientId!),
+    ]);
 
-      setPatient(patientData);
-      setLatestSummary(summaryData);
-      setConsultations(consultsData);
+    setPatient(patientData);
+    setLatestSummary(summaryData);
+    setConsultations(consultsData);
 
-      if (patientData) {
-        setEditForm({
-          name: patientData.name,
-          age: patientData.age.toString(),
-          phone: patientData.phone,
-          case: patientData.case || '',
-          gender: patientData.gender,
-        });
-      }
-
-      return { patientData, summaryData, consultsData };
-    } catch (error) {
-      console.error('Error loading patient data:', error);
-      return { patientData: null, summaryData: null, consultsData: [] as any[] };
-    } finally {
-      setLoading(false);
+    if (patientData) {
+      setEditForm({
+        name: patientData.name,
+        age: patientData.age.toString(),
+        phone: patientData.phone,
+        case: patientData.case || '',
+        gender: patientData.gender,
+      });
     }
-  };
+
+    return { patientData, summaryData, consultsData };
+  } catch (error) {
+    console.error('Error loading patient data:', error);
+    return { patientData: null, summaryData: null, consultsData: [] as any[] };
+  } finally {
+    setLoading(false);
+  }
+}
+
 
  const loadConsultMedicines = async (consultId: string) => {
   try {

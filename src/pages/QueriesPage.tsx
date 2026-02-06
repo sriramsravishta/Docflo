@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/Navbar'; 
 import Modal from '../components/Modal';
 import { Send, Paperclip, X } from 'lucide-react';
 import { getQueries, getMessages, createMessage, updateQuery } from '../lib/database';

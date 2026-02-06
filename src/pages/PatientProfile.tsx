@@ -179,6 +179,38 @@ if (wasProcessed) {
   };
 }, [patientId]);
 
+  // ✅ NEW: Watch patient summary changes (summaries table)
+// This is the REAL trigger to refresh History tab (diagnostic trends, meds, timeline)
+useEffect(() => {
+  if (!patientId) return;
+
+  const channel = supabase
+    .channel(`summary-watch-patient-${patientId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // UPDATE/INSERT
+        schema: 'public',
+        table: 'summaries',
+        filter: `patient_id=eq.${patientId}`,
+      },
+      async () => {
+        try {
+          const summaryData = await getLatestSummary(patientId!);
+          setLatestSummary(summaryData);
+        } catch (e) {
+          console.error('Error refreshing latestSummary from summaries realtime:', e);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [patientId]);
+
+
   // ✅ NEW: Load and watch pre-consult processing status
 useEffect(() => {
   if (!patientId) return;

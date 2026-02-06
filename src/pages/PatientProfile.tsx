@@ -296,7 +296,7 @@ const [processingPreConsults, setProcessingPreConsults] = useState<any[]>([]);
 
 // ✅ Timers (you can keep either ref OR state — I recommend ref only)
 const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
+  
 
 
   // ✅ NEW: Optimistic add so the card appears instantly

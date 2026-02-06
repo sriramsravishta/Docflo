@@ -1101,6 +1101,7 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
     // ✅ refresh patient profile data
   if (patientId) {
     await loadPatientData();
+    }
 };
 
 const handleDocumentUploadRetry = () => {

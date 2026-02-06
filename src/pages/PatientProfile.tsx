@@ -2456,7 +2456,7 @@ const getViewModeMedicines = (summary: any) => {
 
     {/* ✅ NEW: Pre-Consult Processing Cards */}
     {processingPreConsults.length > 0 && (
-      <section>
+      <section ref={preConsultSectionRef}>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Pre-Consultation Processing
         </h2>

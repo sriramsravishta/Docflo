@@ -555,7 +555,8 @@ completed: false
 };
 
 export const getTodaysAppointments = async (docId: string) => {
-  const today = new Date().toISOString().split('T')[0];
+  const { startISO, endISO } = getTodayBoundsISO();
+
 
   const { data, error } = await supabase
     .from('appointments')

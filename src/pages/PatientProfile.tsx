@@ -1098,7 +1098,7 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
   setShowConfirmation(false);
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');
-    await new Promise((res) => setTimeout(res, 2000));
+    await new Promise((res) => setTimeout(res, 4000));
   await loadPatientData();
 
 };

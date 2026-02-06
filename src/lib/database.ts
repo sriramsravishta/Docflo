@@ -566,8 +566,8 @@ export const getTodaysAppointments = async (docId: string) => {
     `)
     .eq('doc_id', docId)
     // ✅ IMPORTANT: DO NOT filter completed here
-    .gte('created_at', `${today}T00:00:00.000Z`)
-    .lt('created_at', `${today}T23:59:59.999Z`)
+    .gte('created_at', startISO)
+.lte('created_at', endISO)
     // ✅ pending first, then completed
     .order('completed', { ascending: true })
     .order('queue', { ascending: true });

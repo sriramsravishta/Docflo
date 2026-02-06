@@ -261,6 +261,46 @@ preConsultRemovalTimersRef.current = {};
   };
 }, [patientId]);
 
+
+  // ✅ FALLBACK: Poll pending pre-consults so UI flips to Complete even if realtime misses
+useEffect(() => {
+  if (!patientId) return;
+
+  // only poll if something is still processing
+  const pending = (processingPreConsults || []).filter((pc) => !pc?.ai_summary);
+  if (pending.length === 0) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const ids = pending.map((p) => p.id);
+
+      const { data, error } = await supabase
+        .from('pre_consult')
+        .select('id, documents_uploaded, ai_summary, created_at')
+        .in('id', ids);
+
+      if (error) {
+        console.error('Error polling pre_consult:', error);
+        return;
+      }
+
+      if (!data) return;
+
+      setProcessingPreConsults((prev) =>
+        prev.map((pc) => {
+          const updated = data.find((d) => d.id === pc.id);
+          return updated ? { ...pc, ...updated } : pc;
+        })
+      );
+    } catch (e) {
+      console.error('Poll pre_consult failed:', e);
+    }
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [patientId, processingPreConsults]);
+
+
   // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     diagnosis: true,

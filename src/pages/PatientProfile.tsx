@@ -2506,7 +2506,12 @@ const getViewModeMedicines = (summary: any) => {
         </h2>
         <div className="space-y-3">
           {processingPreConsults.map((preConsult) => {
-            const isComplete = !!preConsult.ai_summary;
+            const hasAiSummary =
+  preConsult.ai_summary &&
+  (typeof preConsult.ai_summary !== 'object' || Object.keys(preConsult.ai_summary).length > 0);
+
+const isComplete = !!hasAiSummary;
+
             const createdAt = preConsult.created_at ? new Date(preConsult.created_at).getTime() : Date.now();
             const elapsed = Math.floor((uiNow - createdAt) / 1000);
             const pct = isComplete ? 100 : Math.min(99, Math.floor((elapsed / PRE_CONSULT_ESTIMATED_SECONDS) * 100));

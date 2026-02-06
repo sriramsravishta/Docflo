@@ -529,8 +529,8 @@ export const createAppointment = async (patientId: string, docId: string) => {
     .from('appointments')
     .select('queue')
     .eq('doc_id', docId)
-    .gte('created_at', `${today}T00:00:00.000Z`)
-    .lt('created_at', `${today}T23:59:59.999Z`)
+    .gte('created_at', startISO)
+.lte('created_at', endISO)
     .order('queue', { ascending: false })
     .limit(1);
 

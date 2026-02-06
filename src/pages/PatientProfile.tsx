@@ -299,8 +299,6 @@ const preConsultRemovalTimersRef = useRef<Record<string, ReturnType<typeof setTi
   const preConsultSectionRef = useRef<HTMLDivElement | null>(null);
 
 
-  
-
   // ✅ NEW: Optimistic add so the card appears instantly
 const addProcessingPreConsultOptimistic = (row: any) => {
   setProcessingPreConsults((prev) => {

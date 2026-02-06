@@ -15,26 +15,7 @@ function getTodayBoundsISO() {
 }
 
 
-export async function completeTodaysAppointmentByPatientAndDoctor(
-  patientId: string,
-  doctorId: string 
-): Promise<boolean> {
-  // 1) Fetch most recent appointment (for this patient + doctor)
-  const { data: row, error: fetchError } = await supabase
-    .from('appointments')
-    .select('id')
-    .eq('patient_id', patientId)
-    .eq('doc_id', doctorId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
-  if (fetchError) throw fetchError;
-
-  if (!row?.id) {
-    // No appointment exists → do nothing
-    return false;
-  }
 
   // 2) Update the found row → completed=true (BOOLEAN)
   const { error: updateError } = await supabase

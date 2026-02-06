@@ -605,7 +605,7 @@ setMedicineDrafts(drafts);
 
         out.push(s);
         return;
-      }
+      } 
 
       // fallback
       out.push(String(x));

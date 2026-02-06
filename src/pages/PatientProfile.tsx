@@ -1089,13 +1089,23 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
     }
 
     // ONLY AFTER all uploads complete, create DB record with URLs
-    const preConsult = await createPreConsult(user!.id, patientId!);
-    await updatePreConsult(preConsult.id, {
-      documents_uploaded: uploadedUrls,
-      status: 'Draft',
-    });
+const preConsult = await createPreConsult(user!.id, patientId!);
 
-    setDocumentUploadState('success');
+await updatePreConsult(preConsult.id, {
+  documents_uploaded: uploadedUrls,
+  status: 'Draft',
+});
+
+// ✅ INSTANT: show processing card immediately (don’t wait for realtime)
+addProcessingPreConsultOptimistic({
+  id: preConsult.id,
+  documents_uploaded: uploadedUrls,
+  ai_summary: null,
+  created_at: new Date().toISOString(),
+});
+
+setDocumentUploadState('success');
+
   } catch (error) {
     console.error('Error uploading documents:', error);
     setDocumentUploadState('error');

@@ -626,19 +626,3 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
   return data && data.length > 0 ? data[0] : null;
 };
 
-export const updateTodaysAppointmentCompleted = async (docId: string, patientId: string) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { data, error } = await supabase
-    .from('appointments')
-    .update({ completed: true })
-    .eq('doc_id', docId)
-    .eq('patient_id', patientId)
-    .gte('created_at', `${today}T00:00:00.000Z`)
-    .lt('created_at', `${today}T23:59:59.999Z`)
-    .select()
-    .maybeSingle();
-
-  if (error) throw error;
-  return data;
-};

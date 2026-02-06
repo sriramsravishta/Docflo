@@ -1097,6 +1097,10 @@ const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
   setShowConfirmation(false);
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');
+
+    // ✅ refresh patient profile data
+  if (patientId) {
+    await loadPatientData();
 };
 
 const handleDocumentUploadRetry = () => {

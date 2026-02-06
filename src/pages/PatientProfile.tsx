@@ -578,6 +578,7 @@ setMedicineDrafts(drafts);
 };
 
 
+const preConsultSectionRef = useRef<HTMLElement | null>(null);
 
   const timeDropdownRef = useRef<HTMLDivElement | null>(null);
 

@@ -1110,7 +1110,7 @@ setDocumentUploadState('success');
     console.error('Error uploading documents:', error);
     setDocumentUploadState('error');
   }
-}; 
+};
 
   const handleDocumentUploadOkay = () => {
   setShowConfirmation(false);

@@ -1155,7 +1155,7 @@ setDocumentUploadState('success');
   }
 };
 
-  const handleDocumentUploadOkay = () => {
+  const handleDocumentUploadOkay = async () => {
   setShowConfirmation(false);
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');

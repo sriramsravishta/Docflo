@@ -218,10 +218,11 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
   };
 
   const handleCloseModal = () => {
-    setShowAddPatient(false);
-    setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
-    setExistingPatient(null);
-  };
+  setShowAddPatient(false);
+  setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+  setExistingPatient(null);
+  setFormError(''); // Clear error when closing
+};
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />

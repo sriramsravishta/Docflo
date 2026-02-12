@@ -19,6 +19,7 @@ export default function MainPage() {
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<any>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
   const [newPatient, setNewPatient] = useState({
     phone: '',
     name: '',
@@ -103,11 +104,13 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
 
   const handleCreatePatient = async () => {
   try {
+    setFormError(''); // Clear any previous errors
+    
     // Check if patient with this phone already exists
     const existingPatientCheck = await getPatientByPhone(newPatient.phone, user!.id);
     
     if (existingPatientCheck) {
-      alert('A patient with this phone number already exists!');
+      setFormError('A patient with this phone number already exists!');
       return;
     }
     
@@ -124,10 +127,11 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
     setShowAddPatient(false);
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
     setExistingPatient(null);
+    setFormError('');
     await loadData();
   } catch (error) {
     console.error('Error creating patient:', error);
-    alert('Failed to create patient');
+    setFormError('Failed to create patient. Please try again.');
   }
 };
 

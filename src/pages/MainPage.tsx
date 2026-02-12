@@ -102,39 +102,57 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
   };
 
   const handleCreatePatient = async () => {
-    try {
-      const patient = await createPatient({
-        name: newPatient.name,
-        age: parseInt(newPatient.age),
-        phone: newPatient.phone,
-        gender: newPatient.gender,
-      });
-      
-      // Create appointment for new patient
-      await createAppointment(patient.id, user!.id);
-      
-      setShowAddPatient(false);
-      setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
-      setExistingPatient(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error creating patient:', error);
-      alert('Failed to create patient');
+  try {
+    // Check if patient with this phone already exists
+    const existingPatientCheck = await getPatientByPhone(newPatient.phone, user!.id);
+    
+    if (existingPatientCheck) {
+      alert('A patient with this phone number already exists!');
+      return;
     }
-  };
+    
+    const patient = await createPatient({
+      name: newPatient.name,
+      age: parseInt(newPatient.age),
+      phone: newPatient.phone,
+      gender: newPatient.gender,
+    });
+    
+    // Create appointment for new patient
+    await createAppointment(patient.id, user!.id);
+    
+    setShowAddPatient(false);
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+    setExistingPatient(null);
+    await loadData();
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    alert('Failed to create patient');
+  }
+};
 
   const handleAddToQueue = async () => {
-    try {
-      await createAppointment(existingPatient.id, user!.id);
-      setShowAddPatient(false);
-      setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
-      setExistingPatient(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error adding to queue:', error);
-      alert('Failed to add to queue');
+  try {
+    // Check if patient already has an appointment today
+    const hasAppointmentToday = todaysAppointments.some(
+      apt => apt.patient_id === existingPatient.id
+    );
+    
+    if (hasAppointmentToday) {
+      alert('This patient already has an appointment today!');
+      return;
     }
-  };
+    
+    await createAppointment(existingPatient.id, user!.id);
+    setShowAddPatient(false);
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
+    setExistingPatient(null);
+    await loadData();
+  } catch (error) {
+    console.error('Error adding to queue:', error);
+    alert('Failed to add to queue');
+  }
+};
 
   const handleMoveUp = async (appointment: any) => {
     const currentIndex = todaysAppointments.findIndex(a => a.id === appointment.id);

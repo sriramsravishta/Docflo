@@ -469,6 +469,11 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
             handleCreatePatient();
           }
         }} className="space-y-4">
+          {formError && (
+    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      {formError}
+    </div>
+  )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone <span className="text-red-500">*</span>

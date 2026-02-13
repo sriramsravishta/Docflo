@@ -230,7 +230,8 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
   setShowAddPatient(false);
   setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
   setExistingPatient(null);
-  setFormError(''); // Clear error when closing
+  setFormError('');
+  setIsSubmitting(false); // Reset loading state
 };
   return (
     <div className="min-h-screen bg-gray-50">

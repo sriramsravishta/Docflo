@@ -479,12 +479,18 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
               Phone <span className="text-red-500">*</span>
             </label>
             <input
-              type="tel"
-              value={newPatient.phone}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              className="input-field"
-              required
-            />
+  type="tel"
+  value={newPatient.phone}
+  onChange={(e) => {
+    const value = e.target.value;
+    // Only allow numbers and +
+    if (value === '' || /^[0-9+]*$/.test(value)) {
+      handlePhoneChange(value);
+    }
+  }}
+  className="input-field"
+  required
+/>
             {existingPatient && (
               <p className="text-sm text-green-600 mt-1">Patient found! Details auto-filled.</p>
             )}

@@ -136,40 +136,29 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
   }
 };
 
-  const handleCreatePatient = async () => {
+  const handleAddToQueue = async () => {
   try {
-    setFormError('');
-    setIsSubmitting(true); // Start loading
+    setFormError(''); // Clear any previous errors
     
-    // Check if patient with this phone already exists
-    const existingPatientCheck = await getPatientByPhone(newPatient.phone, user!.id);
+    // Check if patient already has an appointment today
+    const hasAppointmentToday = todaysAppointments.some(
+      apt => apt.patient_id === existingPatient.id
+    );
     
-    if (existingPatientCheck) {
-      setFormError('A patient with this phone number already exists!');
-      setIsSubmitting(false); // Stop loading
+    if (hasAppointmentToday) {
+      setFormError('This patient already has an appointment today!');
       return;
     }
     
-    const patient = await createPatient({
-      name: newPatient.name,
-      age: parseInt(newPatient.age),
-      phone: newPatient.phone,
-      gender: newPatient.gender,
-    });
-    
-    // Create appointment for new patient
-    await createAppointment(patient.id, user!.id);
-    
+    await createAppointment(existingPatient.id, user!.id);
     setShowAddPatient(false);
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
     setExistingPatient(null);
     setFormError('');
-    setIsSubmitting(false); // Stop loading
     await loadData();
   } catch (error) {
-    console.error('Error creating patient:', error);
-    setFormError('Failed to create patient. Please try again.');
-    setIsSubmitting(false); // Stop loading on error
+    console.error('Error adding to queue:', error);
+    setFormError('Failed to add to queue. Please try again.');
   }
 };
 

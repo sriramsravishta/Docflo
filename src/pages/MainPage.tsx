@@ -20,6 +20,7 @@ export default function MainPage() {
   const [appointmentToRemove, setAppointmentToRemove] = useState<any>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newPatient, setNewPatient] = useState({
     phone: '',
     name: '',
@@ -135,29 +136,40 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
   }
 };
 
-  const handleAddToQueue = async () => {
+  const handleCreatePatient = async () => {
   try {
-    setFormError(''); // Clear any previous errors
+    setFormError('');
+    setIsSubmitting(true); // Start loading
     
-    // Check if patient already has an appointment today
-    const hasAppointmentToday = todaysAppointments.some(
-      apt => apt.patient_id === existingPatient.id
-    );
+    // Check if patient with this phone already exists
+    const existingPatientCheck = await getPatientByPhone(newPatient.phone, user!.id);
     
-    if (hasAppointmentToday) {
-      setFormError('This patient already has an appointment today!');
+    if (existingPatientCheck) {
+      setFormError('A patient with this phone number already exists!');
+      setIsSubmitting(false); // Stop loading
       return;
     }
     
-    await createAppointment(existingPatient.id, user!.id);
+    const patient = await createPatient({
+      name: newPatient.name,
+      age: parseInt(newPatient.age),
+      phone: newPatient.phone,
+      gender: newPatient.gender,
+    });
+    
+    // Create appointment for new patient
+    await createAppointment(patient.id, user!.id);
+    
     setShowAddPatient(false);
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
     setExistingPatient(null);
     setFormError('');
+    setIsSubmitting(false); // Stop loading
     await loadData();
   } catch (error) {
-    console.error('Error adding to queue:', error);
-    setFormError('Failed to add to queue. Please try again.');
+    console.error('Error creating patient:', error);
+    setFormError('Failed to create patient. Please try again.');
+    setIsSubmitting(false); // Stop loading on error
   }
 };
 

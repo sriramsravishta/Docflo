@@ -142,7 +142,8 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
 
   const handleAddToQueue = async () => {
   try {
-    setFormError(''); // Clear any previous errors
+    setFormError('');
+    setIsSubmitting(true); // Start loading
     
     // Check if patient already has an appointment today
     const hasAppointmentToday = todaysAppointments.some(
@@ -151,6 +152,7 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
     
     if (hasAppointmentToday) {
       setFormError('This patient already has an appointment today!');
+      setIsSubmitting(false); // Stop loading
       return;
     }
     
@@ -159,10 +161,12 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
     setExistingPatient(null);
     setFormError('');
+    setIsSubmitting(false); // Stop loading
     await loadData();
   } catch (error) {
     console.error('Error adding to queue:', error);
     setFormError('Failed to add to queue. Please try again.');
+    setIsSubmitting(false); // Stop loading on error
   }
 };
 

@@ -554,20 +554,44 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-  <button type="button" onClick={handleCloseModal} className="btn-secondary">
+  <button 
+    type="button" 
+    onClick={handleCloseModal} 
+    className="btn-secondary"
+    disabled={isSubmitting}
+  >
     Cancel
   </button>
   {existingPatient ? (
     <button 
       type="button" 
       onClick={handleAddToQueue}
-      className="btn-primary"
+      className="btn-primary flex items-center justify-center"
+      disabled={isSubmitting}
     >
-      Add to Queue
+      {isSubmitting ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Adding...
+        </>
+      ) : (
+        'Add to Queue'
+      )}
     </button>
   ) : (
-    <button type="submit" className="btn-primary">
-      Create
+    <button 
+      type="submit" 
+      className="btn-primary flex items-center justify-center"
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Creating...
+        </>
+      ) : (
+        'Create'
+      )}
     </button>
   )}
 </div>

@@ -105,13 +105,15 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
 
   const handleCreatePatient = async () => {
   try {
-    setFormError(''); // Clear any previous errors
+    setFormError('');
+    setIsSubmitting(true); // Start loading
     
     // Check if patient with this phone already exists
     const existingPatientCheck = await getPatientByPhone(newPatient.phone, user!.id);
     
     if (existingPatientCheck) {
       setFormError('A patient with this phone number already exists!');
+      setIsSubmitting(false); // Stop loading
       return;
     }
     
@@ -129,10 +131,12 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
     setExistingPatient(null);
     setFormError('');
+    setIsSubmitting(false); // Stop loading
     await loadData();
   } catch (error) {
     console.error('Error creating patient:', error);
     setFormError('Failed to create patient. Please try again.');
+    setIsSubmitting(false); // Stop loading on error
   }
 };
 

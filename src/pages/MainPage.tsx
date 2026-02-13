@@ -554,23 +554,23 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={handleCloseModal} className="btn-secondary">
-              Cancel
-            </button>
-            {existingPatient ? (
-              <button 
-                type="button" 
-                onClick={handleAddToQueue}
-                className="btn-primary"
-              >
-                Add to Queue
-              </button>
-            ) : (
-              <button type="submit" className="btn-primary">
-                Create
-              </button>
-            )}
-          </div>
+  <button type="button" onClick={handleCloseModal} className="btn-secondary">
+    Cancel
+  </button>
+  {existingPatient ? (
+    <button 
+      type="button" 
+      onClick={handleAddToQueue}
+      className="btn-primary"
+    >
+      Add to Queue
+    </button>
+  ) : (
+    <button type="submit" className="btn-primary">
+      Create
+    </button>
+  )}
+</div>
         </form>
       </Modal>
 

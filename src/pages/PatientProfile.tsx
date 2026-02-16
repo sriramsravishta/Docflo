@@ -1510,7 +1510,10 @@ const getProgressPercent = (consult: any) => {
     // dayKey like "2025-10-31"
     const d = new Date(dayKey + "T00:00:00");
     if (isNaN(d.getTime())) return dayKey;
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase(); // "31 OCT"
+    return d
+  .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })
+  .toUpperCase(); // "31 OCT 25"
+
   };
 
   const badgeClass = (label: string) => {

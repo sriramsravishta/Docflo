@@ -552,6 +552,27 @@ useEffect(() => {
     }
   };
 
+  const loadTodaysVitals = async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+    
+    const { data, error } = await supabase
+      .from('vitals')
+      .select('*')
+      .eq('patient_id', patientId)
+      .eq('doctor_id', user!.id)
+      .gte('created_at', `${today}T00:00:00`)
+      .lte('created_at', `${today}T23:59:59`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    setTodaysVitals(data || []);
+  } catch (error) {
+    console.error('Error loading vitals:', error);
+  }
+};
+
  const loadConsultMedicines = async (consultId: string) => {
   try {
     const medicines = await getConsultMedicines(consultId);

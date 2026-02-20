@@ -547,28 +547,29 @@ useEffect(() => {
   try {
     const medicines = await getConsultMedicines(consultId);
 
-const normalized = (medicines || []).map((m: any) => ({
-  ...m,
-  time: normalizeTime(m?.time),
-}));
+    const normalized = (medicines || []).map((m: any) => ({
+      ...m,
+      time: normalizeTime(m?.time),
+    }));
 
-setConsultMedicines(normalized);
-
+    setConsultMedicines(normalized);
 
     // ✅ ALWAYS reset drafts from DB (so popup default values match DB)
-const drafts: Record<string, any> = {};
-medicines.forEach((m: any) => {
-  drafts[m.id] = {
-    name: m.name || '',
-    quantity: m.quantity || '',
-    frequency: m.frequency || '',
-    food: m.food || '',
-    time: normalizeTime(m.time),
-    duration: m.duration || '',
-    instructions: m.instructions || '',
-  };
-});
-setMedicineDrafts(drafts);
+    const drafts: Record<string, any> = {};
+    medicines.forEach((m: any) => {
+      drafts[m.id] = {
+        name: m.name || '',
+        dosage: m.dosage || '',        // ✅ NEW
+        quantity: m.quantity || '',
+        type: m.type || '',             // ✅ NEW
+        frequency: m.frequency || '',
+        food: m.food || '',
+        time: normalizeTime(m.time),
+        duration: m.duration || '',
+        instructions: m.instructions || '',
+      };
+    });
+    setMedicineDrafts(drafts);
 
   } catch (error) {
     console.error('Error loading consult medicines:', error);

@@ -2657,7 +2657,7 @@ const renderHistoryTab = () => {
        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
          {/* Vitals Section - Only show if there are vitals for today */}
 {todaysVitals.length > 0 && (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+  <div className="mb-6">
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2>

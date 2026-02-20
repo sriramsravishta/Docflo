@@ -2218,7 +2218,6 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     );
   };
 
-  // Helper function to render medications (view popup - unchanged)
 const renderMedications = (medications: any[]) => {
   return (
     <div className="overflow-x-auto">
@@ -2226,7 +2225,9 @@ const renderMedications = (medications: any[]) => {
         <thead>
           <tr className="bg-gray-50">
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Name</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Dosage</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Type</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Frequency</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Time</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">AF/BF</th>
@@ -2239,7 +2240,9 @@ const renderMedications = (medications: any[]) => {
           {medications.map((med: any, idx: number) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.quantity || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.type || '-'}</td>
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
               <td className="border border-gray-300 px-3 py-2 text-gray-800">
                 {Array.isArray(med.time) && med.time.length ? med.time.join(', ') : '-'}

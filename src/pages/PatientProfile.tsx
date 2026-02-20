@@ -922,16 +922,15 @@ useEffect(() => {
   };
 
 const saveMedicineDraftsToDB = async () => {
-  // consultMedicines = what you loaded from DB
-  // medicineDrafts   = what user edited in popup
-
   for (const m of consultMedicines) {
     const d = medicineDrafts[m.id];
     if (!d) continue;
 
     const updates: any = {
       name: d.name || '',
+      dosage: d.dosage || '',        // ✅ NEW
       quantity: d.quantity || '',
+      type: d.type || '',             // ✅ NEW
       frequency: d.frequency || '',
       food: d.food || '',
       time: normalizeTime(d.time),
@@ -939,11 +938,9 @@ const saveMedicineDraftsToDB = async () => {
       instructions: d.instructions || '',
     };
 
-    // ✅ Update DB for this medicine row
     await updateConsultMedicine(m.id, updates);
   }
 
-  // ✅ reload from DB so view mode shows updated values
   if (selectedConsult?.id) {
     await loadConsultMedicines(selectedConsult.id);
   }

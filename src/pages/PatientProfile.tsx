@@ -2659,16 +2659,9 @@ const renderHistoryTab = () => {
 {todaysVitals.length > 0 && (
   <div className="mb-6">
     <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2>
-        <button
-          onClick={() => handleEditVital(todaysVitals[0])}
-          className="text-sm text-[#024CDB] hover:underline flex items-center space-x-1"
-        >
-          <Edit className="w-4 h-4" />
-          <span>Edit</span>
-        </button>
-      </div>
+      <div className="mb-4">
+  <h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2>
+</div>
 
       <div className="space-y-4">
         {todaysVitals.map((vital, index) => (

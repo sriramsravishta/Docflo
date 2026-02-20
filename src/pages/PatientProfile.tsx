@@ -51,6 +51,15 @@ export default function PatientProfile() {
   // Patient data
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+const [todaysVitals, setTodaysVitals] = useState<any[]>([]);
+const [editingVital, setEditingVital] = useState<any>(null);
+const [vitalForm, setVitalForm] = useState({
+  temperature: '',
+  blood_pressure: '',
+  heart_rate: '',
+  spo2: '',
+});
 
   // Summary data
   const [latestSummary, setLatestSummary] = useState<any>(null);

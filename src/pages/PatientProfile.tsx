@@ -402,10 +402,11 @@ const addProcessingPreConsultOptimistic = (row: any) => {
 };
 
   useEffect(() => {
-    if (patientId) {
-      loadPatientData();
-    }
-  }, [patientId]);
+  if (patientId) {
+    loadPatientData();
+    loadTodaysVitals();
+  }
+}, [patientId]);
 
   // ✅ NEW: Auto-refresh CONSULTATION CARDS until all are processed
 useEffect(() => {

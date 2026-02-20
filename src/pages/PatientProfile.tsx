@@ -2901,169 +2901,172 @@ const isComplete = !!hasAiSummary;
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="relative">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
-                              <input
-                                type="text"
-                              value={d.name}
-onChange={(e) => {
-  updateMedicineDraft(medicine.id, { name: e.target.value });
-  handleMedicineSearch(e.target.value);
-}}
+  <div className="relative">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
+    <input
+      type="text"
+      value={d.name}
+      onChange={(e) => {
+        updateMedicineDraft(medicine.id, { name: e.target.value });
+        handleMedicineSearch(e.target.value);
+      }}
+      className="input-field"
+      placeholder="Search medicine..."
+    />
 
-                                className="input-field"
-                                placeholder="Search medicine..."
-                              />
-
-                              {medicineSearchResults.length > 0 && (
-                                // ✅ CHANGE: lower than header z-index to avoid overlap
-                                <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                                  {medicineSearchResults.map((result, idx) => (
-                                    <button
-                                      key={idx}
-                                      type="button"
-                                      onClick={() => {
-                                        updateMedicineDraft(medicine.id, { name: result.name });
-
-                                        setMedicineSearchResults([]);
-                                      }}
-                                      className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                                    >
-                                      {result.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-<input
-  type="text"
-  value={d.quantity}
-onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
-
-  className="input-field"
-  placeholder="e.g., 10 MG / 10 ml / 1 tab"
-/>
-
-
-                            </div>
-
-                            <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-<select
-  value={d.frequency}
-onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
-
-
-  className="input-field"
->
-  <option value="" disabled>Select frequency</option>
-  {FREQUENCY_OPTIONS.map((opt) => (
-    <option key={opt} value={opt}>{opt}</option>
-  ))}
-</select>
-
-
-                            </div>
-
-                            <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
-<select
-  value={d.food}
-onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
-
-  className="input-field"
->
-  <option value="" disabled>Select food instruction</option>
-  {FOOD_OPTIONS.map((opt) => (
-    <option key={opt} value={opt}>{opt}</option>
-  ))}
-</select>
-
-</div>
-
-
-                           <div className="md:col-span-2">
-  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-
-  <div
-    ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
-    className="relative"
-  >
-    <button
-      type="button"
-      onClick={() =>
-        setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
-      }
-      className="input-field flex items-center justify-between"
-    >
-      <span className="text-gray-900">
-        {Array.isArray(d.time) && d.time.length > 0
-  ? d.time.join(', ')
-  : 'Select time'}
-
-      </span>
-      <ChevronDown className="w-4 h-4 text-gray-500" />
-    </button>
-
-    {openTimeDropdownId === medicine.id && (
-      <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
-        {TIME_OPTIONS.map((opt) => {
-          const current: string[] = Array.isArray(d.time) ? d.time : [];
-          const checked = current.includes(opt);
-
-          return (
-            <label
-              key={opt}
-              className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => {
-                  const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                  updateMedicineDraft(medicine.id, { time: next });
-                }}
-              />
-              <span className="text-sm text-gray-800">{opt}</span>
-            </label>
-          );
-        })}
+    {medicineSearchResults.length > 0 && (
+      <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+        {medicineSearchResults.map((result, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => {
+              updateMedicineDraft(medicine.id, { name: result.name });
+              setMedicineSearchResults([]);
+            }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+          >
+            {result.name}
+          </button>
+        ))}
       </div>
     )}
   </div>
+
+  {/* ✅ NEW: Dosage field */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+    <input
+      type="text"
+      value={d.dosage}
+      onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
+      className="input-field"
+      placeholder="e.g., 500 mg, 10 ml"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+    <input
+      type="text"
+      value={d.quantity}
+      onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
+      className="input-field"
+      placeholder="e.g., 1 tab, 2 puffs"
+    />
+  </div>
+
+  {/* ✅ NEW: Type field */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+    <input
+      type="text"
+      value={d.type}
+      onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
+      className="input-field"
+      placeholder="e.g., Tablet, Syrup, Injection"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+    <select
+      value={d.frequency}
+      onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
+      className="input-field"
+    >
+      <option value="" disabled>Select frequency</option>
+      {FREQUENCY_OPTIONS.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
+    <select
+      value={d.food}
+      onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
+      className="input-field"
+    >
+      <option value="" disabled>Select food instruction</option>
+      {FOOD_OPTIONS.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+
+  <div className="md:col-span-2">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+    <div
+      ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
+      className="relative"
+    >
+      <button
+        type="button"
+        onClick={() =>
+          setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
+        }
+        className="input-field flex items-center justify-between"
+      >
+        <span className="text-gray-900">
+          {Array.isArray(d.time) && d.time.length > 0
+            ? d.time.join(', ')
+            : 'Select time'}
+        </span>
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+      </button>
+
+      {openTimeDropdownId === medicine.id && (
+        <div className="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+          {TIME_OPTIONS.map((opt) => {
+            const current: string[] = Array.isArray(d.time) ? d.time : [];
+            const checked = current.includes(opt);
+
+            return (
+              <label
+                key={opt}
+                className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => {
+                    const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+                    updateMedicineDraft(medicine.id, { time: next });
+                  }}
+                />
+                <span className="text-sm text-gray-800">{opt}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+    <input
+      type="text"
+      value={d.duration}
+      onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
+      className="input-field"
+      placeholder="e.g., 7 days"
+    />
+  </div>
+
+  <div className="md:col-span-2">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+    <input
+      type="text"
+      value={d.instructions}
+      onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
+      className="input-field"
+      placeholder="e.g., After meals"
+    />
+  </div>
 </div>
-
-                            
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                              <input
-  type="text"
-  value={d.duration}
-onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
-
-  className="input-field"
-  placeholder="e.g., 7 days"
-/>
-
-                            </div>
-
-                            {/* ✅ CHANGE: REMOVE route field from UI */}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                              <input
-  type="text"
-  value={d.instructions}
-onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
-
-  className="input-field"
-  placeholder="e.g., After meals"
-/>
-
-                            </div>
-                          </div>
                         </div>
                         );
 })}

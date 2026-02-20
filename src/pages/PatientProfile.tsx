@@ -993,9 +993,11 @@ const saveMedicineDraftsToDB = async () => {
     const newMedicine = await createConsultMedicine({
       consult_id: selectedConsult.id,
       name: '',
+      dosage: '',        // ✅ NEW
       quantity: '',
+      type: '',          // ✅ NEW
       frequency: '',
-      time: [],            // IMPORTANT: array
+      time: [],
       food: '',
       duration: '',
       instructions: '',

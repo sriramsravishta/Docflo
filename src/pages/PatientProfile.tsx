@@ -2682,7 +2682,7 @@ const renderHistoryTab = () => {
                   <span className="text-sm font-medium text-gray-600">Temperature</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-xl font-semibold text-gray-900">
+                  <span className="text-2xl font-semibold text-gray-900">
                     {vital.temperature || '—'}
                   </span>
                   {vital.temperature && (

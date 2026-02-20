@@ -2664,11 +2664,22 @@ const renderHistoryTab = () => {
 </div>
 
       <div className="space-y-4">
-        {todaysVitals.map((vital, index) => (
-          <div key={vital.id}>
-            {index > 0 && <div className="border-t border-gray-200 pt-4"></div>}
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {todaysVitals.map((vital, index) => (
+    <div key={vital.id}>
+      {index > 0 && <div className="border-t border-gray-200 pt-4"></div>}
+      
+      {/* Edit button for each vital entry */}
+      <div className="flex items-center justify-end mb-3">
+        <button
+          onClick={() => handleEditVital(vital)}
+          className="text-sm text-[#024CDB] hover:underline flex items-center space-x-1"
+        >
+          <Edit className="w-4 h-4" />
+          <span>Edit</span>
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Temperature */}
               <div className="rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">

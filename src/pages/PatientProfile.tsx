@@ -574,6 +574,76 @@ useEffect(() => {
   }
 };
 
+  const handleAddVital = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('vitals')
+      .insert([
+        {
+          patient_id: patientId,
+          doctor_id: user!.id,
+          temperature: vitalForm.temperature || null,
+          blood_pressure: vitalForm.blood_pressure || null,
+          heart_rate: vitalForm.heart_rate || null,
+          spo2: vitalForm.spo2 || null,
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+
+    await loadTodaysVitals();
+    handleCloseVitalsModal();
+  } catch (error) {
+    console.error('Error adding vital:', error);
+    alert('Failed to add vitals');
+  }
+};
+
+const handleUpdateVital = async () => {
+  try {
+    const { error } = await supabase
+      .from('vitals')
+      .update({
+        temperature: vitalForm.temperature || null,
+        blood_pressure: vitalForm.blood_pressure || null,
+        heart_rate: vitalForm.heart_rate || null,
+        spo2: vitalForm.spo2 || null,
+      })
+      .eq('id', editingVital.id);
+
+    if (error) throw error;
+
+    await loadTodaysVitals();
+    handleCloseVitalsModal();
+  } catch (error) {
+    console.error('Error updating vital:', error);
+    alert('Failed to update vitals');
+  }
+};
+
+const handleEditVital = (vital: any) => {
+  setEditingVital(vital);
+  setVitalForm({
+    temperature: vital.temperature || '',
+    blood_pressure: vital.blood_pressure || '',
+    heart_rate: vital.heart_rate || '',
+    spo2: vital.spo2 || '',
+  });
+  setShowVitalsModal(true);
+};
+
+const handleCloseVitalsModal = () => {
+  setShowVitalsModal(false);
+  setEditingVital(null);
+  setVitalForm({
+    temperature: '',
+    blood_pressure: '',
+    heart_rate: '',
+    spo2: '',
+  });
+};
+
  const loadConsultMedicines = async (consultId: string) => {
   try {
     const medicines = await getConsultMedicines(consultId);

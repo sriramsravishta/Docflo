@@ -3606,6 +3606,110 @@ const isComplete = !!hasAiSummary;
       : 'Create and send follow-up form link to patient?'
   }
 />
+      {/* Vitals Modal */}
+<Modal
+  isOpen={showVitalsModal}
+  onClose={handleCloseVitalsModal}
+  title={editingVital ? "Edit Vitals" : "Add Vitals"}
+>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      if (editingVital) {
+        handleUpdateVital();
+      } else {
+        handleAddVital();
+      }
+    }}
+    className="space-y-4"
+  >
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Temperature (°C)
+      </label>
+      <input
+        type="text"
+        value={vitalForm.temperature}
+        onChange={(e) => {
+          const value = e.target.value;
+          // Allow numbers and decimal point only
+          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setVitalForm({ ...vitalForm, temperature: value });
+          }
+        }}
+        className="input-field"
+        placeholder="e.g., 98.6"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Blood Pressure (mmHg)
+      </label>
+      <input
+        type="text"
+        value={vitalForm.blood_pressure}
+        onChange={(e) => setVitalForm({ ...vitalForm, blood_pressure: e.target.value })}
+        className="input-field"
+        placeholder="e.g., 120/80"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Heart Rate (bpm)
+      </label>
+      <input
+        type="text"
+        value={vitalForm.heart_rate}
+        onChange={(e) => {
+          const value = e.target.value;
+          // Allow numbers only
+          if (value === '' || /^\d*$/.test(value)) {
+            setVitalForm({ ...vitalForm, heart_rate: value });
+          }
+        }}
+        className="input-field"
+        placeholder="e.g., 72"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        SpO2 (%)
+      </label>
+      <input
+        type="text"
+        value={vitalForm.spo2}
+        onChange={(e) => {
+          const value = e.target.value;
+          // Allow numbers only
+          if (value === '' || /^\d*$/.test(value)) {
+            setVitalForm({ ...vitalForm, spo2: value });
+          }
+        }}
+        className="input-field"
+        placeholder="e.g., 98"
+      />
+    </div>
+
+    <div className="flex space-x-3 justify-end pt-4">
+      <button
+        type="button"
+        onClick={handleCloseVitalsModal}
+        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        className="px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded-lg transition-colors"
+      >
+        {editingVital ? 'Update Vitals' : 'Add Vitals'}
+      </button>
+    </div>
+  </form>
+</Modal>
     </div>
   );
 }

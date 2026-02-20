@@ -2682,7 +2682,7 @@ const renderHistoryTab = () => {
                   <span className="text-sm font-medium text-gray-600">Temperature</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-semibold text-gray-900">
                     {vital.temperature || '—'}
                   </span>
                   {vital.temperature && (
@@ -2697,7 +2697,7 @@ const renderHistoryTab = () => {
                   <span className="text-sm font-medium text-gray-600">Blood Pressure</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-semibold text-gray-900">
                     {vital.blood_pressure || '—'}
                   </span>
                   {vital.blood_pressure && (
@@ -2712,7 +2712,7 @@ const renderHistoryTab = () => {
                   <span className="text-sm font-medium text-gray-600">Heart Rate</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-semibold text-gray-900">
                     {vital.heart_rate || '—'}
                   </span>
                   {vital.heart_rate && (
@@ -2727,7 +2727,7 @@ const renderHistoryTab = () => {
                   <span className="text-sm font-medium text-gray-600">SpO2</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-semibold text-gray-900">
                     {vital.spo2 || '—'}
                   </span>
                   {vital.spo2 && (

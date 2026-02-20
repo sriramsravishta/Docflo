@@ -2722,7 +2722,7 @@ const renderHistoryTab = () => {
               </div>
 
               {/* SpO2 */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">SpO2</span>
                 </div>

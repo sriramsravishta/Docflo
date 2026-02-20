@@ -1937,7 +1937,9 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
         <thead>
           <tr>
             <th>Name</th>
+            <th>Dosage</th>
             <th>Quantity</th>
+            <th>Type</th>
             <th>Frequency</th>
             <th>Time</th>
             <th>AF/BF</th>
@@ -1954,7 +1956,9 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
               return `
                 <tr>
                   <td>${escapeHtml(m?.name || '-')}</td>
+                  <td>${escapeHtml(m?.dosage || '-')}</td>
                   <td>${escapeHtml(m?.quantity || '-')}</td>
+                  <td>${escapeHtml(m?.type || '-')}</td>
                   <td>${escapeHtml(m?.frequency || '-')}</td>
                   <td>${escapeHtml(timeText)}</td>
                   <td>${escapeHtml(m?.food || '-')}</td>

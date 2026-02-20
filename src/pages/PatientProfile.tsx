@@ -2677,7 +2677,7 @@ const renderHistoryTab = () => {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Temperature */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">Temperature</span>
                 </div>
@@ -2692,7 +2692,7 @@ const renderHistoryTab = () => {
               </div>
 
               {/* Blood Pressure */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">Blood Pressure</span>
                 </div>
@@ -2707,7 +2707,7 @@ const renderHistoryTab = () => {
               </div>
 
               {/* Heart Rate */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">Heart Rate</span>
                 </div>

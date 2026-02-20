@@ -2655,6 +2655,99 @@ const renderHistoryTab = () => {
         </div>
 
        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+         {/* Vitals Section - Only show if there are vitals for today */}
+{todaysVitals.length > 0 && (
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2>
+        <button
+          onClick={() => handleEditVital(todaysVitals[0])}
+          className="text-sm text-[#024CDB] hover:underline flex items-center space-x-1"
+        >
+          <Edit className="w-4 h-4" />
+          <span>Edit</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {todaysVitals.map((vital, index) => (
+          <div key={vital.id}>
+            {index > 0 && <div className="border-t border-gray-200 pt-4"></div>}
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Temperature */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Temperature</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {vital.temperature || '—'}
+                  </span>
+                  {vital.temperature && (
+                    <span className="ml-1 text-sm text-gray-600">°C</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Blood Pressure */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Blood Pressure</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {vital.blood_pressure || '—'}
+                  </span>
+                  {vital.blood_pressure && (
+                    <span className="ml-1 text-sm text-gray-600">mmHg</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Heart Rate */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Heart Rate</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {vital.heart_rate || '—'}
+                  </span>
+                  {vital.heart_rate && (
+                    <span className="ml-1 text-sm text-gray-600">bpm</span>
+                  )}
+                </div>
+              </div>
+
+              {/* SpO2 */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">SpO2</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {vital.spo2 || '—'}
+                  </span>
+                  {vital.spo2 && (
+                    <span className="ml-1 text-sm text-gray-600">%</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {vital.created_at && (
+              <p className="text-xs text-gray-500 mt-2">
+                Recorded at: {formatDate(vital.created_at)}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
   <div className="p-6 space-y-8">
 
     {/* ✅ NEW: Pre-Consult Processing Cards */}

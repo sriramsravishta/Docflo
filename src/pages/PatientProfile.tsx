@@ -2498,7 +2498,8 @@ const renderHistoryTab = () => {
               <Edit className="w-5 h-5 text-gray-600" />
             </button>
           </div>
-<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
   <button onClick={() => setShowVitalsModal(true)} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
     <Plus className="w-4 h-4" />
     <span className="text-sm font-medium">Add Vitals</span>
@@ -2508,11 +2509,6 @@ const renderHistoryTab = () => {
     <Upload className="w-4 h-4" /> 
     <span className="text-sm font-medium">Upload</span>
   </button>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button onClick={handleUploadDocuments} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-              <Upload className="w-4 h-4" /> 
-              <span className="text-sm font-medium">Upload</span>
-            </button>
 
           <button onClick={handleOpenForm} className="hidden btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
               <ExternalLink className="w-4 h-4" />

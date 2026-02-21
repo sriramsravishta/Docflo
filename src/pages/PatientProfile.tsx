@@ -1091,14 +1091,15 @@ const saveMedicineDraftsToDB = async () => {
     const newMedicine = await createConsultMedicine({
       consult_id: selectedConsult.id,
       name: '',
-      dosage: '',        // ✅ NEW
+      dosage: '',
       quantity: '',
-      type: '',          // ✅ NEW
+      type: '',
       frequency: '',
       time: [],
       food: '',
       duration: '',
       instructions: '',
+      flags: '',          // ✅ NEW
     });
     setConsultMedicines([...consultMedicines, newMedicine]);
   } catch (error) {

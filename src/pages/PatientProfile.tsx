@@ -2477,14 +2477,15 @@ const renderHistoryTab = () => {
   if (Array.isArray(consultMedicines) && consultMedicines.length > 0) {
     return consultMedicines.map((m: any) => ({
       name: m?.name || '',
-      dosage: m?.dosage || '',        // ✅ NEW
+      dosage: m?.dosage || '',
       quantity: m?.quantity || '',
-      type: m?.type || '',             // ✅ NEW
+      type: m?.type || '',
       frequency: m?.frequency || '',
       time: normalizeTime(m?.time),
       food: m?.food || '',
       duration: m?.duration || '',
       instructions: m?.instructions || '',
+      flags: m?.flags || '',        // ✅ NEW
     }));
   }
 
@@ -2492,14 +2493,15 @@ const renderHistoryTab = () => {
   if (Array.isArray(summary?.medications) && summary.medications.length > 0) {
     return summary.medications.map((m: any) => ({
       name: m?.name || m?.drug_name || '',
-      dosage: m?.dosage || m?.dose || '',        // ✅ NEW
+      dosage: m?.dosage || m?.dose || '',
       quantity: m?.quantity || '',
-      type: m?.type || '',                        // ✅ NEW
+      type: m?.type || '',
       frequency: m?.frequency || '',
       time: Array.isArray(m?.time) ? m.time : [],
       food: m?.food || '',
       duration: m?.duration || m?.duration_or_quantity || '',
       instructions: m?.instructions || m?.purpose || m?.indication || '',
+      flags: m?.flags || '',        // ✅ NEW
     }));
   }
 

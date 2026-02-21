@@ -2341,6 +2341,7 @@ const renderMedications = (medications: any[]) => {
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">AF/BF</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Duration</th>
             <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Instructions</th>
+            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Flags</th>
           </tr>
         </thead>
 
@@ -2358,6 +2359,7 @@ const renderMedications = (medications: any[]) => {
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.food || '-'}</td>
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
               <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.instructions || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.flags || '-'}</td>
             </tr>
           ))}
         </tbody>

@@ -1306,11 +1306,19 @@ setDocumentUploadState('success');
   handleCloseDocumentUpload();
   setDocumentUploadState('confirming');
 
-    // ✅ scroll to processing section after modal closes
+  // ✅ scroll to processing section with 32px offset
   requestAnimationFrame(() => {
-    preConsultSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+    if (preConsultSectionRef.current) {
+      const element = preConsultSectionRef.current;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - 32;
 
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  });
 };
 
 const handleDocumentUploadRetry = () => {

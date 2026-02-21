@@ -660,14 +660,15 @@ const handleCloseVitalsModal = () => {
     medicines.forEach((m: any) => {
       drafts[m.id] = {
         name: m.name || '',
-        dosage: m.dosage || '',        // ✅ NEW
+        dosage: m.dosage || '',
         quantity: m.quantity || '',
-        type: m.type || '',             // ✅ NEW
+        type: m.type || '',
         frequency: m.frequency || '',
         food: m.food || '',
         time: normalizeTime(m.time),
         duration: m.duration || '',
         instructions: m.instructions || '',
+        flags: m.flags || '',        // ✅ NEW
       };
     });
     setMedicineDrafts(drafts);

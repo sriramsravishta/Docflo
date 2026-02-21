@@ -1030,14 +1030,15 @@ const saveMedicineDraftsToDB = async () => {
 
     const updates: any = {
       name: d.name || '',
-      dosage: d.dosage || '',        // ✅ NEW
+      dosage: d.dosage || '',
       quantity: d.quantity || '',
-      type: d.type || '',             // ✅ NEW
+      type: d.type || '',
       frequency: d.frequency || '',
       food: d.food || '',
       time: normalizeTime(d.time),
       duration: d.duration || '',
       instructions: d.instructions || '',
+      flags: d.flags || '',        // ✅ NEW
     };
 
     await updateConsultMedicine(m.id, updates);

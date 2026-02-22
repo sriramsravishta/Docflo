@@ -1447,6 +1447,38 @@ const handleDocumentUploadRetry = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+  // Helper to get color based on interpretation
+const getInterpretationColor = (interpretation: string) => {
+  const t = (interpretation || '').toLowerCase();
+  if (t.includes('normal') || t.includes('acceptable')) return '#10b981'; // green
+  if (t.includes('borderline')) return '#f59e0b'; // orange
+  if (t.includes('high') || t.includes('critical') || t.includes('elevated')) return '#ef4444'; // red
+  if (t.includes('low')) return '#3b82f6'; // blue
+  return '#6b7280'; // gray
+};
+
+// Helper to format date for graph
+const formatGraphDate = (dateStr: string) => {
+  // Handle formats like "16-Aug-2025" or "~01-Feb-2026"
+  const cleaned = dateStr.replace('~', '').trim();
+  const d = new Date(cleaned);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+  }
+  return cleaned;
+};
+
+// Open graph modal
+const handleOpenGraph = (trend: any) => {
+  setSelectedTrend(trend);
+  setShowGraphModal(true);
+};
+
+// Close graph modal
+const handleCloseGraph = () => {
+  setShowGraphModal(false);
+  setSelectedTrend(null);
+};
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
 const MAX_PROCESS_SECONDS = 300; // ✅ 5 min hard limit

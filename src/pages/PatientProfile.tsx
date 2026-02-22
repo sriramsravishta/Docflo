@@ -1639,7 +1639,7 @@ const getProgressPercent = (consult: any) => {
 
   if (!trends.length) {
     return (
-      <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg" >
+      <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg">
         <p className="text-gray-500">No diagnostic trends available</p>
       </div>
     );
@@ -1649,18 +1649,15 @@ const getProgressPercent = (consult: any) => {
   const toDayKey = (iso: string) => {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
-    // group by day (yyyy-mm-dd)
     return d.toISOString().slice(0, 10);
   };
 
   const formatColHeader = (dayKey: string) => {
-    // dayKey like "2025-10-31"
     const d = new Date(dayKey + "T00:00:00");
     if (isNaN(d.getTime())) return dayKey;
     return d
-  .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })
-  .toUpperCase(); // "31 OCT 25"
-
+      .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })
+      .toUpperCase();
   };
 
   const badgeClass = (label: string) => {
@@ -1674,7 +1671,7 @@ const getProgressPercent = (consult: any) => {
     return "bg-gray-100 text-gray-700";
   };
 
-  // -------- Build columns (unique days across all parameters) --------
+  // -------- Build columns --------
   const allDays: string[] = [];
   trends.forEach((p: any) => {
     (p?.measurements || []).forEach((m: any) => {
@@ -1682,11 +1679,9 @@ const getProgressPercent = (consult: any) => {
     });
   });
 
-  const uniqueDays = Array.from(new Set(allDays)).sort(); // chronological
-  // Optional: if you only want latest 3 columns like screenshot:
-  // const uniqueDays = Array.from(new Set(allDays)).sort().slice(-3);
+  const uniqueDays = Array.from(new Set(allDays)).sort();
 
-  // -------- Build quick lookup: param -> day -> measurement --------
+  // -------- Build lookup --------
   const valueMap: Record<string, Record<string, any>> = {};
   trends.forEach((p: any) => {
     const key = String(p?.parameter_name || "").trim();
@@ -1698,7 +1693,6 @@ const getProgressPercent = (consult: any) => {
       const day = m?.measurement_datetime ? toDayKey(m.measurement_datetime) : null;
       if (!day) return;
 
-      // if multiple on same day, keep the latest by time
       const existing = valueMap[key][day];
       if (!existing) {
         valueMap[key][day] = m;
@@ -1710,9 +1704,6 @@ const getProgressPercent = (consult: any) => {
     });
   });
 
-  // -------- Interpretation source --------
-  // Prefer latest measurement's "clinical_interpretation" if present,
-  // else fallback to overall_trend_comment.
   const getInterpretation = (p: any) => {
     const ms = Array.isArray(p?.measurements) ? p.measurements : [];
     const latest = ms
@@ -1722,18 +1713,13 @@ const getProgressPercent = (consult: any) => {
           new Date(b.measurement_datetime).getTime() - new Date(a.measurement_datetime).getTime()
       )[0];
 
-    return (
-      latest?.clinical_interpretation ||
-      p?.overall_trend_comment ||
-      ""
-    );
+    return latest?.clinical_interpretation || p?.overall_trend_comment || "";
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
-          {/* Header */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">
@@ -1755,7 +1741,6 @@ const getProgressPercent = (consult: any) => {
             </tr>
           </thead>
 
-          {/* Body */}
           <tbody>
             {trends.map((p: any, idx: number) => {
               const paramName = String(p?.parameter_name || "").trim();
@@ -1767,14 +1752,15 @@ const getProgressPercent = (consult: any) => {
               return (
                 <tr
                   key={paramName + idx}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"}
+                  onClick={() => handleOpenGraph(p)}
+                  className={`cursor-pointer transition-colors ${
+                    idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50/40 hover:bg-blue-50"
+                  }`}
                 >
-                  {/* Parameter name */}
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                     {paramName}
                   </td>
 
-                  {/* Value columns */}
                   {uniqueDays.map((dayKey) => {
                     const m = valueMap?.[paramName]?.[dayKey];
                     const val = m?.value_raw ?? "";
@@ -1794,10 +1780,13 @@ const getProgressPercent = (consult: any) => {
                     );
                   })}
 
-                  {/* Interpretation badge */}
                   <td className="px-4 py-4 whitespace-nowrap">
                     {interp ? (
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClass(interp)}`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClass(
+                          interp
+                        )}`}
+                      >
                         {interp}
                       </span>
                     ) : (

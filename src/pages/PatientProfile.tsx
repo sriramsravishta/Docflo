@@ -3958,105 +3958,114 @@ const isComplete = !!hasAiSummary;
         />
 
         {/* Data points */}
-        {points.map((point, i) => {
-          const color = getInterpretationColor(point.clinical_interpretation);
-          
-          // ✅ FIXED: Better smart label positioning
-          const minTopSpace = padding.top + 5; // Minimum 5px from top
-          const maxBottomSpace = padding.top + chartHeight - 5; // Maximum 5px from bottom
-          
-          let labelY = point.y - 28;
-          
-          // If label would overflow top, place it below the point
-          if (labelY < minTopSpace) {
-            labelY = point.y + 38;
-          }
-          
-          // If label would overflow bottom, keep it above
-          if (labelY > maxBottomSpace) {
-            labelY = point.y - 28;
-          }
-          
-          // Check horizontal collision with previous point
-          if (i > 0) {
-            const prevPoint = points[i - 1];
-            const horizontalDistance = point.x - prevPoint.x;
-            const verticalDistance = Math.abs(point.y - prevPoint.y);
-            
-            if (horizontalDistance < 100 && verticalDistance < 40) {
-              // Alternate: if previous was above, place this below
-              labelY = point.y + 38;
-            }
-          }
-          
-          return (
-            <g key={i}>
-              {/* Larger hover area */}
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="14"
-                fill="transparent"
-                className="cursor-pointer"
-              >
-                <title>
-                  {`${formatGraphDate(point.measurement_datetime)}\nValue: ${
-                    point.value_raw
-                  } ${selectedTrend.unit || ''}\n${
-                    point.clinical_interpretation || ''
-                  }`}
-                </title>
-              </circle>
+{points.map((point, i) => {
+  const color = getInterpretationColor(point.clinical_interpretation);
+  
+  // ✅ FIXED: Ensure labels stay INSIDE the chart area (right of Y-axis)
+  const labelWidth = 44;
+  const labelHeight = 22;
+  const minLeftBound = padding.left + labelWidth / 2 + 5; // Must be right of Y-axis
+  const maxRightBound = padding.left + chartWidth - labelWidth / 2 - 5; // Must fit inside right edge
+  
+  // Adjust X position if label would overflow left
+  let labelX = point.x;
+  if (labelX < minLeftBound) {
+    labelX = minLeftBound;
+  }
+  if (labelX > maxRightBound) {
+    labelX = maxRightBound;
+  }
+  
+  // Calculate Y position (above or below point)
+  const minTopSpace = padding.top + 20;
+  const maxBottomSpace = padding.top + chartHeight - 35;
+  
+  let labelY = point.y - 28;
+  
+  // If label would overflow top, place it below the point
+  if (labelY < minTopSpace) {
+    labelY = point.y + 38;
+  }
+  
+  // Check horizontal collision with previous point
+  if (i > 0) {
+    const prevPoint = points[i - 1];
+    const horizontalDistance = point.x - prevPoint.x;
+    const verticalDistance = Math.abs(point.y - prevPoint.y);
+    
+    if (horizontalDistance < 100 && verticalDistance < 40) {
+      labelY = point.y + 38; // Place below
+    }
+  }
+  
+  return (
+    <g key={i}>
+      {/* Larger hover area */}
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r="14"
+        fill="transparent"
+        className="cursor-pointer"
+      >
+        <title>
+          {`${formatGraphDate(point.measurement_datetime)}\nValue: ${
+            point.value_raw
+          } ${selectedTrend.unit || ''}\n${
+            point.clinical_interpretation || ''
+          }`}
+        </title>
+      </circle>
 
-              {/* Data point circle */}
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="8"
-                fill={color}
-                stroke="white"
-                strokeWidth="3"
-                className="transition-all"
-              />
+      {/* Data point circle */}
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r="8"
+        fill={color}
+        stroke="white"
+        strokeWidth="3"
+        className="transition-all"
+      />
 
-              {/* X-axis date label */}
-              <text
-                x={point.x}
-                y={padding.top + chartHeight + 25}
-                textAnchor="middle"
-                fontSize="12"
-                fill="#374151"
-                fontWeight="500"
-              >
-                {formatGraphDate(point.measurement_datetime)}
-              </text>
+      {/* X-axis date label */}
+      <text
+        x={point.x}
+        y={padding.top + chartHeight + 25}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#374151"
+        fontWeight="500"
+      >
+        {formatGraphDate(point.measurement_datetime)}
+      </text>
 
-              {/* Value label with border */}
-              <g>
-                <rect
-                  x={point.x - 22}
-                  y={labelY - 15}
-                  width="44"
-                  height="22"
-                  fill="white"
-                  stroke={color}
-                  strokeWidth="1.5"
-                  rx="4"
-                />
-                <text
-                  x={point.x}
-                  y={labelY - 2}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill="#111827"
-                  fontWeight="700"
-                >
-                  {point.value_raw}
-                </text>
-              </g>
-            </g>
-          );
-        })}
+      {/* ✅ FIXED: Value label centered on adjusted X position */}
+      <g>
+        <rect
+          x={labelX - labelWidth / 2}
+          y={labelY - 15}
+          width={labelWidth}
+          height={labelHeight}
+          fill="white"
+          stroke={color}
+          strokeWidth="1.5"
+          rx="4"
+        />
+        <text
+          x={labelX}
+          y={labelY - 2}
+          textAnchor="middle"
+          fontSize="12"
+          fill="#111827"
+          fontWeight="700"
+        >
+          {point.value_raw}
+        </text>
+      </g>
+    </g>
+  );
+})}
 
         {/* Y-axis label */}
         <text

@@ -3808,21 +3808,20 @@ const isComplete = !!hasAiSummary;
   // Calculate dimensions
   const graphWidth = Math.max(700, measurements.length * 120);
   const graphHeight = 450;
-  const padding = { top: 50, right: 40, bottom: 80, left: 80 };
+  const padding = { top: 50, right: 80, bottom: 80, left: 80 }; // ✅ Increased right padding
   const chartWidth = graphWidth - padding.left - padding.right;
   const chartHeight = graphHeight - padding.top - padding.bottom;
 
-  // ✅ FIX: Better Y-axis scale (start from clinically relevant baseline)
+  // Better Y-axis scale
   const values = measurements.map((m: any) => m.value_numeric);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
   const valueRange = maxValue - minValue || 1;
   
-  // Start Y-axis from a round number below min value
   const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
   const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
 
-  // ✅ NEW: Parse normal range for reference zone
+  // Parse normal range for reference zone
   const normalRangeMatch = selectedTrend.normal_range?.match(/[<>]?\s*(\d+)/);
   const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
 
@@ -3840,30 +3839,46 @@ const isComplete = !!hasAiSummary;
     .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
     .join(' ');
 
-  // Y-axis ticks (more ticks for better readability)
+  // Y-axis ticks
   const yTicks = 6;
   const yTickValues = Array.from({ length: yTicks }, (_, i) => {
     return yMin + ((yMax - yMin) / (yTicks - 1)) * i;
   });
+
+  // ✅ Calculate normal zone Y position (BELOW the threshold)
+  let normalZoneY = null;
+  let normalZoneHeight = null;
+  if (normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax) {
+    normalZoneY = padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight;
+    normalZoneHeight = chartHeight - (chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight);
+  }
 
   return (
     <div className="overflow-x-auto">
       <svg
         width={graphWidth}
         height={graphHeight}
-        className="bg-white rounded-lg"
+        className="bg-white"
         style={{ minWidth: '700px' }}
       >
-        {/* ✅ NEW: Normal range background zone */}
-        {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
+        {/* ✅ Rounded background rectangle */}
+        <rect
+          x="0"
+          y="0"
+          width={graphWidth}
+          height={graphHeight}
+          fill="white"
+          rx="12"
+          ry="12"
+        />
+
+        {/* ✅ FIXED: Normal range background zone (BELOW threshold) */}
+        {normalZoneY !== null && normalZoneHeight !== null && (
           <rect
             x={padding.left}
-            y={padding.top}
+            y={normalZoneY}
             width={chartWidth}
-            height={
-              chartHeight -
-              ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight
-            }
+            height={normalZoneHeight}
             fill="rgba(16, 185, 129, 0.08)"
           />
         )}
@@ -3899,34 +3914,22 @@ const isComplete = !!hasAiSummary;
           );
         })}
 
-        {/* ✅ NEW: Normal range threshold line */}
+        {/* Normal range threshold line */}
         {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
           <g>
             <line
               x1={padding.left}
-              y1={
-                padding.top +
-                chartHeight -
-                ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight
-              }
+              y1={normalZoneY}
               x2={padding.left + chartWidth}
-              y2={
-                padding.top +
-                chartHeight -
-                ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight
-              }
+              y2={normalZoneY}
               stroke="#10b981"
               strokeWidth="2"
               strokeDasharray="6,3"
             />
+            {/* ✅ FIXED: Normal label with more space */}
             <text
-              x={padding.left + chartWidth + 5}
-              y={
-                padding.top +
-                chartHeight -
-                ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight +
-                4
-              }
+              x={padding.left + chartWidth + 10}
+              y={normalZoneY! + 4}
               fontSize="11"
               fill="#10b981"
               fontWeight="600"
@@ -3956,7 +3959,7 @@ const isComplete = !!hasAiSummary;
           strokeWidth="2"
         />
 
-        {/* Line with gradient (optional: color based on trend) */}
+        {/* Line */}
         <path
           d={linePath}
           fill="none"
@@ -3966,18 +3969,37 @@ const isComplete = !!hasAiSummary;
           strokeLinejoin="round"
         />
 
-        {/* Data points with improved hover */}
+        {/* Data points */}
         {points.map((point, i) => {
           const color = getInterpretationColor(point.clinical_interpretation);
-          const labelY = point.y - 18; // Smart positioning above point
+          
+          // ✅ FIXED: Smart label positioning to avoid overlap
+          let labelY = point.y - 25;
+          
+          // If label would be too close to top, move it below the point
+          if (labelY < padding.top + 10) {
+            labelY = point.y + 35;
+          }
+          
+          // Check if previous point is too close (within 50px horizontally)
+          if (i > 0) {
+            const prevPoint = points[i - 1];
+            const horizontalDistance = point.x - prevPoint.x;
+            const verticalDistance = Math.abs(point.y - prevPoint.y);
+            
+            // If points are close horizontally and vertically, alternate label positions
+            if (horizontalDistance < 100 && verticalDistance < 40) {
+              labelY = point.y + 35; // Place below
+            }
+          }
           
           return (
             <g key={i}>
-              {/* ✅ Larger hover area */}
+              {/* Larger hover area */}
               <circle
                 cx={point.x}
                 cy={point.y}
-                r="12"
+                r="14"
                 fill="transparent"
                 className="cursor-pointer"
               >
@@ -3990,7 +4012,7 @@ const isComplete = !!hasAiSummary;
                 </title>
               </circle>
 
-              {/* Outer ring on hover */}
+              {/* Data point circle */}
               <circle
                 cx={point.x}
                 cy={point.y}
@@ -3998,10 +4020,10 @@ const isComplete = !!hasAiSummary;
                 fill={color}
                 stroke="white"
                 strokeWidth="3"
-                className="transition-all hover:r-10"
+                className="transition-all"
               />
 
-              {/* X-axis label */}
+              {/* X-axis date label */}
               <text
                 x={point.x}
                 y={padding.top + chartHeight + 25}
@@ -4013,13 +4035,13 @@ const isComplete = !!hasAiSummary;
                 {formatGraphDate(point.measurement_datetime)}
               </text>
 
-              {/* ✅ Value label with background */}
+              {/* ✅ FIXED: Value label with smart positioning */}
               <g>
                 <rect
-                  x={point.x - 20}
-                  y={labelY - 14}
-                  width="40"
-                  height="20"
+                  x={point.x - 22}
+                  y={labelY - 15}
+                  width="44"
+                  height="22"
                   fill="white"
                   stroke={color}
                   strokeWidth="1.5"
@@ -4027,7 +4049,7 @@ const isComplete = !!hasAiSummary;
                 />
                 <text
                   x={point.x}
-                  y={labelY}
+                  y={labelY - 2}
                   textAnchor="middle"
                   fontSize="12"
                   fill="#111827"

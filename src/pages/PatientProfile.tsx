@@ -3808,7 +3808,7 @@ const isComplete = !!hasAiSummary;
   // Calculate dimensions
   const graphWidth = Math.max(700, measurements.length * 120);
   const graphHeight = 450;
-  const padding = { top: 50, right: 80, bottom: 80, left: 80 }; // ✅ Increased right padding
+  const padding = { top: 60, right: 80, bottom: 80, left: 80 }; // ✅ Increased top padding to 60
   const chartWidth = graphWidth - padding.left - padding.right;
   const chartHeight = graphHeight - padding.top - padding.bottom;
 
@@ -3845,7 +3845,7 @@ const isComplete = !!hasAiSummary;
     return yMin + ((yMax - yMin) / (yTicks - 1)) * i;
   });
 
-  // ✅ Calculate normal zone Y position (BELOW the threshold)
+  // Calculate normal zone Y position (BELOW the threshold)
   let normalZoneY = null;
   let normalZoneHeight = null;
   if (normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax) {
@@ -3861,18 +3861,7 @@ const isComplete = !!hasAiSummary;
         className="bg-white"
         style={{ minWidth: '700px' }}
       >
-        {/* ✅ Rounded background rectangle */}
-        <rect
-          x="0"
-          y="0"
-          width={graphWidth}
-          height={graphHeight}
-          fill="white"
-          rx="12"
-          ry="12"
-        />
-
-        {/* ✅ FIXED: Normal range background zone (BELOW threshold) */}
+        {/* Normal range background zone (BELOW threshold) */}
         {normalZoneY !== null && normalZoneHeight !== null && (
           <rect
             x={padding.left}
@@ -3926,7 +3915,6 @@ const isComplete = !!hasAiSummary;
               strokeWidth="2"
               strokeDasharray="6,3"
             />
-            {/* ✅ FIXED: Normal label with more space */}
             <text
               x={padding.left + chartWidth + 10}
               y={normalZoneY! + 4}
@@ -3973,23 +3961,31 @@ const isComplete = !!hasAiSummary;
         {points.map((point, i) => {
           const color = getInterpretationColor(point.clinical_interpretation);
           
-          // ✅ FIXED: Smart label positioning to avoid overlap
-          let labelY = point.y - 25;
+          // ✅ FIXED: Better smart label positioning
+          const minTopSpace = padding.top + 5; // Minimum 5px from top
+          const maxBottomSpace = padding.top + chartHeight - 5; // Maximum 5px from bottom
           
-          // If label would be too close to top, move it below the point
-          if (labelY < padding.top + 10) {
-            labelY = point.y + 35;
+          let labelY = point.y - 28;
+          
+          // If label would overflow top, place it below the point
+          if (labelY < minTopSpace) {
+            labelY = point.y + 38;
           }
           
-          // Check if previous point is too close (within 50px horizontally)
+          // If label would overflow bottom, keep it above
+          if (labelY > maxBottomSpace) {
+            labelY = point.y - 28;
+          }
+          
+          // Check horizontal collision with previous point
           if (i > 0) {
             const prevPoint = points[i - 1];
             const horizontalDistance = point.x - prevPoint.x;
             const verticalDistance = Math.abs(point.y - prevPoint.y);
             
-            // If points are close horizontally and vertically, alternate label positions
             if (horizontalDistance < 100 && verticalDistance < 40) {
-              labelY = point.y + 35; // Place below
+              // Alternate: if previous was above, place this below
+              labelY = point.y + 38;
             }
           }
           
@@ -4035,7 +4031,7 @@ const isComplete = !!hasAiSummary;
                 {formatGraphDate(point.measurement_datetime)}
               </text>
 
-              {/* ✅ FIXED: Value label with smart positioning */}
+              {/* Value label with border */}
               <g>
                 <rect
                   x={point.x - 22}

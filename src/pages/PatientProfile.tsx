@@ -54,6 +54,9 @@ export default function PatientProfile() {
   const [showVitalsModal, setShowVitalsModal] = useState(false);
 const [todaysVitals, setTodaysVitals] = useState<any[]>([]);
 const [editingVital, setEditingVital] = useState<any>(null);
+  // Graph modal state
+const [showGraphModal, setShowGraphModal] = useState(false);
+const [selectedTrend, setSelectedTrend] = useState<any>(null);
 const [vitalForm, setVitalForm] = useState({
   temperature: '',
   blood_pressure: '',

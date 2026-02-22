@@ -3763,6 +3763,245 @@ const isComplete = !!hasAiSummary;
     </div>
   </form>
 </Modal>
+      {/* Diagnostic Trends Graph Modal */}
+{showGraphModal && selectedTrend && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      {/* Header */}
+      <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {selectedTrend.parameter_name}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {selectedTrend.unit && `Unit: ${selectedTrend.unit}`}
+            {selectedTrend.normal_range && ` • Normal Range: ${selectedTrend.normal_range}`}
+          </p>
+        </div>
+        <button
+          onClick={handleCloseGraph}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5 text-gray-600" />
+        </button>
+      </div>
+
+      {/* Graph Content */}
+      <div className="flex-1 overflow-auto p-6">
+        {(() => {
+          const measurements = (selectedTrend.measurements || [])
+            .map((m: any) => ({
+              ...m,
+              timestamp: new Date(m.measurement_datetime.replace('~', '').trim()).getTime(),
+            }))
+            .filter((m: any) => !isNaN(m.timestamp))
+            .sort((a: any, b: any) => a.timestamp - b.timestamp);
+
+          if (measurements.length === 0) {
+            return (
+              <div className="flex items-center justify-center h-64">
+                <p className="text-gray-500">No data available</p>
+              </div>
+            );
+          }
+
+          // Calculate dimensions
+          const graphWidth = Math.max(600, measurements.length * 100);
+          const graphHeight = 400;
+          const padding = { top: 20, right: 20, bottom: 60, left: 60 };
+          const chartWidth = graphWidth - padding.left - padding.right;
+          const chartHeight = graphHeight - padding.top - padding.bottom;
+
+          // Calculate scales
+          const values = measurements.map((m: any) => m.value_numeric);
+          const minValue = Math.min(...values);
+          const maxValue = Math.max(...values);
+          const valueRange = maxValue - minValue || 1;
+          const yMin = minValue - valueRange * 0.1;
+          const yMax = maxValue + valueRange * 0.1;
+
+          // Create path for line
+          const points = measurements.map((m: any, i: number) => {
+            const x = padding.left + (i / (measurements.length - 1 || 1)) * chartWidth;
+            const y =
+              padding.top +
+              chartHeight -
+              ((m.value_numeric - yMin) / (yMax - yMin)) * chartHeight;
+            return { x, y, ...m };
+          });
+
+          const linePath = points
+            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+            .join(' ');
+
+          // Y-axis ticks
+          const yTicks = 5;
+          const yTickValues = Array.from({ length: yTicks }, (_, i) => {
+            return yMin + ((yMax - yMin) / (yTicks - 1)) * i;
+          });
+
+          return (
+            <div className="overflow-x-auto">
+              <svg
+                width={graphWidth}
+                height={graphHeight}
+                className="border border-gray-200 rounded-lg"
+                style={{ minWidth: '600px' }}
+              >
+                {/* Y-axis grid lines */}
+                {yTickValues.map((val, i) => {
+                  const y =
+                    padding.top +
+                    chartHeight -
+                    ((val - yMin) / (yMax - yMin)) * chartHeight;
+                  return (
+                    <g key={i}>
+                      <line
+                        x1={padding.left}
+                        y1={y}
+                        x2={padding.left + chartWidth}
+                        y2={y}
+                        stroke="#e5e7eb"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={padding.left - 10}
+                        y={y + 4}
+                        textAnchor="end"
+                        fontSize="12"
+                        fill="#6b7280"
+                      >
+                        {val.toFixed(1)}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* X-axis */}
+                <line
+                  x1={padding.left}
+                  y1={padding.top + chartHeight}
+                  x2={padding.left + chartWidth}
+                  y2={padding.top + chartHeight}
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+
+                {/* Y-axis */}
+                <line
+                  x1={padding.left}
+                  y1={padding.top}
+                  x2={padding.left}
+                  y2={padding.top + chartHeight}
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+
+                {/* Line */}
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Data points with hover */}
+                {points.map((point, i) => {
+                  const color = getInterpretationColor(point.clinical_interpretation);
+                  return (
+                    <g key={i}>
+                      {/* Point */}
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r="6"
+                        fill={color}
+                        stroke="white"
+                        strokeWidth="2"
+                        className="cursor-pointer hover:r-8 transition-all"
+                      >
+                        <title>
+                          {`${formatGraphDate(point.measurement_datetime)}\nValue: ${
+                            point.value_raw
+                          } ${selectedTrend.unit || ''}\n${
+                            point.clinical_interpretation || ''
+                          }`}
+                        </title>
+                      </circle>
+
+                      {/* X-axis label */}
+                      <text
+                        x={point.x}
+                        y={padding.top + chartHeight + 20}
+                        textAnchor="middle"
+                        fontSize="11"
+                        fill="#374151"
+                        fontWeight="500"
+                      >
+                        {formatGraphDate(point.measurement_datetime)}
+                      </text>
+
+                      {/* Value label above point */}
+                      <text
+                        x={point.x}
+                        y={point.y - 12}
+                        textAnchor="middle"
+                        fontSize="11"
+                        fill="#1f2937"
+                        fontWeight="600"
+                      >
+                        {point.value_raw}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Y-axis label */}
+                <text
+                  x={padding.left - 45}
+                  y={padding.top + chartHeight / 2}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#374151"
+                  fontWeight="600"
+                  transform={`rotate(-90 ${padding.left - 45} ${
+                    padding.top + chartHeight / 2
+                  })`}
+                >
+                  {selectedTrend.unit || 'Value'}
+                </text>
+
+                {/* X-axis label */}
+                <text
+                  x={padding.left + chartWidth / 2}
+                  y={graphHeight - 10}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#374151"
+                  fontWeight="600"
+                >
+                  Date
+                </text>
+              </svg>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Interpretation legend */}
+      {selectedTrend.overall_trend_comment && (
+        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 shrink-0">
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Trend Comment:</span>{' '}
+            {selectedTrend.overall_trend_comment}
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
     </div>
   );
 }

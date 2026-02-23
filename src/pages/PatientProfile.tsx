@@ -3568,52 +3568,54 @@ const isComplete = !!hasAiSummary;
                     </div>
                   </div>
 
-                  <div className="divide-y divide-gray-200">
-                    {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
+                  <<div className="divide-y divide-gray-200">
+                  {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis), true)}
 
-                    {summary.chief_complaints &&
-                      renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
+                  {summary.chief_complaints &&
+                    renderAccordionSection('Chief Complaints', 'chief_complaints', renderArrayContent(summary.chief_complaints), true)}
 
-                    {summary.treatment_suggested &&
-                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
+                  {summary.treatment_suggested &&
+                    renderAccordionSection('Treatment Suggested', 'treatment_suggested', renderTreatmentSuggested(summary.treatment_suggested), true)}
 
-                    {(() => {
-  const meds = getViewModeMedicines(summary);
-  return meds.length > 0
-    ? renderAccordionSection('Medications', 'medications', renderMedications(meds))
-    : null;
-})()}
+                  {(() => {
+                    const meds = getViewModeMedicines(summary);
+                    return meds.length > 0
+                      ? renderAccordionSection('Medications', 'medications', renderMedications(meds), true)
+                      : null;
+                  })()}
 
-                    {summary.investigations &&
-                      renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}
+                  {summary.investigations &&
+                    renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations), true)}
 
-                    {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
+                  {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history), true)}
 
-                    {summary.followup_recommendations &&
-                      renderAccordionSection(
-                        'Follow-up Recommendations',
-                        'followupRecommendations',
-                        renderArrayContent(summary.followup_recommendations)
-                      )}
+                  {summary.followup_recommendations &&
+                    renderAccordionSection(
+                      'Follow-up Recommendations',
+                      'followup_recommendations',
+                      renderArrayContent(summary.followup_recommendations),
+                      true
+                    )}
 
-                    {summary.key_personal_insights &&
-                      renderAccordionSection('Key Personal Insights', 'keyPersonalInsights', renderArrayContent(summary.key_personal_insights))}
+                  {summary.key_personal_insights &&
+                    renderAccordionSection('Key Personal Insights', 'key_personal_insights', renderArrayContent(summary.key_personal_insights), true)}
 
-                    {Array.isArray(summary.flags_for_review) &&
-                      summary.flags_for_review.length > 0 &&
-                      renderAccordionSection(
-                        'Flags for Review',
-                        'flagsForReview',
-                        <div className="space-y-2">
-                          {summary.flags_for_review.map((flag: string, idx: number) => (
-                            <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
-                              <span className="text-red-800 font-medium">⚠ {flag}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                </>
+                  {Array.isArray(summary.flags_for_review) &&
+                    summary.flags_for_review.length > 0 &&
+                    renderAccordionSection(
+                      'Flags for Review',
+                      'flags_for_review',
+                      <div className="space-y-2">
+                        {summary.flags_for_review.map((flag: string, idx: number) => (
+                          <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
+                            <span className="text-red-800 font-medium">⚠ {flag}</span>
+                          </div>
+                        ))}
+                      </div>,
+                      false
+                    )}
+                </div>
+              </>
               ) : (
                 <div className="p-6">
   {(() => {

@@ -4090,7 +4090,7 @@ const isComplete = !!hasAiSummary;
                               textAnchor="middle"
                               fontSize="12"
                               fill="#111827"
-                              fontWeight="700"
+                              fontWeight="700" 
                             >
                               {point.value_raw}
                             </text>
@@ -4100,20 +4100,19 @@ const isComplete = !!hasAiSummary;
                     })}
 
                     {/* Axis labels */}
-                    {/* Y-axis label */}
-<text
-  x={isMobile ? padding.left - 40 : padding.left - 55}
-  y={padding.top + chartHeight / 2}
-  textAnchor="middle"
-  fontSize="13"
-  fill="#374151"
-  fontWeight="600"
-  transform={`rotate(-90 ${isMobile ? padding.left - 40 : padding.left - 55} ${
-    padding.top + chartHeight / 2
-  })`}
->
-  {trend.unit || 'Value'}
-</text>
+                    <text
+                      x={padding.left - 55}
+                      y={padding.top + chartHeight / 2}
+                      textAnchor="middle"
+                      fontSize="13"
+                      fill="#374151"
+                      fontWeight="600"
+                      transform={`rotate(-90 ${padding.left - 55} ${
+                        padding.top + chartHeight / 2
+                      })`}
+                    >
+                      {trend.unit || 'Value'}
+                    </text>
 
                     <text
                       x={padding.left + chartWidth / 2}

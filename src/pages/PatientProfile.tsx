@@ -4090,7 +4090,7 @@ const isComplete = !!hasAiSummary;
                               textAnchor="middle"
                               fontSize="12"
                               fill="#111827"
-                              fontWeight="700" 
+                              fontWeight="700"
                             >
                               {point.value_raw}
                             </text>

@@ -1468,9 +1468,9 @@ const formatGraphDate = (dateStr: string) => {
 };
 
 // Close graph modal
+// Close graph modal
 const handleCloseGraph = () => {
   setShowGraphModal(false);
-  setSelectedTrend(null);
 };
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;

@@ -1467,9 +1467,10 @@ const formatGraphDate = (dateStr: string) => {
   return cleaned;
 };
 
-// Close graph modal
+// Close graph modal 
 const handleCloseGraph = () => {
   setShowGraphModal(false);
+  setSelectedTrend(null);
 };
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
@@ -1754,11 +1755,11 @@ const getProgressPercent = (consult: any) => {
 
               return (
                 <tr
-  key={paramName + idx}
-  className={`${
-    idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-  }`}
->
+                  key={paramName + idx}
+                  className={`cursor-pointer transition-colors ${
+                    idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50/40 hover:bg-blue-50"
+                  }`}
+                >
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                     {paramName}
                   </td>
@@ -3784,20 +3785,19 @@ const isComplete = !!hasAiSummary;
 
         {/* Search/Filter Dropdown */}
         <div className="relative">
-         <select
-  onChange={(e) => {
-    const paramName = e.target.value;
-    if (paramName) {
-      const element = document.getElementById(`graph-${paramName}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  }}
-  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent text-gray-900"
-  style={{ color: 'inherit' }}
->
-  <option value="" className="text-gray-400">Search parameters...</option>
+          <select
+            onChange={(e) => {
+              const paramName = e.target.value;
+              if (paramName) {
+                const element = document.getElementById(`graph-${paramName}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }
+            }}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
+          >
+            <option value="">Jump to parameter...</option>
             {(() => {
               const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
                 ? latestSummary.summary.diagnostic_trends
@@ -3846,12 +3846,8 @@ const isComplete = !!hasAiSummary;
 
             if (measurements.length === 0) return null;
 
-           // ✅ Responsive width: full width on mobile, wider on desktop
-const isMobile = window.innerWidth < 768;
-const graphWidth = isMobile 
-  ? Math.min(window.innerWidth - 80, 600) // Mobile: fit in viewport minus padding
-  : Math.max(700, measurements.length * 120); // Desktop: scale with data points
-const graphHeight = 450;
+            const graphWidth = Math.max(700, measurements.length * 120);
+            const graphHeight = 450;
             const padding = { top: 60, right: 80, bottom: 80, left: 80 };
             const chartWidth = graphWidth - padding.left - padding.right;
             const chartHeight = graphHeight - padding.top - padding.bottom;
@@ -3908,13 +3904,13 @@ const graphHeight = 450;
                 </div>
 
                 {/* Graph SVG */}
-               <div className="overflow-x-auto md:overflow-x-visible">
-  <svg
-    width={graphWidth}
-    height={graphHeight}
-    className="bg-white w-full"
-    style={{ minWidth: isMobile ? 'auto' : '700px' }}
-  >
+                <div className="overflow-x-auto">
+                  <svg
+                    width={graphWidth}
+                    height={graphHeight}
+                    className="bg-white"
+                    style={{ minWidth: '700px' }}
+                  >
                     {/* Normal zone */}
                     {normalZoneY !== null && normalZoneHeight !== null && (
                       <rect

@@ -3774,350 +3774,380 @@ const isComplete = !!hasAiSummary;
   </form>
 </Modal>
       {/* Diagnostic Trends Graph Modal */}
-{showGraphModal && selectedTrend && (
+{/* Diagnostic Trends - View All Graphs Modal */}
+{showGraphModal && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {selectedTrend.parameter_name}
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            {selectedTrend.unit && `Unit: ${selectedTrend.unit}`}
-            {selectedTrend.normal_range && ` • Normal Range: ${selectedTrend.normal_range}`}
-          </p>
+    <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      {/* Header with Search */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Diagnostic Trends</h2>
+          <button
+            onClick={handleCloseGraph}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
-        <button
-          onClick={handleCloseGraph}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <X className="w-5 h-5 text-gray-600" />
-        </button>
+
+        {/* Search/Filter Dropdown */}
+        <div className="relative">
+          <select
+            onChange={(e) => {
+              const paramName = e.target.value;
+              if (paramName) {
+                const element = document.getElementById(`graph-${paramName}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }
+            }}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
+          >
+            <option value="">Jump to parameter...</option>
+            {(() => {
+              const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
+                ? latestSummary.summary.diagnostic_trends
+                : [];
+              return trends.map((p: any, idx: number) => {
+                const paramName = String(p?.parameter_name || "").trim();
+                if (!paramName) return null;
+                return (
+                  <option key={idx} value={paramName}>
+                    {paramName}
+                  </option>
+                );
+              });
+            })()}
+          </select>
+        </div>
       </div>
 
-      {/* Graph Content */}
-      <div className="flex-1 overflow-auto p-6">
+      {/* Scrollable Graphs Container */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
         {(() => {
-  const measurements = (selectedTrend.measurements || [])
-    .map((m: any) => ({
-      ...m,
-      timestamp: new Date(m.measurement_datetime.replace('~', '').trim()).getTime(),
-    }))
-    .filter((m: any) => !isNaN(m.timestamp))
-    .sort((a: any, b: any) => a.timestamp - b.timestamp);
+          const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
+            ? latestSummary.summary.diagnostic_trends
+            : [];
 
-  if (measurements.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">No data available</p>
-      </div>
-    );
-  }
+          if (trends.length === 0) {
+            return (
+              <div className="flex items-center justify-center h-64">
+                <p className="text-gray-500">No diagnostic trends available</p>
+              </div>
+            );
+          }
 
-  // Calculate dimensions
-  const graphWidth = Math.max(700, measurements.length * 120);
-  const graphHeight = 450;
-  const padding = { top: 60, right: 80, bottom: 80, left: 80 }; // ✅ Increased top padding to 60
-  const chartWidth = graphWidth - padding.left - padding.right;
-  const chartHeight = graphHeight - padding.top - padding.bottom;
+          return trends.map((trend: any, trendIdx: number) => {
+            const paramName = String(trend?.parameter_name || "").trim();
+            if (!paramName) return null;
 
-  // Better Y-axis scale
-  const values = measurements.map((m: any) => m.value_numeric);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-  const valueRange = maxValue - minValue || 1;
-  
-  const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
-  const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
+            // ✅ Graph rendering logic (same as before)
+            const measurements = (trend.measurements || [])
+              .map((m: any) => ({
+                ...m,
+                timestamp: new Date(m.measurement_datetime.replace('~', '').trim()).getTime(),
+              }))
+              .filter((m: any) => !isNaN(m.timestamp))
+              .sort((a: any, b: any) => a.timestamp - b.timestamp);
 
-  // Parse normal range for reference zone
-  const normalRangeMatch = selectedTrend.normal_range?.match(/[<>]?\s*(\d+)/);
-  const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
+            if (measurements.length === 0) return null;
 
-  // Create path for line
-  const points = measurements.map((m: any, i: number) => {
-    const x = padding.left + (i / (measurements.length - 1 || 1)) * chartWidth;
-    const y =
-      padding.top +
-      chartHeight -
-      ((m.value_numeric - yMin) / (yMax - yMin)) * chartHeight;
-    return { x, y, ...m };
-  });
+            const graphWidth = Math.max(700, measurements.length * 120);
+            const graphHeight = 450;
+            const padding = { top: 60, right: 80, bottom: 80, left: 80 };
+            const chartWidth = graphWidth - padding.left - padding.right;
+            const chartHeight = graphHeight - padding.top - padding.bottom;
 
-  const linePath = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
-    .join(' ');
+            const values = measurements.map((m: any) => m.value_numeric);
+            const minValue = Math.min(...values);
+            const maxValue = Math.max(...values);
+            const valueRange = maxValue - minValue || 1;
 
-  // Y-axis ticks
-  const yTicks = 6;
-  const yTickValues = Array.from({ length: yTicks }, (_, i) => {
-    return yMin + ((yMax - yMin) / (yTicks - 1)) * i;
-  });
+            const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
+            const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
 
-  // Calculate normal zone Y position (BELOW the threshold)
-  let normalZoneY = null;
-  let normalZoneHeight = null;
-  if (normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax) {
-    normalZoneY = padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight;
-    normalZoneHeight = chartHeight - (chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight);
-  }
+            const normalRangeMatch = trend.normal_range?.match(/[<>]?\s*(\d+)/);
+            const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
 
-  return (
-    <div className="overflow-x-auto">
-      <svg
-        width={graphWidth}
-        height={graphHeight}
-        className="bg-white"
-        style={{ minWidth: '700px' }}
-      >
-        {/* Normal range background zone (BELOW threshold) */}
-        {normalZoneY !== null && normalZoneHeight !== null && (
-          <rect
-            x={padding.left}
-            y={normalZoneY}
-            width={chartWidth}
-            height={normalZoneHeight}
-            fill="rgba(16, 185, 129, 0.08)"
-          />
-        )}
+            const points = measurements.map((m: any, i: number) => {
+              const x = padding.left + (i / (measurements.length - 1 || 1)) * chartWidth;
+              const y =
+                padding.top +
+                chartHeight -
+                ((m.value_numeric - yMin) / (yMax - yMin)) * chartHeight;
+              return { x, y, ...m };
+            });
 
-        {/* Y-axis grid lines */}
-        {yTickValues.map((val, i) => {
-          const y =
-            padding.top +
-            chartHeight -
-            ((val - yMin) / (yMax - yMin)) * chartHeight;
-          return (
-            <g key={i}>
-              <line
-                x1={padding.left}
-                y1={y}
-                x2={padding.left + chartWidth}
-                y2={y}
-                stroke="#f3f4f6"
-                strokeWidth="1"
-                strokeDasharray="4,4"
-              />
-              <text
-                x={padding.left - 12}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="12"
-                fill="#6b7280"
-                fontWeight="500"
+            const linePath = points
+              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+              .join(' ');
+
+            const yTicks = 6;
+            const yTickValues = Array.from({ length: yTicks }, (_, i) => {
+              return yMin + ((yMax - yMin) / (yTicks - 1)) * i;
+            });
+
+            let normalZoneY = null;
+            let normalZoneHeight = null;
+            if (normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax) {
+              normalZoneY = padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight;
+              normalZoneHeight = chartHeight - (chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight);
+            }
+
+            return (
+              <div
+                key={trendIdx}
+                id={`graph-${paramName}`}
+                className="scroll-mt-24 border border-gray-200 rounded-lg p-6 bg-white"
               >
-                {Math.round(val)}
-              </text>
-            </g>
-          );
-        })}
+                {/* Graph Title */}
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">{paramName}</h3>
+                  <p className="text-sm text-gray-600">
+                    {trend.unit && `Unit: ${trend.unit}`}
+                    {trend.normal_range && ` • Normal Range: ${trend.normal_range}`}
+                  </p>
+                </div>
 
-        {/* Normal range threshold line */}
-        {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
-          <g>
-            <line
-              x1={padding.left}
-              y1={normalZoneY}
-              x2={padding.left + chartWidth}
-              y2={normalZoneY}
-              stroke="#10b981"
-              strokeWidth="2"
-              strokeDasharray="6,3"
-            />
-            <text
-              x={padding.left + chartWidth + 10}
-              y={normalZoneY! + 4}
-              fontSize="11"
-              fill="#10b981"
-              fontWeight="600"
-            >
-              Normal
-            </text>
-          </g>
-        )}
+                {/* Graph SVG */}
+                <div className="overflow-x-auto">
+                  <svg
+                    width={graphWidth}
+                    height={graphHeight}
+                    className="bg-white"
+                    style={{ minWidth: '700px' }}
+                  >
+                    {/* Normal zone */}
+                    {normalZoneY !== null && normalZoneHeight !== null && (
+                      <rect
+                        x={padding.left}
+                        y={normalZoneY}
+                        width={chartWidth}
+                        height={normalZoneHeight}
+                        fill="rgba(16, 185, 129, 0.08)"
+                      />
+                    )}
 
-        {/* X-axis */}
-        <line
-          x1={padding.left}
-          y1={padding.top + chartHeight}
-          x2={padding.left + chartWidth}
-          y2={padding.top + chartHeight}
-          stroke="#9ca3af"
-          strokeWidth="2"
-        />
+                    {/* Y-axis grid */}
+                    {yTickValues.map((val, i) => {
+                      const y =
+                        padding.top +
+                        chartHeight -
+                        ((val - yMin) / (yMax - yMin)) * chartHeight;
+                      return (
+                        <g key={i}>
+                          <line
+                            x1={padding.left}
+                            y1={y}
+                            x2={padding.left + chartWidth}
+                            y2={y}
+                            stroke="#f3f4f6"
+                            strokeWidth="1"
+                            strokeDasharray="4,4"
+                          />
+                          <text
+                            x={padding.left - 12}
+                            y={y + 4}
+                            textAnchor="end"
+                            fontSize="12"
+                            fill="#6b7280"
+                            fontWeight="500"
+                          >
+                            {Math.round(val)}
+                          </text>
+                        </g>
+                      );
+                    })}
 
-        {/* Y-axis */}
-        <line
-          x1={padding.left}
-          y1={padding.top}
-          x2={padding.left}
-          y2={padding.top + chartHeight}
-          stroke="#9ca3af"
-          strokeWidth="2"
-        />
+                    {/* Normal threshold line */}
+                    {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
+                      <g>
+                        <line
+                          x1={padding.left}
+                          y1={normalZoneY}
+                          x2={padding.left + chartWidth}
+                          y2={normalZoneY}
+                          stroke="#10b981"
+                          strokeWidth="2"
+                          strokeDasharray="6,3"
+                        />
+                        <text
+                          x={padding.left + chartWidth + 10}
+                          y={normalZoneY! + 4}
+                          fontSize="11"
+                          fill="#10b981"
+                          fontWeight="600"
+                        >
+                          Normal
+                        </text>
+                      </g>
+                    )}
 
-        {/* Line */}
-        <path
-          d={linePath}
-          fill="none"
-          stroke="#3b82f6"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+                    {/* Axes */}
+                    <line
+                      x1={padding.left}
+                      y1={padding.top + chartHeight}
+                      x2={padding.left + chartWidth}
+                      y2={padding.top + chartHeight}
+                      stroke="#9ca3af"
+                      strokeWidth="2"
+                    />
+                    <line
+                      x1={padding.left}
+                      y1={padding.top}
+                      x2={padding.left}
+                      y2={padding.top + chartHeight}
+                      stroke="#9ca3af"
+                      strokeWidth="2"
+                    />
 
-        {/* Data points */}
-{points.map((point, i) => {
-  const color = getInterpretationColor(point.clinical_interpretation);
-  
-  // ✅ FIXED: Ensure labels stay INSIDE the chart area (right of Y-axis)
-  const labelWidth = 44;
-  const labelHeight = 22;
-  const minLeftBound = padding.left + labelWidth / 2 + 5; // Must be right of Y-axis
-  const maxRightBound = padding.left + chartWidth - labelWidth / 2 - 5; // Must fit inside right edge
-  
-  // Adjust X position if label would overflow left
-  let labelX = point.x;
-  if (labelX < minLeftBound) {
-    labelX = minLeftBound;
-  }
-  if (labelX > maxRightBound) {
-    labelX = maxRightBound;
-  }
-  
-  // Calculate Y position (above or below point)
-  const minTopSpace = padding.top + 20;
-  const maxBottomSpace = padding.top + chartHeight - 35;
-  
-  let labelY = point.y - 28;
-  
-  // If label would overflow top, place it below the point
-  if (labelY < minTopSpace) {
-    labelY = point.y + 38;
-  }
-  
-  // Check horizontal collision with previous point
-  if (i > 0) {
-    const prevPoint = points[i - 1];
-    const horizontalDistance = point.x - prevPoint.x;
-    const verticalDistance = Math.abs(point.y - prevPoint.y);
-    
-    if (horizontalDistance < 100 && verticalDistance < 40) {
-      labelY = point.y + 38; // Place below
-    }
-  }
-  
-  return (
-    <g key={i}>
-      {/* Larger hover area */}
-      <circle
-        cx={point.x}
-        cy={point.y}
-        r="14"
-        fill="transparent"
-        className="cursor-pointer"
-      >
-        <title>
-          {`${formatGraphDate(point.measurement_datetime)}\nValue: ${
-            point.value_raw
-          } ${selectedTrend.unit || ''}\n${
-            point.clinical_interpretation || ''
-          }`}
-        </title>
-      </circle>
+                    {/* Line */}
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
 
-      {/* Data point circle */}
-      <circle
-        cx={point.x}
-        cy={point.y}
-        r="8"
-        fill={color}
-        stroke="white"
-        strokeWidth="3"
-        className="transition-all"
-      />
+                    {/* Data points */}
+                    {points.map((point, i) => {
+                      const color = getInterpretationColor(point.clinical_interpretation);
+                      
+                      const labelWidth = 44;
+                      const labelHeight = 22;
+                      const minLeftBound = padding.left + labelWidth / 2 + 5;
+                      const maxRightBound = padding.left + chartWidth - labelWidth / 2 - 5;
+                      
+                      let labelX = point.x;
+                      if (labelX < minLeftBound) labelX = minLeftBound;
+                      if (labelX > maxRightBound) labelX = maxRightBound;
+                      
+                      const minTopSpace = padding.top + 20;
+                      let labelY = point.y - 28;
+                      
+                      if (labelY < minTopSpace) {
+                        labelY = point.y + 38;
+                      }
+                      
+                      if (i > 0) {
+                        const prevPoint = points[i - 1];
+                        const horizontalDistance = point.x - prevPoint.x;
+                        const verticalDistance = Math.abs(point.y - prevPoint.y);
+                        
+                        if (horizontalDistance < 100 && verticalDistance < 40) {
+                          labelY = point.y + 38;
+                        }
+                      }
+                      
+                      return (
+                        <g key={i}>
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r="14"
+                            fill="transparent"
+                            className="cursor-pointer"
+                          >
+                            <title>
+                              {`${formatGraphDate(point.measurement_datetime)}\nValue: ${
+                                point.value_raw
+                              } ${trend.unit || ''}\n${
+                                point.clinical_interpretation || ''
+                              }`}
+                            </title>
+                          </circle>
 
-      {/* X-axis date label */}
-      <text
-        x={point.x}
-        y={padding.top + chartHeight + 25}
-        textAnchor="middle"
-        fontSize="12"
-        fill="#374151"
-        fontWeight="500"
-      >
-        {formatGraphDate(point.measurement_datetime)}
-      </text>
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r="8"
+                            fill={color}
+                            stroke="white"
+                            strokeWidth="3"
+                          />
 
-      {/* ✅ FIXED: Value label centered on adjusted X position */}
-      <g>
-        <rect
-          x={labelX - labelWidth / 2}
-          y={labelY - 15}
-          width={labelWidth}
-          height={labelHeight}
-          fill="white"
-          stroke={color}
-          strokeWidth="1.5"
-          rx="4"
-        />
-        <text
-          x={labelX}
-          y={labelY - 2}
-          textAnchor="middle"
-          fontSize="12"
-          fill="#111827"
-          fontWeight="700"
-        >
-          {point.value_raw}
-        </text>
-      </g>
-    </g>
-  );
-})}
+                          <text
+                            x={point.x}
+                            y={padding.top + chartHeight + 25}
+                            textAnchor="middle"
+                            fontSize="12"
+                            fill="#374151"
+                            fontWeight="500"
+                          >
+                            {formatGraphDate(point.measurement_datetime)}
+                          </text>
 
-        {/* Y-axis label */}
-        <text
-          x={padding.left - 55}
-          y={padding.top + chartHeight / 2}
-          textAnchor="middle"
-          fontSize="13"
-          fill="#374151"
-          fontWeight="600"
-          transform={`rotate(-90 ${padding.left - 55} ${
-            padding.top + chartHeight / 2
-          })`}
-        >
-          {selectedTrend.unit || 'Value'}
-        </text>
+                          <g>
+                            <rect
+                              x={labelX - labelWidth / 2}
+                              y={labelY - 15}
+                              width={labelWidth}
+                              height={labelHeight}
+                              fill="white"
+                              stroke={color}
+                              strokeWidth="1.5"
+                              rx="4"
+                            />
+                            <text
+                              x={labelX}
+                              y={labelY - 2}
+                              textAnchor="middle"
+                              fontSize="12"
+                              fill="#111827"
+                              fontWeight="700"
+                            >
+                              {point.value_raw}
+                            </text>
+                          </g>
+                        </g>
+                      );
+                    })}
 
-        {/* X-axis label */}
-        <text
-          x={padding.left + chartWidth / 2}
-          y={graphHeight - 20}
-          textAnchor="middle"
-          fontSize="13"
-          fill="#374151"
-          fontWeight="600"
-        >
-          Date
-        </text>
-      </svg>
-    </div>
-  );
-})()}
+                    {/* Axis labels */}
+                    <text
+                      x={padding.left - 55}
+                      y={padding.top + chartHeight / 2}
+                      textAnchor="middle"
+                      fontSize="13"
+                      fill="#374151"
+                      fontWeight="600"
+                      transform={`rotate(-90 ${padding.left - 55} ${
+                        padding.top + chartHeight / 2
+                      })`}
+                    >
+                      {trend.unit || 'Value'}
+                    </text>
+
+                    <text
+                      x={padding.left + chartWidth / 2}
+                      y={graphHeight - 20}
+                      textAnchor="middle"
+                      fontSize="13"
+                      fill="#374151"
+                      fontWeight="600"
+                    >
+                      Date
+                    </text>
+                  </svg>
+                </div>
+
+                {/* Trend Comment */}
+                {trend.overall_trend_comment && (
+                  <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">Trend Comment:</span>{' '}
+                      {trend.overall_trend_comment}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          });
+        })()}
       </div>
-
-      {/* Interpretation legend */}
-      {selectedTrend.overall_trend_comment && (
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 shrink-0">
-          <p className="text-sm text-gray-700">
-            <span className="font-semibold">Trend Comment:</span>{' '}
-            {selectedTrend.overall_trend_comment}
-          </p>
-        </div>
-      )}
     </div>
   </div>
 )}

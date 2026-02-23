@@ -56,7 +56,6 @@ const [todaysVitals, setTodaysVitals] = useState<any[]>([]);
 const [editingVital, setEditingVital] = useState<any>(null);
   // Graph modal state
 const [showGraphModal, setShowGraphModal] = useState(false);
-const [selectedTrend, setSelectedTrend] = useState<any>(null);
 const [vitalForm, setVitalForm] = useState({
   temperature: '',
   blood_pressure: '',
@@ -1468,8 +1467,16 @@ const formatGraphDate = (dateStr: string) => {
   return cleaned;
 };
 
+// Close graph modal
+const handleCloseGraph = () => {
+  setShowGraphModal(false);
+};
 
-
+// Close graph modal
+const handleCloseGraph = () => {
+  setShowGraphModal(false);
+  setSelectedTrend(null);
+};
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
 const MAX_PROCESS_SECONDS = 300; // ✅ 5 min hard limit

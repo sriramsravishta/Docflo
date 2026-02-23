@@ -3508,13 +3508,7 @@ const isComplete = !!hasAiSummary;
   {/* Buttons move below title on mobile, stay right on desktop */}
   <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
     <div className="flex flex-wrap gap-2">
-      <button
-        onClick={handleEditConsult}
-        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-      >
-        <Edit className="w-4 h-4" />
-        <span>Edit</span>
-      </button>
+      
 
       <button
         onClick={handleDownloadPDF}

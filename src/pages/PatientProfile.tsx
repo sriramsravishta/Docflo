@@ -1027,6 +1027,75 @@ useEffect(() => {
     setMedicineSearchResults([]);
   };
 
+  // Section-wise edit handlers
+const handleEditSection = (sectionKey: string, currentValue: any) => {
+  setEditingSections((prev) => ({ ...prev, [sectionKey]: true }));
+  
+  // Store draft based on section type
+  if (sectionKey === 'diagnosis') {
+    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: diagnosisToEditableText(currentValue) }));
+  } else if (sectionKey === 'treatment_suggested') {
+    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: treatmentToEditableText(currentValue) }));
+  } else if (sectionKey === 'investigations') {
+    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: investigationsToEditableText(currentValue) }));
+  } else if (sectionKey === 'medications') {
+    // Medications handled separately - just set flag
+    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: true }));
+  } else {
+    // For simple text fields (history, chief_complaints, followup_recommendations)
+    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: currentValue || '' }));
+  }
+};
+
+const handleCancelSection = (sectionKey: string) => {
+  setEditingSections((prev) => ({ ...prev, [sectionKey]: false }));
+  setSectionDrafts((prev) => {
+    const next = { ...prev };
+    delete next[sectionKey];
+    return next;
+  });
+};
+
+const handleSaveSection = async (sectionKey: string) => {
+  try {
+    if (!selectedConsult) return;
+
+    const summary = getConsultSummary(selectedConsult) || {};
+    let updatePayload: any = {};
+
+    // Convert draft back to proper format based on section
+    if (sectionKey === 'diagnosis') {
+      updatePayload.diagnosis = diagnosisTextToJson(sectionDrafts[sectionKey], summary.diagnosis);
+    } else if (sectionKey === 'treatment_suggested') {
+      updatePayload.treatment_suggested = treatmentTextToJson(sectionDrafts[sectionKey], summary.treatment_suggested);
+    } else if (sectionKey === 'investigations') {
+      updatePayload.investigations = investigationsTextToJson(sectionDrafts[sectionKey], summary.investigations);
+    } else if (sectionKey === 'medications') {
+      // Save medicine drafts to DB
+      await saveMedicineDraftsToDB();
+    } else {
+      // Simple text fields
+      updatePayload[sectionKey] = sectionDrafts[sectionKey];
+    }
+
+    // Only update if we have changes (medications are handled separately)
+    if (Object.keys(updatePayload).length > 0) {
+      await updateConsultSummary(selectedConsult.id, updatePayload);
+    }
+
+    // Refresh consultation data
+    const { consultsData } = await loadPatientData();
+    const updated = consultsData.find((c: any) => c.id === selectedConsult.id);
+    if (updated) setSelectedConsult(updated);
+
+    // Exit edit mode for this section
+    handleCancelSection(sectionKey);
+  } catch (error) {
+    console.error('Error saving section:', error);
+    alert('Failed to save changes');
+  }
+};
+
 const saveMedicineDraftsToDB = async () => {
   for (const m of consultMedicines) {
     const d = medicineDrafts[m.id];

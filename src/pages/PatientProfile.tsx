@@ -1754,11 +1754,11 @@ const getProgressPercent = (consult: any) => {
 
               return (
                 <tr
-                  key={paramName + idx}
-                  className={`cursor-pointer transition-colors ${
-                    idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50/40 hover:bg-blue-50"
-                  }`}
-                >
+  key={paramName + idx}
+  className={`${
+    idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"
+  }`}
+>
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                     {paramName}
                   </td>

@@ -1467,7 +1467,7 @@ const formatGraphDate = (dateStr: string) => {
   return cleaned;
 };
 
-// Close graph modal 
+// Close graph modal
 const handleCloseGraph = () => {
   setShowGraphModal(false);
   setSelectedTrend(null);

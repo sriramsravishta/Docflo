@@ -56,6 +56,8 @@ const [todaysVitals, setTodaysVitals] = useState<any[]>([]);
 const [editingVital, setEditingVital] = useState<any>(null);
   // Graph modal state
 const [showGraphModal, setShowGraphModal] = useState(false);
+const [editingSections, setEditingSections] = useState<{ [key: string]: boolean }>({});
+const [sectionDrafts, setSectionDrafts] = useState<{ [key: string]: any }>({});
 const [vitalForm, setVitalForm] = useState({
   temperature: '',
   blood_pressure: '',

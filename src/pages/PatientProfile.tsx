@@ -3846,8 +3846,12 @@ const isComplete = !!hasAiSummary;
 
             if (measurements.length === 0) return null;
 
-            const graphWidth = Math.max(700, measurements.length * 120);
-            const graphHeight = 450;
+           // ✅ Responsive width: full width on mobile, wider on desktop
+const isMobile = window.innerWidth < 768;
+const graphWidth = isMobile 
+  ? Math.min(window.innerWidth - 80, 600) // Mobile: fit in viewport minus padding
+  : Math.max(700, measurements.length * 120); // Desktop: scale with data points
+const graphHeight = 450;
             const padding = { top: 60, right: 80, bottom: 80, left: 80 };
             const chartWidth = graphWidth - padding.left - padding.right;
             const chartHeight = graphHeight - padding.top - padding.bottom;

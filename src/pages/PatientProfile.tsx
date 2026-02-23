@@ -1717,9 +1717,20 @@ const getProgressPercent = (consult: any) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
+  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    {/* ✅ NEW: Header with "View Graphical Trend" button */}
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+      <h3 className="text-sm font-semibold text-gray-900">DIAGNOSTIC TRENDS</h3>
+      <button
+        onClick={() => setShowGraphModal(true)}
+        className="text-sm font-medium text-[#024CDB] hover:underline"
+      >
+        View Graphical Trend
+      </button>
+    </div>
+    
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">
@@ -1752,7 +1763,6 @@ const getProgressPercent = (consult: any) => {
               return (
                 <tr
                   key={paramName + idx}
-                  onClick={() => handleOpenGraph(p)}
                   className={`cursor-pointer transition-colors ${
                     idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50/40 hover:bg-blue-50"
                   }`}

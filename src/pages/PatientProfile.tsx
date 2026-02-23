@@ -2489,8 +2489,6 @@ const renderMedicationsEditMode = () => {
   );
 };
 
-// Helper function to render accordion sections
-const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
   
   // Helper function to render accordion sections
 const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {

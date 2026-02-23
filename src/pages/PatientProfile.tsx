@@ -2290,6 +2290,153 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
 
   // Helper function to render accordion sections
 const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
+  const renderEditableContent = (sectionKey: string) => {
+  const draft = sectionDrafts[sectionKey] || '';
+
+  if (sectionKey === 'medications') {
+    return renderMedicationsEditMode();
+  }
+
+  return (
+    <textarea
+      value={draft}
+      onChange={(e) => setSectionDrafts((prev) => ({ ...prev, [sectionKey]: e.target.value }))}
+      className="input-field min-h-40 w-full"
+      rows={6}
+      placeholder={`Enter ${sectionKey.replace(/_/g, ' ')}...`}
+    />
+  );
+};
+
+const renderMedicationsEditMode = () => {
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-700">Edit Medications</span>
+        <button onClick={handleAddMedicine} className="text-sm font-medium text-[#024CDB] hover:underline flex items-center gap-1">
+          <Plus className="w-4 h-4" />
+          Add Medicine
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {consultMedicines.map((medicine, index) => {
+          const d = medicineDrafts[medicine.id] || {
+            name: medicine.name || '',
+            dosage: medicine.dosage || '',
+            quantity: medicine.quantity || '',
+            type: medicine.type || '',
+            frequency: medicine.frequency || '',
+            food: medicine.food || '',
+            time: normalizeTime(medicine.time),
+            duration: medicine.duration || '',
+            instructions: medicine.instructions || '',
+            flags: medicine.flags || '',
+          };
+
+          return (
+            <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-medium text-gray-900">Medicine {index + 1}</span>
+                <button
+                  onClick={() => handleDeleteMedicine(medicine.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
+                  <input
+                    type="text"
+                    value={d.name}
+                    onChange={(e) => {
+                      updateMedicineDraft(medicine.id, { name: e.target.value });
+                      handleMedicineSearch(e.target.value);
+                    }}
+                    className="input-field"
+                    placeholder="Search medicine..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                  <input
+                    type="text"
+                    value={d.dosage}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., 500 mg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                  <input
+                    type="text"
+                    value={d.quantity}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., 1 tab"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <input
+                    type="text"
+                    value={d.type}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., Tablet"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                  <select
+                    value={d.frequency}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
+                    className="input-field"
+                  >
+                    <option value="">Select frequency</option>
+                    {FREQUENCY_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
+                  <select
+                    value={d.food}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
+                    className="input-field"
+                  >
+                    <option value="">Select</option>
+                    {FOOD_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                  <div className="flex flex-wrap gap-2">
+                    {TIME_OPTIONS.map((opt) => {
+                      const current: string[] = Array.isArray(d.time) ? d.time : [];
+                      const checked = current.includes(opt);
+                      
+                      return (
+                        <label key={opt} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+                              updateMedicineDraft(medicine.id, { time: next });
   const isExpanded = expandedSections[key];
   const isEditing = editingSections[key] || false;
   const summary = getConsultSummary(selectedConsult) || {};

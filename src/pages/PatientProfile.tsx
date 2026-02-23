@@ -5,7 +5,7 @@ import {
   Upload,
   ExternalLink,
   Send,
-  Mic,
+  Mic, 
   Square,
   Play,
   Pause,
@@ -56,8 +56,6 @@ const [todaysVitals, setTodaysVitals] = useState<any[]>([]);
 const [editingVital, setEditingVital] = useState<any>(null);
   // Graph modal state
 const [showGraphModal, setShowGraphModal] = useState(false);
-const [editingSections, setEditingSections] = useState<{ [key: string]: boolean }>({});
-const [sectionDrafts, setSectionDrafts] = useState<{ [key: string]: any }>({});
 const [vitalForm, setVitalForm] = useState({
   temperature: '',
   blood_pressure: '',
@@ -1017,88 +1015,15 @@ useEffect(() => {
     setMedicineSearchResults([]);
   };
 
+  // ✅ CHANGE: Cancel should exit edit mode but keep popup open (show view mode)
   const handleCancelEdit = () => {
-  setIsEditingConsult(false);
-  setEditedConsult(null);
-  setEditedDiagnosisText('');
-  setEditedTreatmentText('');
-  setEditedInvestigationsText('');
-  setMedicineSearchResults([]);
-};
-
-// ✅ ADD THESE 3 FUNCTIONS HERE
-const handleEditSection = (sectionKey: string, currentValue: any) => {
-  setEditingSections((prev) => ({ ...prev, [sectionKey]: true }));
-  
-  if (sectionKey === 'diagnosis') {
-    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: diagnosisToEditableText(currentValue) }));
-  } else if (sectionKey === 'treatment_suggested') {
-    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: treatmentToEditableText(currentValue) }));
-  } else if (sectionKey === 'investigations') {
-    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: investigationsToEditableText(currentValue) }));
-  } else if (sectionKey === 'medications') {
-    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: true }));
-  } else {
-    setSectionDrafts((prev) => ({ ...prev, [sectionKey]: currentValue || '' }));
-  }
-};
-
-const handleCancelSection = (sectionKey: string) => {
-  setEditingSections((prev) => ({ ...prev, [sectionKey]: false }));
-  setSectionDrafts((prev) => {
-    const next = { ...prev };
-    delete next[sectionKey];
-    return next;
-  });
-};
-
-const handleSaveSection = async (sectionKey: string) => {
-  try {
-    if (!selectedConsult) return;
-
-    const summary = getConsultSummary(selectedConsult) || {};
-    let updatePayload: any = {};
-
-    if (sectionKey === 'diagnosis') {
-      updatePayload.diagnosis = diagnosisTextToJson(sectionDrafts[sectionKey], summary.diagnosis);
-    } else if (sectionKey === 'treatment_suggested') {
-      updatePayload.treatment_suggested = treatmentTextToJson(sectionDrafts[sectionKey], summary.treatment_suggested);
-    } else if (sectionKey === 'investigations') {
-      updatePayload.investigations = investigationsTextToJson(sectionDrafts[sectionKey], summary.investigations);
-    } else if (sectionKey === 'medications') {
-      await saveMedicineDraftsToDB();
-      handleCancelSection(sectionKey);
-      return;
-    } else {
-      updatePayload[sectionKey] = sectionDrafts[sectionKey];
-    }
-
-    if (Object.keys(updatePayload).length > 0) {
-      await updateConsultSummary(selectedConsult.id, updatePayload);
-    }
-
-    // ✅ Instead of full reload, just update selectedConsult state with new data
-    const { data, error } = await supabase
-      .from('consult')
-      .select('*')
-      .eq('id', selectedConsult.id)
-      .single();
-
-    if (!error && data) {
-      setSelectedConsult(data);
-      
-      // Also update the consultations list (for the cards)
-      setConsultations((prev) => 
-        prev.map((c) => (c.id === data.id ? data : c))
-      );
-    }
-
-    handleCancelSection(sectionKey);
-  } catch (error) {
-    console.error('Error saving section:', error);
-    alert('Failed to save changes');
-  }
-};
+    setIsEditingConsult(false);
+    setEditedConsult(null);
+    setEditedDiagnosisText('');
+    setEditedTreatmentText('');
+    setEditedInvestigationsText('');
+    setMedicineSearchResults([]);
+  };
 
 const saveMedicineDraftsToDB = async () => {
   for (const m of consultMedicines) {
@@ -1543,9 +1468,9 @@ const formatGraphDate = (dateStr: string) => {
 };
 
 // Close graph modal
-// Close graph modal
 const handleCloseGraph = () => {
   setShowGraphModal(false);
+  setSelectedTrend(null);
 };
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
@@ -1793,7 +1718,7 @@ const getProgressPercent = (consult: any) => {
         onClick={() => setShowGraphModal(true)}
         className="text-sm font-medium text-[#024CDB] hover:underline"
       >
-        View Graph
+        View Graphical Trend
       </button>
     </div>
     
@@ -1829,12 +1754,12 @@ const getProgressPercent = (consult: any) => {
               const unit = p?.unit ? String(p.unit) : "";
 
               return (
-               <tr
-  key={paramName + idx}
-  className={`${
-    idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-  }`}
->
+                <tr
+                  key={paramName + idx}
+                  className={`cursor-pointer transition-colors ${
+                    idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50/40 hover:bg-blue-50"
+                  }`}
+                >
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                     {paramName}
                   </td>
@@ -2302,268 +2227,23 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     window.open(whatsappUrl, '_blank');
   };
 
-const renderEditableContent = (sectionKey: string) => {
-  const draft = sectionDrafts[sectionKey] || '';
-
-  if (sectionKey === 'medications') {
-    return renderMedicationsEditMode();
-  }
-
-  return (
-    <textarea
-      value={draft}
-      onChange={(e) => setSectionDrafts((prev) => ({ ...prev, [sectionKey]: e.target.value }))}
-      className="input-field min-h-40 w-full"
-      rows={6}
-      placeholder={`Enter ${sectionKey.replace(/_/g, ' ')}...`}
-    />
-  );
-};
-
-const renderMedicationsEditMode = () => {
-  return (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-gray-700">Edit Medications</span>
-        <button onClick={handleAddMedicine} className="text-sm font-medium text-[#024CDB] hover:underline flex items-center gap-1">
-          <Plus className="w-4 h-4" />
-          Add Medicine
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {consultMedicines.map((medicine, index) => {
-          const d = medicineDrafts[medicine.id] || {
-            name: medicine.name || '',
-            dosage: medicine.dosage || '',
-            quantity: medicine.quantity || '',
-            type: medicine.type || '',
-            frequency: medicine.frequency || '',
-            food: medicine.food || '',
-            time: normalizeTime(medicine.time),
-            duration: medicine.duration || '',
-            instructions: medicine.instructions || '',
-            flags: medicine.flags || '',
-          };
-
-          return (
-            <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-gray-900">Medicine {index + 1}</span>
-                <button
-                  onClick={() => handleDeleteMedicine(medicine.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
-                  <input
-                    type="text"
-                    value={d.name}
-                    onChange={(e) => {
-                      updateMedicineDraft(medicine.id, { name: e.target.value });
-                      handleMedicineSearch(e.target.value);
-                    }}
-                    className="input-field"
-                    placeholder="Search medicine..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                  <input
-                    type="text"
-                    value={d.dosage}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., 500 mg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                  <input
-                    type="text"
-                    value={d.quantity}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., 1 tab"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <input
-                    type="text"
-                    value={d.type}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., Tablet"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                  <select
-                    value={d.frequency}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
-                    className="input-field"
-                  >
-                    <option value="">Select frequency</option>
-                    {FREQUENCY_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
-                  <select
-                    value={d.food}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
-                    className="input-field"
-                  >
-                    <option value="">Select</option>
-                    {FOOD_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                  <div className="flex flex-wrap gap-2">
-                    {TIME_OPTIONS.map((opt) => {
-                      const current: string[] = Array.isArray(d.time) ? d.time : [];
-                      const checked = current.includes(opt);
-                      
-                      return (
-                        <label key={opt} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                              updateMedicineDraft(medicine.id, { time: next });
-                            }}
-                          />
-                          <span className="text-sm text-gray-700">{opt}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                  <input
-                    type="text"
-                    value={d.duration}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., 7 days"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                  <input
-                    type="text"
-                    value={d.instructions}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., After meals"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Flags</label>
-                  <input
-                    type="text"
-                    value={d.flags}
-                    onChange={(e) => updateMedicineDraft(medicine.id, { flags: e.target.value })}
-                    className="input-field"
-                    placeholder="e.g., Monitor BP"
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {consultMedicines.length === 0 && (
-          <p className="text-gray-500 text-center py-4">No medicines added yet</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-  
   // Helper function to render accordion sections
-const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
-  const isExpanded = expandedSections[key];
-  const isEditing = editingSections[key] || false;
-  const summary = getConsultSummary(selectedConsult) || {};
+  const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
+    const isExpanded = expandedSections[key];
 
-  return (
-    <div className="border-b border-gray-200 last:border-b-0">
-      <button
-        onClick={() => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
-      >
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        
-        <div className="flex items-center gap-3">
-          {isExpanded && isEditable && (
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              {!isEditing ? (
-                <button
-                  onClick={() => handleEditSection(key, summary[key])}
-                  className="text-sm font-medium text-[#024CDB] hover:underline"
-                >
-                  Edit
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => handleSaveSection(key)}
-                    className="text-sm font-medium text-[#024CDB] hover:underline"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => handleCancelSection(key)}
-                    className="text-sm font-medium text-gray-600 hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-          
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-gray-500" />
-          )}
-        </div>
-      </button>
-      
-      {isExpanded && (
-        <div className="px-4 pb-4">
-          {isEditing ? renderEditableContent(key) : content}
-        </div>
-      )}
-    </div>
-  );
-};
-
+    return (
+      <div className="border-b border-gray-200 last:border-b-0">
+        <button
+          onClick={() => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+        >
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          {isExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+        </button>
+        {isExpanded && <div className="px-4 pb-4">{content}</div>}
+      </div>
+    );
+  };
 
   // Helper function to render diagnosis
   const renderDiagnosis = (diagnosis: any) => {
@@ -3724,7 +3404,13 @@ const isComplete = !!hasAiSummary;
   {/* Buttons move below title on mobile, stay right on desktop */}
   <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
     <div className="flex flex-wrap gap-2">
-      
+      <button
+        onClick={handleEditConsult}
+        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+      >
+        <Edit className="w-4 h-4" />
+        <span>Edit</span>
+      </button>
 
       <button
         onClick={handleDownloadPDF}
@@ -3779,53 +3465,51 @@ const isComplete = !!hasAiSummary;
                   </div>
 
                   <div className="divide-y divide-gray-200">
-                  {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis), true)}
+                    {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis))}
 
-                  {summary.chief_complaints &&
-                    renderAccordionSection('Chief Complaints', 'chief_complaints', renderArrayContent(summary.chief_complaints), true)}
+                    {summary.chief_complaints &&
+                      renderAccordionSection('Chief Complaints', 'chiefComplaints', renderArrayContent(summary.chief_complaints))}
 
-                  {summary.treatment_suggested &&
-                    renderAccordionSection('Treatment Suggested', 'treatment_suggested', renderTreatmentSuggested(summary.treatment_suggested), true)}
+                    {summary.treatment_suggested &&
+                      renderAccordionSection('Treatment Suggested', 'treatmentSuggested', renderTreatmentSuggested(summary.treatment_suggested))}
 
-                  {(() => {
-                    const meds = getViewModeMedicines(summary);
-                    return meds.length > 0
-                      ? renderAccordionSection('Medications', 'medications', renderMedications(meds), true)
-                      : null;
-                  })()}
+                    {(() => {
+  const meds = getViewModeMedicines(summary);
+  return meds.length > 0
+    ? renderAccordionSection('Medications', 'medications', renderMedications(meds))
+    : null;
+})()}
 
-                  {summary.investigations &&
-                    renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations), true)}
+                    {summary.investigations &&
+                      renderAccordionSection('Investigations', 'investigations', renderInvestigations(summary.investigations))}
 
-                  {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history), true)}
+                    {summary.history && renderAccordionSection('History', 'history', renderArrayContent(summary.history))}
 
-                  {summary.followup_recommendations &&
-                    renderAccordionSection(
-                      'Follow-up Recommendations',
-                      'followup_recommendations',
-                      renderArrayContent(summary.followup_recommendations),
-                      true
-                    )}
+                    {summary.followup_recommendations &&
+                      renderAccordionSection(
+                        'Follow-up Recommendations',
+                        'followupRecommendations',
+                        renderArrayContent(summary.followup_recommendations)
+                      )}
 
-                  {summary.key_personal_insights &&
-                    renderAccordionSection('Key Personal Insights', 'key_personal_insights', renderArrayContent(summary.key_personal_insights), true)}
+                    {summary.key_personal_insights &&
+                      renderAccordionSection('Key Personal Insights', 'keyPersonalInsights', renderArrayContent(summary.key_personal_insights))}
 
-                  {Array.isArray(summary.flags_for_review) &&
-                    summary.flags_for_review.length > 0 &&
-                    renderAccordionSection(
-                      'Flags for Review',
-                      'flags_for_review',
-                      <div className="space-y-2">
-                        {summary.flags_for_review.map((flag: string, idx: number) => (
-                          <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
-                            <span className="text-red-800 font-medium">⚠ {flag}</span>
-                          </div>
-                        ))}
-                      </div>,
-                      false
-                    )}
-                </div>
-              </>
+                    {Array.isArray(summary.flags_for_review) &&
+                      summary.flags_for_review.length > 0 &&
+                      renderAccordionSection(
+                        'Flags for Review',
+                        'flagsForReview',
+                        <div className="space-y-2">
+                          {summary.flags_for_review.map((flag: string, idx: number) => (
+                            <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
+                              <span className="text-red-800 font-medium">⚠ {flag}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                </>
               ) : (
                 <div className="p-6">
   {(() => {
@@ -4442,7 +4126,7 @@ const isComplete = !!hasAiSummary;
                     </text>
                   </svg>
                 </div>
- 
+
                 {/* Trend Comment */}
                 {trend.overall_trend_comment && (
                   <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">

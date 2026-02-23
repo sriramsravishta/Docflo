@@ -3816,27 +3816,30 @@ const isComplete = !!hasAiSummary;
         </div>
       </div>
 
-      {/* Scrollable Graphs Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
-        {(() => {
-          const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
-            ? latestSummary.summary.diagnostic_trends
-            : [];
+     {/* Scrollable Graphs Container */}
+<div className="flex-1 overflow-y-auto p-6 space-y-8">
+  {(() => {
+    const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
+      ? latestSummary.summary.diagnostic_trends
+      : [];
 
-          if (trends.length === 0) {
-            return (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-gray-500">No diagnostic trends available</p>
-              </div>
-            );
-          }
+    if (trends.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-500">No diagnostic trends available</p>
+        </div>
+      );
+    }
 
-          return trends.map((trend: any, trendIdx: number) => {
-            const paramName = String(trend?.parameter_name || "").trim();
-            if (!paramName) return null;
+    // ✅ Define isMobile ONCE before the map
+    const isMobile = window.innerWidth < 768;
 
-            // ✅ Graph rendering logic (same as before)
-            const measurements = (trend.measurements || [])
+    return trends.map((trend: any, trendIdx: number) => {
+      const paramName = String(trend?.parameter_name || "").trim();
+      if (!paramName) return null;
+
+      // ✅ Graph rendering logic (same as before)
+      const measurements = (trend.measurements || [])
               .map((m: any) => ({
                 ...m,
                 timestamp: new Date(m.measurement_datetime.replace('~', '').trim()).getTime(),

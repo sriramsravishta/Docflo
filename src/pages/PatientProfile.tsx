@@ -3568,7 +3568,7 @@ const isComplete = !!hasAiSummary;
                     </div>
                   </div>
 
-                  <<div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-200">
                   {summary.diagnosis && renderAccordionSection('Diagnosis', 'diagnosis', renderDiagnosis(summary.diagnosis), true)}
 
                   {summary.chief_complaints &&

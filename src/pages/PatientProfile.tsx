@@ -3908,7 +3908,13 @@ const graphHeight = 450;
                 </div>
 
                 {/* Graph SVG */}
-               width={graphWidth}
+               <div className="overflow-x-auto md:overflow-x-visible">
+  <svg
+    width={graphWidth}
+    height={graphHeight}
+    className="bg-white w-full"
+    style={{ minWidth: isMobile ? 'auto' : '700px' }}
+  >
                     {/* Normal zone */}
                     {normalZoneY !== null && normalZoneHeight !== null && (
                       <rect

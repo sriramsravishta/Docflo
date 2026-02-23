@@ -1717,7 +1717,7 @@ const getProgressPercent = (consult: any) => {
         onClick={() => setShowGraphModal(true)}
         className="text-sm font-medium text-[#024CDB] hover:underline"
       >
-        View Graphical Trend
+        View Graphs
       </button>
     </div>
     

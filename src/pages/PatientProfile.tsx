@@ -2288,7 +2288,8 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     window.open(whatsappUrl, '_blank');
   };
 
-  const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
+  // Helper function to render accordion sections
+const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
   const isExpanded = expandedSections[key];
   const isEditing = editingSections[key] || false;
   const summary = getConsultSummary(selectedConsult) || {};
@@ -2302,7 +2303,6 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
         <h3 className="font-semibold text-gray-900">{title}</h3>
         
         <div className="flex items-center gap-3">
-          {/* Edit/Save/Cancel buttons - only show when expanded and editable */}
           {isExpanded && isEditable && (
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
               {!isEditing ? (
@@ -2331,7 +2331,6 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
             </div>
           )}
           
-          {/* Chevron icon */}
           {isExpanded ? (
             <ChevronDown className="w-5 h-5 text-gray-500" />
           ) : (
@@ -2348,6 +2347,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     </div>
   );
 };
+
 
   // Helper function to render diagnosis
   const renderDiagnosis = (diagnosis: any) => {

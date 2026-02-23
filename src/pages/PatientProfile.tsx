@@ -1067,6 +1067,8 @@ const handleSaveSection = async (sectionKey: string) => {
       updatePayload.investigations = investigationsTextToJson(sectionDrafts[sectionKey], summary.investigations);
     } else if (sectionKey === 'medications') {
       await saveMedicineDraftsToDB();
+      handleCancelSection(sectionKey);
+      return;
     } else {
       updatePayload[sectionKey] = sectionDrafts[sectionKey];
     }
@@ -1075,9 +1077,21 @@ const handleSaveSection = async (sectionKey: string) => {
       await updateConsultSummary(selectedConsult.id, updatePayload);
     }
 
-    const { consultsData } = await loadPatientData();
-    const updated = consultsData.find((c: any) => c.id === selectedConsult.id);
-    if (updated) setSelectedConsult(updated);
+    // ✅ Instead of full reload, just update selectedConsult state with new data
+    const { data, error } = await supabase
+      .from('consult')
+      .select('*')
+      .eq('id', selectedConsult.id)
+      .single();
+
+    if (!error && data) {
+      setSelectedConsult(data);
+      
+      // Also update the consultations list (for the cards)
+      setConsultations((prev) => 
+        prev.map((c) => (c.id === data.id ? data : c))
+      );
+    }
 
     handleCancelSection(sectionKey);
   } catch (error) {

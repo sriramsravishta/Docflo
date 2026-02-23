@@ -2298,23 +2298,66 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     window.open(whatsappUrl, '_blank');
   };
 
-  // Helper function to render accordion sections
-  const renderAccordionSection = (title: string, key: string, content: React.ReactNode) => {
-    const isExpanded = expandedSections[key];
+  const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
+  const isExpanded = expandedSections[key];
+  const isEditing = editingSections[key] || false;
+  const summary = getConsultSummary(selectedConsult) || {};
 
-    return (
-      <div className="border-b border-gray-200 last:border-b-0">
-        <button
-          onClick={() => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
-        >
-          <h3 className="font-semibold text-gray-900">{title}</h3>
-          {isExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
-        </button>
-        {isExpanded && <div className="px-4 pb-4">{content}</div>}
-      </div>
-    );
-  };
+  return (
+    <div className="border-b border-gray-200 last:border-b-0">
+      <button
+        onClick={() => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+      >
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        
+        <div className="flex items-center gap-3">
+          {/* Edit/Save/Cancel buttons - only show when expanded and editable */}
+          {isExpanded && isEditable && (
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              {!isEditing ? (
+                <button
+                  onClick={() => handleEditSection(key, summary[key])}
+                  className="text-sm font-medium text-[#024CDB] hover:underline"
+                >
+                  Edit
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleSaveSection(key)}
+                    className="text-sm font-medium text-[#024CDB] hover:underline"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => handleCancelSection(key)}
+                    className="text-sm font-medium text-gray-600 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          
+          {/* Chevron icon */}
+          {isExpanded ? (
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-500" />
+          )}
+        </div>
+      </button>
+      
+      {isExpanded && (
+        <div className="px-4 pb-4">
+          {isEditing ? renderEditableContent(key) : content}
+        </div>
+      )}
+    </div>
+  );
+};
 
   // Helper function to render diagnosis
   const renderDiagnosis = (diagnosis: any) => {

@@ -1468,17 +1468,8 @@ const formatGraphDate = (dateStr: string) => {
   return cleaned;
 };
 
-// Open graph modal
-const handleOpenGraph = (trend: any) => {
-  setSelectedTrend(trend);
-  setShowGraphModal(true);
-};
 
-// Close graph modal
-const handleCloseGraph = () => {
-  setShowGraphModal(false);
-  setSelectedTrend(null);
-};
+
   // ✅ NEW: Processing helpers (60s estimate)
 const ESTIMATED_PROCESS_SECONDS = 60;
 const MAX_PROCESS_SECONDS = 300; // ✅ 5 min hard limit

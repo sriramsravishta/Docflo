@@ -2288,9 +2288,7 @@ if (Array.isArray(pdfMeds) && pdfMeds.length > 0) {
     window.open(whatsappUrl, '_blank');
   };
 
-  // Helper function to render accordion sections
-const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
-  const renderEditableContent = (sectionKey: string) => {
+const renderEditableContent = (sectionKey: string) => {
   const draft = sectionDrafts[sectionKey] || '';
 
   if (sectionKey === 'medications') {
@@ -2437,6 +2435,65 @@ const renderMedicationsEditMode = () => {
                             onChange={() => {
                               const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
                               updateMedicineDraft(medicine.id, { time: next });
+                            }}
+                          />
+                          <span className="text-sm text-gray-700">{opt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                  <input
+                    type="text"
+                    value={d.duration}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., 7 days"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                  <input
+                    type="text"
+                    value={d.instructions}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., After meals"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Flags</label>
+                  <input
+                    type="text"
+                    value={d.flags}
+                    onChange={(e) => updateMedicineDraft(medicine.id, { flags: e.target.value })}
+                    className="input-field"
+                    placeholder="e.g., Monitor BP"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {consultMedicines.length === 0 && (
+          <p className="text-gray-500 text-center py-4">No medicines added yet</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Helper function to render accordion sections
+const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
+  
+  // Helper function to render accordion sections
+const renderAccordionSection = (title: string, key: string, content: React.ReactNode, isEditable: boolean = true) => {
   const isExpanded = expandedSections[key];
   const isEditing = editingSections[key] || false;
   const summary = getConsultSummary(selectedConsult) || {};

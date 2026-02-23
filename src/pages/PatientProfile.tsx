@@ -3784,19 +3784,20 @@ const isComplete = !!hasAiSummary;
 
         {/* Search/Filter Dropdown */}
         <div className="relative">
-          <select
-            onChange={(e) => {
-              const paramName = e.target.value;
-              if (paramName) {
-                const element = document.getElementById(`graph-${paramName}`);
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
-          >
-            <option value="">Jump to parameter...</option>
+         <select
+  onChange={(e) => {
+    const paramName = e.target.value;
+    if (paramName) {
+      const element = document.getElementById(`graph-${paramName}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }}
+  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent text-gray-900"
+  style={{ color: 'inherit' }}
+>
+  <option value="" className="text-gray-400">Search parameters...</option>
             {(() => {
               const trends = Array.isArray(latestSummary?.summary?.diagnostic_trends)
                 ? latestSummary.summary.diagnostic_trends

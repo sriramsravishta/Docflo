@@ -3172,7 +3172,7 @@ const isComplete = !!hasAiSummary;
                       <span>Add Medicine</span>
                     </button>
                   </div>
-
+etvevetveververv
                   <div className="rounded-lg">
                     <div className="space-y-4">
                       {consultMedicines.map((medicine, index) => {

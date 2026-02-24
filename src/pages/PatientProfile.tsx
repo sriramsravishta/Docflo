@@ -3399,12 +3399,12 @@ const isComplete = !!hasAiSummary;
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Investigations</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
-                    <textarea
-                      value={editedInvestigationsText}
-                      onChange={(e) => setEditedInvestigationsText(e.target.value)}
-                      className="input-field min-h-60"
-                      rows={5}
-                    />
+                    <AutoResizeTextarea
+  value={editedInvestigationsText}
+  onChange={(e) => setEditedInvestigationsText(e.target.value)}
+  minRows={3}
+  maxHeight={240}
+/>
                   </div>
                 </div>
 

@@ -3126,11 +3126,11 @@ const isComplete = !!hasAiSummary;
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
                     <textarea
-                      value={editedDiagnosisText}
-                      onChange={(e) => setEditedDiagnosisText(e.target.value)}
-                      className="input-field min-h-60"
-                      rows={4}
-                    />
+  value={editedDiagnosisText}
+  onChange={(e) => setEditedDiagnosisText(e.target.value)}
+  className="input-field min-h-60"
+  rows={4}
+/>
                   </div>
                 </div>
 

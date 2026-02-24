@@ -3151,12 +3151,12 @@ const isComplete = !!hasAiSummary;
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Chief Complaints</h3>
                   <div className="rounded-lg py-4">
-                    <textarea
-                      value={editedConsult?.chief_complaints || ''}
-                      onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
-                      className="input-field min-h-60"
-                      rows={3}
-                    />
+                    <AutoResizeTextarea
+  value={editedConsult?.chief_complaints || ''}
+  onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
+  minRows={3}
+  maxHeight={240}
+/>
                   </div>
                 </div>
 

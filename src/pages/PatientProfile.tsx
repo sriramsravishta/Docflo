@@ -1161,7 +1161,7 @@ const saveMedicineDraftsToDB = async () => {
       instructions: '',
       flags: '',          // ✅ NEW
     });
-    setConsultMedicines([...consultMedicines, newMedicine]);
+    setConsultMedicines(prev => [newMedicine, ...prev]);
   } catch (error) {
     console.error('Error adding medicine:', error);
   }

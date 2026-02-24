@@ -3188,7 +3188,7 @@ const isComplete = !!hasAiSummary;
 
   return ( 
 
-                        <div key={medicine.id} className="rounded-lg bg-white">
+                        <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <span className="font-medium text-[#2563EB]">Medicine {index + 1}</span>
                             <button onClick={() => handleDeleteMedicine(medicine.id)} className="text-red-600 hover:text-red-800">

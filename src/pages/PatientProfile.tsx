@@ -3364,8 +3364,7 @@ const isComplete = !!hasAiSummary;
       placeholder="e.g.AF"
     />
   </div>
-   
-</div>
+  
 </div>
                         </div>
                         );

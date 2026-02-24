@@ -3292,7 +3292,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] flex-1">
+  <div className="min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
       ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}

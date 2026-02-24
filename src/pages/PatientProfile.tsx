@@ -3314,7 +3314,7 @@ const isComplete = !!hasAiSummary;
         onClick={() =>
           setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
         }
-        className="input-field flex items-center justify-between"
+        className="input-field flex items-center bg-white justify-between"
       >
         <span className="text-gray-900">
           {Array.isArray(d.time) && d.time.length > 0

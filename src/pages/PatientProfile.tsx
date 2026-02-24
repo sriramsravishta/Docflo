@@ -3412,12 +3412,12 @@ const isComplete = !!hasAiSummary;
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Follow-up Recommendations</h3>
                   <div className="rounded-lg py-4">
-                    <textarea
-                      value={editedConsult?.followup_recommendations || ''}
-                      onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
-                      className="input-field min-h-60"
-                      rows={3}
-                    />
+                    <AutoResizeTextarea
+  value={editedConsult?.followup_recommendations || ''}
+  onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
+  minRows={3}
+  maxHeight={240}
+/>
                   </div>
                 </div>
               </div>

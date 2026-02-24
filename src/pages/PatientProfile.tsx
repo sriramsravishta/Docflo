@@ -3230,41 +3230,41 @@ const isComplete = !!hasAiSummary;
   </div>
 
   {/* ✅ NEW: Dosage field */}
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
     <input
       type="text"
       value={d.dosage}
       onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
       className="input-field"
-      placeholder="e.g., 500 mg, 10 ml"
+      placeholder="e.g.500 mg"
     />
   </div>
 
- <div className="min-w-[120px] max-w-[120px] w-full">
+ <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
     <input
       type="text"
       value={d.quantity}
       onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
       className="input-field"
-      placeholder="e.g., 1 tab, 2 puffs"
+      placeholder="e.g.1 tab"
     />
   </div>
 
   {/* ✅ NEW: Type field */}
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
     <input
       type="text"
       value={d.type}
       onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
       className="input-field"
-      placeholder="e.g., Tablet, Syrup, Injection"
+      placeholder="e.g.Tablet"
     />
   </div>
 
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
     <select
       value={d.frequency}
@@ -3278,7 +3278,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
     <select
       value={d.food}
@@ -3292,7 +3292,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
       ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
@@ -3341,14 +3341,14 @@ const isComplete = !!hasAiSummary;
     </div>
   </div>
 
-  <div className="min-w-[120px] max-w-[120px] w-full">
+  <div className="min-w-[120px] max-w-[160px] w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
     <input
       type="text"
       value={d.duration}
       onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
       className="input-field"
-      placeholder="e.g., 7 days"
+      placeholder="e.g.7 days"
     />
   </div>
 
@@ -3359,7 +3359,7 @@ const isComplete = !!hasAiSummary;
       value={d.instructions}
       onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
       className="input-field"
-      placeholder="e.g., After meals"
+      placeholder="e.g.AF"
     />
   </div>
                             <div className="min-w-[320px] flex-1">

@@ -3134,18 +3134,7 @@ const isComplete = !!hasAiSummary;
                   </div>
                 </div>
 
-                {/* History */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">History</h3>
-                  <div className="rounded-lg py-4">
-                    <AutoResizeTextarea
-  value={editedConsult?.history || ''}
-  onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
-  minRows={3}
-  maxHeight={240}
-/>
-                  </div>
-                </div>
+          
 
                 {/* Chief Complaints */}
                 <div>
@@ -3402,6 +3391,19 @@ const isComplete = !!hasAiSummary;
                     <AutoResizeTextarea
   value={editedInvestigationsText}
   onChange={(e) => setEditedInvestigationsText(e.target.value)}
+  minRows={3}
+  maxHeight={240}
+/>
+                  </div>
+                </div>
+
+                  {/* History */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">History</h3>
+                  <div className="rounded-lg py-4">
+                    <AutoResizeTextarea
+  value={editedConsult?.history || ''}
+  onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
   minRows={3}
   maxHeight={240}
 />

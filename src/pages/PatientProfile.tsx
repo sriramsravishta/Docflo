@@ -3173,7 +3173,7 @@ const isComplete = !!hasAiSummary;
                     </button>
                   </div>
 
-                  <div className="rounded-lg p-4">
+                  <div className="rounded-lg">
                     <div className="space-y-4">
                       {consultMedicines.map((medicine, index) => {
   const d = medicineDrafts[medicine.id] || {

@@ -3230,7 +3230,7 @@ const isComplete = !!hasAiSummary;
   </div>
 
   {/* ✅ NEW: Dosage field */}
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
     <input
       type="text"
@@ -3241,7 +3241,7 @@ const isComplete = !!hasAiSummary;
     />
   </div>
 
- <div className="min-w-[120px] max-w-[160px] w-full">
+ <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
     <input
       type="text"
@@ -3253,7 +3253,7 @@ const isComplete = !!hasAiSummary;
   </div>
 
   {/* ✅ NEW: Type field */}
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
     <input
       type="text"
@@ -3264,7 +3264,7 @@ const isComplete = !!hasAiSummary;
     />
   </div>
 
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
     <select
       value={d.frequency}
@@ -3278,7 +3278,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
     <select
       value={d.food}
@@ -3292,7 +3292,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
       ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
@@ -3341,7 +3341,7 @@ const isComplete = !!hasAiSummary;
     </div>
   </div>
 
-  <div className="min-w-[120px] max-w-[160px] w-full">
+  <div className="min-w-[120px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
     <input
       type="text"

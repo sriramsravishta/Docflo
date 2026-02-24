@@ -3292,6 +3292,17 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
+                            <div className="min-w-[120px] flex-1">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+    <input
+      type="text"
+      value={d.duration}
+      onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
+      className="input-field"
+      placeholder="e.g.7 days"
+    />
+  </div>
+
   <div className="min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
@@ -3341,16 +3352,7 @@ const isComplete = !!hasAiSummary;
     </div>
   </div>
 
-  <div className="min-w-[120px] flex-1">
-    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-    <input
-      type="text"
-      value={d.duration}
-      onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
-      className="input-field"
-      placeholder="e.g.7 days"
-    />
-  </div>
+  
 
   <div className="min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>

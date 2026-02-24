@@ -3195,6 +3195,7 @@ const isComplete = !!hasAiSummary;
                               <Trash2 className="w-4 h-4" />
                             </button> 
                           </div>
+                          <div className="mt-4 border-b border-gray-200" />
 
                           <div className="flex flex-wrap gap-3 items-end">
   <div className="relative min-w-[250px] flex-1">

@@ -132,6 +132,62 @@ const TIME_OPTIONS = [
   'Not applicable',
 ];
 
+  // ✅ Auto-resizing textarea with min (3 lines) + max (old fixed height ~ min-h-60)
+const AutoResizeTextarea = ({
+  value,
+  onChange,
+  minRows = 3,
+  maxHeight = 240, // same as Tailwind min-h-60 (15rem)
+  className = "",
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  minRows?: number;
+  maxHeight?: number;
+  className?: string;
+}) => {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  const resize = () => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Reset to measure correct scrollHeight
+    el.style.height = "auto";
+
+    // Compute a "3 lines" minHeight using current line-height
+    const cs = window.getComputedStyle(el);
+    const lineHeight = parseFloat(cs.lineHeight || "20") || 20;
+
+    // Add a bit of padding buffer (works well with your input-field)
+    const minHeight = Math.ceil(lineHeight * minRows + 16);
+
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+
+    el.style.minHeight = `${minHeight}px`;
+    el.style.height = `${Math.max(nextHeight, minHeight)}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  };
+
+  useLayoutEffect(() => {
+    resize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, minRows, maxHeight]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => {
+        onChange(e);
+        // resize immediately while typing
+        requestAnimationFrame(resize);
+      }}
+      className={`input-field resize-none ${className}`}
+    />
+  );
+};
+
   // ✅ NEW: UI tick for progress loaders (updates every second)
 const [uiNow, setUiNow] = useState(Date.now());
 

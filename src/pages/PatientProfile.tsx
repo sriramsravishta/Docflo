@@ -3193,11 +3193,11 @@ const isComplete = !!hasAiSummary;
                             <span className="font-medium text-gray-900">Medicine {index + 1}</span>
                             <button onClick={() => handleDeleteMedicine(medicine.id)} className="text-red-600 hover:text-red-800">
                               <Trash2 className="w-4 h-4" />
-                            </button>
+                            </button> 
                           </div>
 
                           <div className="flex flex-wrap gap-3 items-end">
-  <div className="relative min-w-[270px] flex-1">
+  <div className="relative min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
     <input
       type="text"
@@ -3354,7 +3354,7 @@ const isComplete = !!hasAiSummary;
 
   
 
-  <div className="min-w-[270px] flex-1">
+  <div className="min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
     <input
       type="text"

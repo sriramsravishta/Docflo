@@ -691,10 +691,18 @@ export default function PatientProfile() {
 
     const renderCollapsible = (title: React.ReactNode, open: boolean, onToggle: () => void, body: React.ReactNode) => (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          {open ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
-        </button>
+        <button
+  onClick={onToggle}
+  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+>
+  {open ? (
+    <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
+  ) : (
+    <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
+  )}
+
+  <h3 className="text-lg font-semibold text-gray-900 flex-1">{title}</h3>
+</button>
         {open && <div className="px-4 pb-4">{body}</div>}
       </div>
     );

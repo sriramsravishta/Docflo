@@ -883,10 +883,10 @@ export default function PatientProfile() {
   ))}
 </div>
                       <div className="min-w-0">
-    <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at</div>
-    <div className="text-sm text-gray-900 truncate">
+    <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at: </div>
+    
       {vital.created_at ? formatDate(vital.created_at) : '—'}
-    </div>
+    
   </div>
                     </div>
                   ))}

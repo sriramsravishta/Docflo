@@ -206,10 +206,10 @@ export default function PatientQueueTable({
 
               return (
                 <tr
-                  key={apt.id}
-                  onClick={() => navigate(`/patient/${apt.patient_id}`)}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                >
+  key={apt.id}
+  onClick={() => navigate(`/patient/${apt.patient_id}`)}
+  className="group hover:bg-gray-50 cursor-pointer transition-colors"
+>
                   <td className="px-4 py-3 font-medium text-gray-900">{p?.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p?.age}yrs · {p?.gender}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">

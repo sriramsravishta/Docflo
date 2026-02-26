@@ -636,9 +636,38 @@ export default function PatientProfile() {
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-900">DIAGNOSTIC TRENDS</h3>
-          <button onClick={() => setShowGraphModal(true)} className="text-sm font-medium text-[#024CDB] hover:underline">View Graphs</button>
-        </div>
+  <h3 className="text-sm font-semibold text-gray-900">DIAGNOSTIC TRENDS</h3>
+
+  <div className="flex items-center gap-3">
+    {/* Mobile: keep existing behavior */}
+    <button
+      onClick={() => setShowGraphModal(true)}
+      className="md:hidden text-sm font-medium text-[#024CDB] hover:underline"
+    >
+      View Graphs
+    </button>
+
+    {/* Desktop: toggle graph view */}
+    <div className="hidden md:flex items-center gap-2">
+      <span className="text-sm font-medium text-gray-600">Graph view</span>
+
+      <button
+        type="button"
+        onClick={() => setDiagnosticGraphView((v) => !v)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+          diagnosticGraphView ? 'bg-[#024CDB] border-[#024CDB]' : 'bg-gray-200 border-gray-200'
+        }`}
+        aria-pressed={diagnosticGraphView}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+            diagnosticGraphView ? 'translate-x-5' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
+    </div>
+  </div>
+</div>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>

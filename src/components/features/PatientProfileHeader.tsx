@@ -51,8 +51,9 @@ export default function PatientProfileHeader({
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {patient.case && (
+           {patient.case && (
   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">
+    <FileText className="w-3.5 h-3.5" />
     <span className="truncate max-w-[220px]">{patient.case}</span>
   </span>
 )}

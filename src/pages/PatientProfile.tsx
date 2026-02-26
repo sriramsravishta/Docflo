@@ -5,6 +5,10 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Thermometer,
+  Activity,
+  HeartPulse,
+  Droplets,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';

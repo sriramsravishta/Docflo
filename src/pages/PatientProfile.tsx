@@ -355,7 +355,220 @@ preConsultRemovalTimersRef.current = {};
   };
 }, [patientId]);
 
+// ✅ POLL 1: Pre-consult cards fallback — starts after 30s from creation, polls every 3s, stops at 3 min
+useEffect(() => {
+  if (!patientId) return;
 
+  const pending = (processingPreConsults || []).filter((pc) => !pc?.ai_summary);
+  if (pending.length === 0) return;
+
+  // Find the earliest created_at among pending pre-consults
+  const earliestCreatedAt = pending.reduce((earliest: number, pc: any) => {
+    const t = pc?.created_at ? new Date(pc.created_at).getTime() : Date.now();
+    return t < earliest ? t : earliest;
+  }, Date.now());
+
+  const elapsed = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+  const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000); // wait remaining time until 30s
+  const MAX_POLL_MS = 3 * 60 * 1000; // 3 minutes max
+
+  let interval: ReturnType<typeof setInterval> | null = null;
+
+  const startPolling = () => {
+    // Check if already past 3 min max — if so, don't even start
+    const elapsedNow = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+    if (elapsedNow >= 180) return;
+
+    interval = setInterval(async () => {
+      // Stop if past 3 min from earliest creation
+      const elapsedCheck = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+      if (elapsedCheck >= 180) {
+        if (interval) clearInterval(interval);
+        return;
+      }
+
+      try {
+        const ids = pending.map((p: any) => p.id);
+        const { data, error } = await supabase
+          .from('pre_consult')
+          .select('id, documents_uploaded, ai_summary, created_at')
+          .in('id', ids);
+
+        if (error) {
+          console.error('Error polling pre_consult (fallback):', error);
+          return;
+        }
+
+        if (!data) return;
+
+        setProcessingPreConsults((prev) =>
+          prev.map((pc) => {
+            const updated = data.find((d: any) => d.id === pc.id);
+            return updated ? { ...pc, ...updated } : pc;
+          })
+        );
+
+        // Stop polling if all are now complete
+        const allDone = data.every((d: any) => !!d.ai_summary);
+        if (allDone && interval) clearInterval(interval);
+
+      } catch (e) {
+        console.error('Poll pre_consult failed:', e);
+      }
+    }, 3000);
+  };
+
+  const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
+
+  return () => {
+    clearTimeout(timeout);
+    if (interval) clearInterval(interval);
+  };
+}, [patientId, processingPreConsults]);
+
+
+// ✅ POLL 2: Consultation cards fallback — starts after 30s from earliest unprocessed consult creation, polls every 3s, stops at 3 min
+useEffect(() => {
+  if (!patientId) return;
+
+  const pending = (consultations || []).filter(
+    (c) => !isConsultProcessed(c) && !isConsultError(c)
+  );
+  if (pending.length === 0) return;
+
+  // Find the earliest created_at among pending consults
+  const earliestCreatedAt = pending.reduce((earliest: number, c: any) => {
+    const t = c?.created_at ? new Date(c.created_at).getTime() : Date.now();
+    return t < earliest ? t : earliest;
+  }, Date.now());
+
+  const elapsed = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+  const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
+  const MAX_POLL_SECONDS = 180; // 3 minutes
+
+  let interval: ReturnType<typeof setInterval> | null = null;
+
+  const startPolling = () => {
+    const elapsedNow = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+    if (elapsedNow >= MAX_POLL_SECONDS) return;
+
+    interval = setInterval(async () => {
+      const elapsedCheck = Math.floor((Date.now() - earliestCreatedAt) / 1000);
+      if (elapsedCheck >= MAX_POLL_SECONDS) {
+        if (interval) clearInterval(interval);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('consult')
+          .select('id, consult_summary_final, created_at')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false })
+          .limit(25);
+
+        if (error) {
+          console.error('Error polling consult cards (fallback):', error);
+          return;
+        }
+
+        if (!data || data.length === 0) return;
+
+        setConsultations((prev) =>
+          prev.map((c) => {
+            const updated = data.find((d: any) => d.id === c.id);
+            return updated ? { ...c, ...updated } : c;
+          })
+        );
+
+        // Stop polling if all pending are now processed
+        const allDone = pending.every((pc: any) => {
+          const match = data.find((d: any) => d.id === pc.id);
+          return match ? !!getConsultSummary(match) : false;
+        });
+        if (allDone && interval) clearInterval(interval);
+
+      } catch (e) {
+        console.error('Error polling consult cards (fallback catch):', e);
+      }
+    }, 3000);
+  };
+
+  const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
+
+  return () => {
+    clearTimeout(timeout);
+    if (interval) clearInterval(interval);
+  };
+}, [patientId, consultations]);
+
+
+// ✅ POLL 3: Consultation popup fallback — starts after 30s from consult creation, polls every 3s, stops at 3 min, only when unprocessed
+useEffect(() => {
+  if (!selectedConsult?.id) return;
+  if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult)) return;
+
+  const createdAt = selectedConsult?.created_at
+    ? new Date(selectedConsult.created_at).getTime()
+    : Date.now();
+
+  const elapsed = Math.floor((Date.now() - createdAt) / 1000);
+  const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000); // continues from where it was based on consult creation
+  const MAX_POLL_SECONDS = 180; // 3 minutes
+
+  let interval: ReturnType<typeof setInterval> | null = null;
+
+  const startPolling = () => {
+    const elapsedNow = Math.floor((Date.now() - createdAt) / 1000);
+    if (elapsedNow >= MAX_POLL_SECONDS) return;
+
+    interval = setInterval(async () => {
+      const elapsedCheck = Math.floor((Date.now() - createdAt) / 1000);
+      if (elapsedCheck >= MAX_POLL_SECONDS) {
+        if (interval) clearInterval(interval);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('consult')
+          .select('id, consult_summary_final, created_at')
+          .eq('id', selectedConsult.id)
+          .single();
+
+        if (error) {
+          console.error('Error polling consult popup (fallback):', error);
+          return;
+        }
+
+        if (!data) return;
+
+        // Update popup
+        setSelectedConsult((prev: any) =>
+          prev?.id === data.id ? { ...prev, ...data } : prev
+        );
+
+        // Update cards list too
+        setConsultations((prev) =>
+          prev.map((c) => (c.id === data.id ? { ...c, ...data } : c))
+        );
+
+        // Stop polling if now processed
+        if (getConsultSummary(data) && interval) clearInterval(interval);
+
+      } catch (e) {
+        console.error('Error polling consult popup (fallback catch):', e);
+      }
+    }, 3000);
+  };
+
+  const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
+
+  return () => {
+    clearTimeout(timeout);
+    if (interval) clearInterval(interval);
+  };
+}, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
 
   // Form states
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({

@@ -170,7 +170,7 @@ export default function PatientQueueTable({
     <>
       {/* Desktop table — overflow-visible so dropdown is never clipped */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-visible">
-        <table className="w-full border-separate border-spacing-0">
+        <table className="w-full"> 
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tl-xl">Name</th>
@@ -179,7 +179,7 @@ export default function PatientQueueTable({
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pre-Consultation</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tr-xl">Consultation</th>
               {/* Always reserve the action column so layout doesn't shift */}
-              <th className="w-10 px-4 py-3 rounded-tr-xl" />
+              <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

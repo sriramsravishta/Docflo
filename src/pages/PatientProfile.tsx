@@ -732,7 +732,7 @@ export default function PatientProfile() {
           currentOpen,
           () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
           currentMeds.length === 0 ? <p className="text-gray-500">No current medications</p> : (
-            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
+            <div className="mt-2 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
               {currentMeds.map((med, idx) => medCard(med, idx, false))}
             </div>
           )

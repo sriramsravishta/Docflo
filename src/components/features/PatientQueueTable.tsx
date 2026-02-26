@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreVertical, ChevronUp, ChevronDown, Trash2, ChevronRight } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, ChevronRight } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 
 interface Appointment {

@@ -179,7 +179,7 @@ export default function PatientQueueTable({
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pre-Consultation</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tr-xl">Consultation</th>
               {/* Always reserve the action column so layout doesn't shift */}
-              <th className="w-10 px-4 py-3" />
+              <th className="w-10 px-4 py-3 rounded-tr-xl" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

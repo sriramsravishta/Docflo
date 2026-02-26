@@ -73,7 +73,7 @@ export default function PatientProfileHeader({
   {patient.last_visit_at && (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">
       <Calendar className="w-3.5 h-3.5" />
-      <span>Last visit {formatDate(patient.last_visit_at)}</span>
+      <span>Last visit: {formatDate(patient.last_visit_at)}</span>
     </span>
   )}
 </div>

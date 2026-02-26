@@ -668,7 +668,7 @@ export default function PatientProfile() {
     </div>
   </div>
 </div>
-        <div className="overflow-x-auto">
+        <div className={`${diagnosticGraphView ? 'md:hidden' : ''} overflow-x-auto`}>
           <table className="min-w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -707,6 +707,14 @@ export default function PatientProfile() {
             </tbody>
           </table>
         </div>
+        {diagnosticGraphView && (
+  <div className="hidden md:block border-t border-gray-200">
+    <div className="p-6 space-y-8">
+      {/* ✅ Reuse the exact same graph content you already render in the modal */}
+      {renderDiagnosticGraphs()}
+    </div>
+  </div>
+)}
       </div>
     );
   };

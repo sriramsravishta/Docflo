@@ -879,7 +879,7 @@ export default function PatientProfile() {
     >
       <Icon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{label}</div>
         <div className="text-sm text-gray-900 truncate">
           {value || '—'}{value ? ` ${unit}` : ''}
         </div>

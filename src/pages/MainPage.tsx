@@ -248,7 +248,7 @@ export default function MainPage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 -mx-6 px-6 flex space-x-3 justify-end pt-4 mt-6">
+          <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>

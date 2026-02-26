@@ -93,15 +93,15 @@ export default function PatientProfileHeader({
           {patient.last_visit_at ? formatDate(patient.last_visit_at) : '—'}
         </div>
       </div>
+    </div>
 
-      {/* Condition / Case */}
+    {/* Condition / Case */}
     <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"> 
       <FileText className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-gray-500">Condition</div>
         <div className="text-sm text-gray-900 truncate">{patient.case ?? '—'}</div>
       </div>
-    </div>
     </div>
   </div>
 </div>

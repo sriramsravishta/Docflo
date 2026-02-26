@@ -88,7 +88,7 @@ export default function PatientProfileHeader({
     <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
       <Calendar className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500">Last Visit</div>
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Last Visit</div>
         <div className="text-sm text-gray-900 truncate">
           {patient.last_visit_at ? formatDate(patient.last_visit_at) : '—'}
         </div>

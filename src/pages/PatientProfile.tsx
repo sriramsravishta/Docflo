@@ -849,30 +849,44 @@ export default function PatientProfile() {
                   {todaysVitals.map((vital, index) => (
                     <div key={vital.id}>
                       {index > 0 && <div className="border-t border-gray-200 pt-4" />}
-                      <div className="flex items-center justify-end mb-3">
-                        <button onClick={() => handleEditVital(vital)} className="text-sm text-[#024CDB] hover:underline flex items-center space-x-1">
-                          <Edit className="w-4 h-4" /><span>Edit</span>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                          { label: 'Temperature', value: vital.temperature, unit: '°C' },
-                          { label: 'Blood Pressure', value: vital.blood_pressure, unit: 'mmHg' },
-                          { label: 'Heart Rate', value: vital.heart_rate, unit: 'bpm' },
-                          { label: 'SpO2', value: vital.spo2, unit: '%' },
-                        ].map(({ label, value, unit }) => (
-                          <div key={label} className="rounded-lg p-4 border border-gray-200">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-600">{label}</span>
-                            </div>
-                            <div className="flex items-baseline">
-                              <span className="text-xl md:text-2xl font-semibold text-gray-900">{value || '—'}</span>
-                              {value && <span className="ml-1 text-sm text-gray-600">{unit}</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {vital.created_at && <p className="text-xs text-gray-500 mt-2">Recorded at: {formatDate(vital.created_at)}</p>}
+                    <div className="flex items-center justify-between mb-3">
+  <div className="min-w-0">
+    <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at</div>
+    <div className="text-sm text-gray-900 truncate">
+      {vital.created_at ? formatDate(vital.created_at) : '—'}
+    </div>
+  </div>
+
+  <button
+    onClick={() => handleEditVital(vital)}
+    className="inline-flex items-center gap-2 text-sm font-medium text-[#024CDB] hover:bg-blue-50 px-2 py-1 rounded-md transition-colors shrink-0"
+  >
+    <Edit className="w-4 h-4" />
+    <span>Edit</span>
+  </button>
+</div>
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+  {[
+    { label: 'Temperature', value: vital.temperature, unit: '°C', Icon: Thermometer },
+    { label: 'Blood Pressure', value: vital.blood_pressure, unit: 'mmHg', Icon: Activity },
+    { label: 'Heart Rate', value: vital.heart_rate, unit: 'bpm', Icon: HeartPulse },
+    { label: 'SpO2', value: vital.spo2, unit: '%', Icon: Droplets },
+  ].map(({ label, value, unit, Icon }) => (
+    <div
+      key={label}
+      className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"
+    >
+      <Icon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
+        <div className="text-sm text-gray-900 truncate">
+          {value || '—'}{value ? ` ${unit}` : ''}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
                     </div>
                   ))}
                 </div>

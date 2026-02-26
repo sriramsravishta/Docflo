@@ -40,12 +40,12 @@ export default function PatientProfileHeader({
   onPauseRecording,
   onEditPatient,
   onAddVitals,
-  onUploadDocuments,
+  onUploadDocuments, 
   formatDate,
 }: PatientProfileHeaderProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="my-6">
+      <div className="mb-6">
   {/* Top row: Name + Edit icon inline */}
   <div className="flex items-center justify-between gap-3 mb-3">
     <h1 className="text-2xl font-bold text-gray-900 truncate">{patient.name}</h1>

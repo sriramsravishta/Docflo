@@ -583,6 +583,38 @@ export default function PatientProfile() {
     );
   };
 
+const renderDiagnosticGraphs = () => {
+  const trends: DiagnosticTrend[] =
+    Array.isArray(latestSummary?.summary?.diagnostic_trends)
+      ? latestSummary!.summary.diagnostic_trends!
+      : [];
+
+  if (trends.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">No diagnostic trends available</p>
+      </div>
+    );
+  }
+
+  // ✅ IMPORTANT:
+  // Copy-paste the EXACT trends.map(...) graph rendering block that you already have
+  // inside showGraphModal (the big trends.map((trend, trendIdx) => { ... }) part)
+  // and paste it here as the return value.
+
+  return (
+    <>
+      {trends.map((trend, trendIdx) => {
+        // ⬇️ paste your existing graph card code here (UNCHANGED)
+        // return (
+        //   <div key=...> ... </div>
+        // )
+        return null as any; // <-- remove this after pasting
+      })}
+    </>
+  );
+};
+  
   const renderDiagnosticTrendsTab = () => {
     const trends: DiagnosticTrend[] = Array.isArray(latestSummary?.summary?.diagnostic_trends) ? latestSummary!.summary.diagnostic_trends! : [];
     if (!trends.length) {

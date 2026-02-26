@@ -850,7 +850,12 @@ export default function PatientProfile() {
                     <div key={vital.id}>
                       {index > 0 && <div className="border-t border-gray-200 pt-4" />}
                     <div className="flex items-center justify-between mb-3">
-  
+  <div className="min-w-0">
+    <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at: {vital.created_at ? formatDate(vital.created_at) : '—'}</div>
+    
+      
+
+  </div>
 
   <button
     onClick={() => handleEditVital(vital)}
@@ -882,12 +887,6 @@ export default function PatientProfile() {
     </div>
   ))}
 </div>
-                      <div className="min-w-0">
-    <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-2">Recorded at: {vital.created_at ? formatDate(vital.created_at) : '—'}</div>
-    
-      
-    
-  </div>
                     </div>
                   ))}
                 </div>

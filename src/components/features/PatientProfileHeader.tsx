@@ -65,7 +65,7 @@ export default function PatientProfileHeader({
   {/* Below: 4 tiles (mobile 2×2, desktop 1×4) */}
   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 mt-4">
     {/* Condition / Case */}
-    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
       <FileText className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-gray-500">Condition</div>
@@ -74,7 +74,7 @@ export default function PatientProfileHeader({
     </div>
 
     {/* Age & Gender */}
-    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
       <User className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-gray-500">Age &amp; Gender</div>
@@ -83,7 +83,7 @@ export default function PatientProfileHeader({
     </div>
 
     {/* Mobile */}
-    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
       <Phone className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-gray-500">Mobile</div>
@@ -92,7 +92,7 @@ export default function PatientProfileHeader({
     </div>
 
     {/* Last Visit */}
-    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
       <Calendar className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-gray-500">Last Visit</div>

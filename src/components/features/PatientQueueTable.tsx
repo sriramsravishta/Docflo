@@ -170,7 +170,7 @@ export default function PatientQueueTable({
     <>
       {/* Desktop table — overflow-visible so dropdown is never clipped */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-visible">
-        <table className="w-full"> 
+        <table className="w-full border-separate border-spacing-0"> 
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tl-xl">Name</th>

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, MessageSquare, Search, MoreVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PatientQueueTable from '../components/features/PatientQueueTable';
+import AllPatientsTable from '../components/features/AllPatientsTable';
 import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function MainPage() {
-  const navigate = useNavigate(); 
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -249,174 +249,59 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
             />
           </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate('/queries')}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span>Queries</span>
-            </button>
-
-            <button
-              onClick={() => setShowAddPatient(true)}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Patient</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setShowAddPatient(true)}
+            className="btn-primary flex items-center space-x-2 shrink-0"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Patient</span>
+          </button>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-10">
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-10">
-              Today's Patient Que
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Today's Patient Queue
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-              {loading ? (
-                <div className="col-span-full text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
-                </div>
-              ) : (
-                <>
-  {/* 1) PENDING (completed = false) — keep your current card + kebab menu */}
-  {pendingTodaysAppointments.map((appointment) => (
-    <div key={appointment.id} className="relative">
-      <div
-        onClick={() => navigate(`/patient/${appointment.patient_id}`)}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-      >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <div>
-              <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-                {appointment.patients?.name}
-              </h3>
-
-              <div className="text-sm text-gray-500 flex items-center gap-2">
-                <span>
-                  {appointment.patients?.age}yrs · {appointment.patients?.gender}
-                </span>
-
-                {appointment.pre_consult_filled === true && (
-                  <span className="w-3 h-3 bg-green-500 rounded-full inline-block" />
-                )}
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB]" />
               </div>
-            </div>
-          </div>
-
-          {/* ✅ keep kebab menu only for pending */}
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowKebabMenu(showKebabMenu === appointment.id ? null : appointment.id);
-                }}
-                className="p-1 hover:bg-gray-100 rounded-full"
-              >
-                <MoreVertical className="w-4 h-4 text-gray-400" />
-              </button>
-
-              {showKebabMenu === appointment.id && (
-                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMoveUp(appointment);
-                    }}
-                    disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === 0}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                    <span>Move Up</span>
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMoveDown(appointment);
-                    }}
-                    disabled={todaysAppointments.findIndex(a => a.id === appointment.id) === todaysAppointments.length - 1}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                    <span>Move Down</span>
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveClick(appointment);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Remove</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {appointment.patients?.case && (
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-            {appointment.patients?.case}
-          </div>
-        )}
-        <div className="mt-5 pt-3 border-t border-gray-100">
-  {appointment.patients?.last_visit_at ? (
-    <p className="text-sm text-gray-500">
-      Last visit: {formatDate(appointment.patients.last_visit_at)}
-    </p>
-  ) : (
-    <p className="text-sm text-gray-400">Last visit: —</p>
-  )}
-</div>
-
-      </div>
-    </div>
-  ))}
-
-  {/* 2) COMPLETED (completed = true) — new simple card design, NO kebab */}
-  {completedTodaysAppointments.map((appointment) => (
-    <div
-      key={appointment.id}
-      onClick={() => navigate(`/patient/${appointment.patient_id}`)}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-    >
-      <div className="flex items-start justify-between">
-        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">
-          {appointment.patients?.name}
-        </h3>
-
-        {appointment.patients?.case && (
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-            {appointment.patients?.case}
-          </div>
-        )}
-      </div>
-
-      <div className="text-sm text-gray-500">
-        {appointment.patients?.age}yrs · {appointment.patients?.gender}
-      </div>
-
-      <div className="mt-5 pt-3 border-t border-gray-100">
-        <p className="text-sm font-medium text-green-600">Consultation completed</p>
-      </div>
-    </div>
-  ))}
-</>
-
-              )}
-            </div>
-            
-            {filteredTodaysAppointments.length === 0 && (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            ) : filteredTodaysAppointments.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <p className="text-gray-500">No appointments scheduled for today</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingTodaysAppointments.length > 0 && (
+                  <PatientQueueTable
+                    appointments={pendingTodaysAppointments}
+                    pendingOnly={pendingTodaysAppointments}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onRemove={handleRemoveClick}
+                    showKebabMenu={showKebabMenu}
+                    setShowKebabMenu={setShowKebabMenu}
+                    formatDate={formatDate}
+                    showActions={true}
+                  />
+                )}
+                {completedTodaysAppointments.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Completed</p>
+                    <PatientQueueTable
+                      appointments={completedTodaysAppointments}
+                      pendingOnly={pendingTodaysAppointments}
+                      onMoveUp={handleMoveUp}
+                      onMoveDown={handleMoveDown}
+                      onRemove={handleRemoveClick}
+                      showKebabMenu={showKebabMenu}
+                      setShowKebabMenu={setShowKebabMenu}
+                      formatDate={formatDate}
+                      showActions={false}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -425,42 +310,16 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               All Patients ({filteredAllPatients.length})
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-              {loading ? (
-                <div className="col-span-full text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
-                </div>
-              ) : (
-                filteredAllPatients.map((patient) => (
-                  <div
-                    key={patient.id}
-                    onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
-                      {patient.case && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                          {patient.case}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {patient.age}yrs · {patient.gender}
-                    </div>
-                    <div className="mt-5 pt-3 border-t border-gray-100">
-                      {patient.last_visit_at && (
-                        <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {filteredAllPatients.length === 0 && (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB]" />
+              </div>
+            ) : filteredAllPatients.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <p className="text-gray-500">No patients found</p>
               </div>
+            ) : (
+              <AllPatientsTable patients={filteredAllPatients} formatDate={formatDate} />
             )}
           </section>
         </div>

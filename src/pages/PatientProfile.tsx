@@ -22,12 +22,12 @@ import {
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PatientProfileHeader from '../components/features/PatientProfileHeader';
 import {
   getPatientById,
   updatePatient,
   createPreConsult,
   updatePreConsult,
-  createFollowUp,
   createConsult,
   updateConsult,
   getLatestSummary,
@@ -441,7 +441,7 @@ useEffect(() => {
   });
 
 const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
-const [confirmationType, setConfirmationType] = useState<'preConsult' | 'followUp' | 'documents'>('preConsult');
+const [confirmationType, setConfirmationType] = useState<'preConsult' | 'documents'>('preConsult');
 const [uploadError, setUploadError] = useState('');
 const [isUploading, setIsUploading] = useState(false);
 const [documentUploadState, setDocumentUploadState] = useState<'confirming' | 'uploading' | 'success' | 'error'>('confirming');
@@ -1264,11 +1264,6 @@ const saveMedicineDraftsToDB = async () => {
 };
 
 
-  const handleSendFollowUpLink = () => {
-    setConfirmationType('followUp');
-    setShowConfirmation(true);
-  };
-
   const handleUploadDocuments = () => {
     setShowDocumentUpload(true);
   };
@@ -1287,13 +1282,7 @@ const saveMedicineDraftsToDB = async () => {
   // ✅ Do NOT create a pre-consult row on Link generation
   const handleConfirmAction = async () => {
     try {
-      if (confirmationType === 'preConsult') {
-        const link = `${window.location.origin}/pre-consult/new?docId=${user!.id}&patientId=${patientId}`;
-      } else if (confirmationType === 'followUp') {
-        const followUp = await createFollowUp(user!.id, patientId!);
-        const link = `${window.location.origin}/follow-up/${followUp.id}`;
-        alert(`Follow-up link created: ${link}`);
-      } else if (confirmationType === 'documents') {
+      if (confirmationType === 'documents') {
         await confirmDocumentSubmit();
         return;
       }
@@ -2679,77 +2668,19 @@ const renderHistoryTab = () => {
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-              <div className="text-gray-600 mt-1">
-                <span>
-                  {patient.age} years • {patient.gender}
-                </span>
-                {patient.case && <span className="ml-4 text-blue-600">{patient.case}</span>}
-              </div>
-              <p className="text-gray-600 mt-1">{patient.phone}</p>
-              {patient.last_visit_at && <p className="text-sm text-gray-500 mt-1">Last visit: {formatDate(patient.last_visit_at)}</p>}
-            </div>
-            <button onClick={() => setShowEditModal(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Edit className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-  <button onClick={() => setShowVitalsModal(true)} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-    <Plus className="w-4 h-4" />
-    <span className="text-sm font-medium">Add Vitals</span>
-  </button>
-
-  <button onClick={handleUploadDocuments} className="btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-    <Upload className="w-4 h-4" /> 
-    <span className="text-sm font-medium">Upload</span>
-  </button>
-
-          <button onClick={handleOpenForm} className="hidden btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-              <ExternalLink className="w-4 h-4" />
-              <span className="text-sm font-medium">Form</span>
-            </button>
-
-            <button onClick={handleSendPreConsultLink} className="hidden btn-secondary flex items-center justify-center space-x-2 py-3 px-4">
-              <Send className="w-4 h-4" />
-              <span className="text-sm font-medium">Link</span>
-            </button>
-
-            <button
-              onClick={isRecording ? handleEndRecording : handleStartRecording}
-              className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-colors font-medium ${
-                isRecording ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
-              }`}
-            >
-              {isRecording ? (
-                <>
-                  <Square className="w-4 h-4" />
-                  <span className="text-sm font-medium">{formatTime(recordingTime)}</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4" />
-                  <span className="text-sm font-medium">Start</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {isRecording && (
-            <div className="mt-3 flex justify-center">
-              <button
-                onClick={handlePauseRecording}
-                className="flex items-center space-x-2 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-              >
-                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                <span className="text-sm">{isPaused ? 'Resume' : 'Pause'}</span>
-              </button>
-            </div>
-          )}
-        </div>
+        <PatientProfileHeader
+          patient={patient}
+          isRecording={isRecording}
+          isPaused={isPaused}
+          recordingTime={recordingTime}
+          onStartRecording={handleStartRecording}
+          onEndRecording={handleEndRecording}
+          onPauseRecording={handlePauseRecording}
+          onEditPatient={() => setShowEditModal(true)}
+          onAddVitals={() => setShowVitalsModal(true)}
+          onUploadDocuments={handleUploadDocuments}
+          formatDate={formatDate}
+        />
 
        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
          {/* Vitals Section - Only show if there are vitals for today */}
@@ -3695,21 +3626,12 @@ const isComplete = !!hasAiSummary;
   </div>
 )}
 
-{/* Keep original ConfirmationModal for non-document types */}
 <ConfirmationModal
   isOpen={showConfirmation && confirmationType !== 'documents'}
   onClose={() => setShowConfirmation(false)}
   onConfirm={handleConfirmAction}
-  title={
-    confirmationType === 'preConsult'
-      ? 'Send Pre-Consult Link'
-      : 'Send Follow-Up Link'
-  }
-  message={
-    confirmationType === 'preConsult'
-      ? 'Create and send pre-consultation form link to patient?'
-      : 'Create and send follow-up form link to patient?'
-  }
+  title="Send Pre-Consult Link"
+  message="Create and send pre-consultation form link to patient?"
 />
       {/* Vitals Modal */}
 <Modal

@@ -217,45 +217,51 @@ export default function PatientQueueTable({
                   </td>
                   <td className="px-4 py-3"><StatusBadge done={apt.pre_consult_filled} /></td>
                   <td className="px-4 py-3"><StatusBadge done={apt.completed} /></td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    {canShowActions && (
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowKebabMenu(showKebabMenu === apt.id ? null : apt.id);
-                          }}
-                          className="p-1 hover:bg-gray-100 rounded-full"
-                        >
-                          <MoreVertical className="w-4 h-4 text-gray-400" />
-                        </button>
-                        {showKebabMenu === apt.id && (
-                          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[140px]">
-                            <button
-                              disabled={idx === 0}
-                              onClick={() => onMoveUp(apt)}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                              <ChevronUp className="w-4 h-4" /> Move Up
-                            </button>
-                            <button
-                              disabled={idx === pendingOnly.length - 1}
-                              onClick={() => onMoveDown(apt)}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                              <ChevronDown className="w-4 h-4" /> Move Down
-                            </button>
-                            <button
-                              onClick={() => onRemove(apt)}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" /> Remove
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </td>
+                  <td className="px-4 py-3 w-[160px]" onClick={(e) => e.stopPropagation()}>
+  {canShowActions && (
+    <div
+      className="
+        flex items-center justify-end gap-2
+        opacity-0 pointer-events-none
+        group-hover:opacity-100 group-hover:pointer-events-auto
+        group-focus-within:opacity-100 group-focus-within:pointer-events-auto
+        transition-opacity
+      "
+    >
+      <button
+        type="button"
+        title="Move Up"
+        disabled={idx === 0}
+        onClick={(e) => { e.stopPropagation(); onMoveUp(apt); }}
+        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <ChevronUp className="w-4 h-4 text-gray-500" />
+        <span className="sr-only">Move Up</span>
+      </button>
+
+      <button
+        type="button"
+        title="Move Down"
+        disabled={idx === pendingOnly.length - 1}
+        onClick={(e) => { e.stopPropagation(); onMoveDown(apt); }}
+        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+        <span className="sr-only">Move Down</span>
+      </button>
+
+      <button
+        type="button"
+        title="Delete"
+        onClick={(e) => { e.stopPropagation(); onRemove(apt); }}
+        className="p-1 rounded-md hover:bg-red-50"
+      >
+        <Trash2 className="w-4 h-4 text-red-600" />
+        <span className="sr-only">Delete</span>
+      </button>
+    </div>
+  )}
+</td>
                 </tr>
               );
             })}

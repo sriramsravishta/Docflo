@@ -105,7 +105,7 @@ export default function PatientProfile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
-  const [showGraphModal, setShowGraphModal] = useState(false);
+  const [diagnosticGraphView, setDiagnosticGraphView] = useState(false);
   const [editingVital, setEditingVital] = useState<VitalRow | null>(null);
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
 

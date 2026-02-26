@@ -25,12 +25,9 @@ function MobileRow({ patient, formatDate }: { patient: Patient; formatDate: (s: 
           <ChevronRight
             className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
           />
-          <span
-            className="font-medium text-gray-900 truncate"
-            onClick={(e) => { e.stopPropagation(); navigate(`/patient/${patient.id}`); }}
-          >
-            {patient.name}
-          </span>
+          <span className="font-medium text-gray-900 truncate">
+  {patient.name}
+</span>
         </div>
       </div>
 

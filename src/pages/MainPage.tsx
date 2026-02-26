@@ -272,37 +272,17 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
                 <p className="text-gray-500">No appointments scheduled for today</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {pendingTodaysAppointments.length > 0 && (
-                  <PatientQueueTable
-                    appointments={pendingTodaysAppointments}
-                    pendingOnly={pendingTodaysAppointments}
-                    onMoveUp={handleMoveUp}
-                    onMoveDown={handleMoveDown}
-                    onRemove={handleRemoveClick}
-                    showKebabMenu={showKebabMenu}
-                    setShowKebabMenu={setShowKebabMenu}
-                    formatDate={formatDate}
-                    showActions={true}
-                  />
-                )}
-                {completedTodaysAppointments.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Completed</p>
-                    <PatientQueueTable
-                      appointments={completedTodaysAppointments}
-                      pendingOnly={pendingTodaysAppointments}
-                      onMoveUp={handleMoveUp}
-                      onMoveDown={handleMoveDown}
-                      onRemove={handleRemoveClick}
-                      showKebabMenu={showKebabMenu}
-                      setShowKebabMenu={setShowKebabMenu}
-                      formatDate={formatDate}
-                      showActions={false}
-                    />
-                  </div>
-                )}
-              </div>
+              <PatientQueueTable
+                appointments={filteredTodaysAppointments}
+                pendingOnly={pendingTodaysAppointments}
+                onMoveUp={handleMoveUp}
+                onMoveDown={handleMoveDown}
+                onRemove={handleRemoveClick}
+                showKebabMenu={showKebabMenu}
+                setShowKebabMenu={setShowKebabMenu}
+                formatDate={formatDate}
+                showActions={true}
+              />
             )}
           </section>
 

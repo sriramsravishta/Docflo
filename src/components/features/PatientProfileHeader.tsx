@@ -67,7 +67,7 @@ export default function PatientProfileHeader({
   
 
     {/* Age & Gender */}
-    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2">
+    <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3">
       <User className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
       <div className="min-w-0">
         <div className="text-[12px] uppercase tracking-wider text-gray-500 mb-1">Age &amp; Gender</div>

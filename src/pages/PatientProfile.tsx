@@ -217,28 +217,7 @@ useEffect(() => {
         setConsultations((prev) =>
           prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
         );
-        // ✅ If consultation just became processed, refresh history section after 2 seconds
-const wasProcessed = !!getConsultSummary(updated);
-
-if (wasProcessed) {
-  // ✅ Keep this only as a fallback (in case summaries realtime is not enabled)
-  // Poll a few times because summaries update can happen AFTER consult is processed
-  let tries = 0;
-  const maxTries = 8; // ~16 sec total
-
-  const poll = async () => {
-    tries++;
-    try {
-      const summaryData = await getLatestSummary(patientId!);
-      setLatestSummary(summaryData);
-    } catch (e) {
-      console.error('Error refreshing summary after consultation (poll):', e);
-    }
-    if (tries < maxTries) setTimeout(poll, 2000);
-  };
-
-  setTimeout(poll, 2000);
-}
+      
 
 
         // ✅ If popup is open for this consult, update popup too

@@ -45,62 +45,64 @@ export default function PatientProfileHeader({
 }: PatientProfileHeaderProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="flex items-start justify-between mb-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-3 flex-wrap mb-3">
-            <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-  {/* Condition / Case */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <FileText className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Condition</div>
-      <div className="text-sm text-gray-900 truncate">{patient.case ?? '—'}</div>
-    </div>
+      <div className="mb-4">
+  {/* Top row: Name + Edit icon inline */}
+  <div className="flex items-center justify-between gap-3 mb-3">
+    <h1 className="text-2xl font-bold text-gray-900 truncate">{patient.name}</h1>
+
+    <button
+      onClick={onEditPatient}
+      className="p-2 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+      title="Edit patient"
+    >
+      <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    </button>
   </div>
 
-  {/* Age & Gender */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <User className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Age & Gender</div>
-      <div className="text-sm text-gray-900 truncate">{patient.age} yrs • {patient.gender}</div>
+  {/* Below: 4 tiles (mobile 2×2, desktop 1×4) */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    {/* Condition / Case */}
+    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <FileText className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500">Condition</div>
+        <div className="text-sm text-gray-900 truncate">{patient.case ?? '—'}</div>
+      </div>
     </div>
-  </div>
 
-  {/* Mobile */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <Phone className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Mobile</div>
-      <div className="text-sm text-gray-900 truncate">{patient.phone}</div>
+    {/* Age & Gender */}
+    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <User className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500">Age &amp; Gender</div>
+        <div className="text-sm text-gray-900 truncate">{patient.age} yrs • {patient.gender}</div>
+      </div>
     </div>
-  </div>
 
-  {/* Last Visit */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <Calendar className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Last Visit</div>
-      <div className="text-sm text-gray-900 truncate">
-        {patient.last_visit_at ? formatDate(patient.last_visit_at) : '—'}
+    {/* Mobile */}
+    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <Phone className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500">Mobile</div>
+        <div className="text-sm text-gray-900 truncate">{patient.phone}</div>
+      </div>
+    </div>
+
+    {/* Last Visit */}
+    <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <Calendar className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500">Last Visit</div>
+        <div className="text-sm text-gray-900 truncate">
+          {patient.last_visit_at ? formatDate(patient.last_visit_at) : '—'}
+        </div>
       </div>
     </div>
   </div>
 </div>
-        </div>
-        <button
-          onClick={onEditPatient}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-4 shrink-0"
-          title="Edit patient"
-        >
-          <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-        </button>
-      </div>
 
       {/* ── Buttons: desktop = single row 1×4, mobile = two rows ── */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">

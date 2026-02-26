@@ -55,12 +55,17 @@ export default function PatientProfileHeader({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <InfoPill label="Age" value={`${patient.age} yrs`} />
-            <InfoPill label="Gender" value={patient.gender} />
-            <InfoPill label="Phone" value={patient.phone} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
+            <span>{patient.age} yrs</span>
+            <span className="text-gray-200">·</span>
+            <span>{patient.gender}</span>
+            <span className="text-gray-200">·</span>
+            <span>{patient.phone}</span>
             {patient.last_visit_at && (
-              <InfoPill label="Last Visit" value={formatDate(patient.last_visit_at)} />
+              <>
+                <span className="text-gray-200">·</span>
+                <span>Last visit {formatDate(patient.last_visit_at)}</span>
+              </>
             )}
           </div>
         </div>

@@ -54,20 +54,27 @@ export default function PatientProfileHeader({
                 {patient.case}
               </span>
             )}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
-            <span>{patient.age} yrs</span>
-            <span className="text-gray-500">•</span>
-            <span>{patient.gender}</span>
-            <span className="text-gray-500">•</span>
-            <span>{patient.phone}</span>
-            {patient.last_visit_at && (
-              <>
-                <span className="text-gray-500">•</span>
-                <span>Last visit {formatDate(patient.last_visit_at)}</span>
-              </>
-            )}
-          </div>
+          <div className="flex flex-wrap items-center gap-2">
+  {/* Age + Gender chip */}
+  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">
+    <User className="w-3.5 h-3.5" />
+    <span>{patient.age} yrs • {patient.gender}</span>
+  </span>
+
+  {/* Mobile number chip */}
+  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">
+    <Phone className="w-3.5 h-3.5" />
+    <span>{patient.phone}</span>
+  </span>
+
+  {/* Last visit chip (only if present) */}
+  {patient.last_visit_at && (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">
+      <Calendar className="w-3.5 h-3.5" />
+      <span>Last visit {formatDate(patient.last_visit_at)}</span>
+    </span>
+  )}
+</div>
         </div>
         <button
           onClick={onEditPatient}

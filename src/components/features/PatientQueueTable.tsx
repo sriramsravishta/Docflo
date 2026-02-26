@@ -100,51 +100,64 @@ function MobileRow({
             <span className="text-gray-500">Consultation</span>
             <StatusBadge done={appointment.completed} />
           </div>
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => navigate(`/patient/${appointment.patient_id}`)}
-              className="flex-1 btn-primary text-sm py-2"
-            >
-              View Profile
-            </button>
-            {canShowActions && (
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowKebabMenu(showKebabMenu === appointment.id ? null : appointment.id);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <MoreVertical className="w-4 h-4 text-gray-400" />
-                </button>
-                {showKebabMenu === appointment.id && (
-                  <div className="absolute right-0 bottom-10 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[130px]">
-                    <button
-                      disabled={idx === 0}
-                      onClick={() => onMoveUp(appointment)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40 flex items-center gap-2"
-                    >
-                      <ChevronUp className="w-4 h-4" /> Move Up
-                    </button>
-                    <button
-                      disabled={idx === pendingOnly.length - 1}
-                      onClick={() => onMoveDown(appointment)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40 flex items-center gap-2"
-                    >
-                      <ChevronDown className="w-4 h-4" /> Move Down
-                    </button>
-                    <button
-                      onClick={() => onRemove(appointment)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" /> Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+  {canShowActions ? (
+    <>
+      <button
+        type="button"
+        disabled={idx === 0}
+        onClick={() => onMoveUp(appointment)}
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Move Up
+      </button>
+
+      <button
+        type="button"
+        disabled={idx === pendingOnly.length - 1}
+        onClick={() => onMoveDown(appointment)}
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Move Down
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onRemove(appointment)}
+        className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+      >
+        Delete
+      </button>
+    </>
+  ) : (
+    // keep the 2×2 grid layout, but keep actions hidden like before (completed rows)
+    <>
+      <div className="invisible">
+        <button className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium">
+          Move Up
+        </button>
+      </div>
+      <div className="invisible">
+        <button className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium">
+          Move Down
+        </button>
+      </div>
+      <div className="invisible">
+        <button className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium">
+          Delete
+        </button>
+      </div>
+    </>
+  )}
+
+  <button
+    type="button"
+    onClick={() => navigate(`/patient/${appointment.patient_id}`)}
+    className="w-full btn-primary text-sm py-2"
+  >
+    View Profile
+  </button>
+</div>
         </div>
       )}
     </div>

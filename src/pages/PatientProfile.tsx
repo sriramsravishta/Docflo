@@ -836,7 +836,7 @@ export default function PatientProfile() {
           onPauseRecording={handlePauseRecording}
           onEditPatient={() => setShowEditModal(true)}
           onAddVitals={() => setShowVitalsModal(true)}
-          onUploadDocuments={() => setShowDocumentUpload(true)}
+          onUploadDocuments={() => setShowDocumentUpload(true)} 
           formatDate={formatDateShort}
         />
 
@@ -849,7 +849,7 @@ export default function PatientProfile() {
                   {todaysVitals.map((vital, index) => (
                     <div key={vital.id}>
                       {index > 0 && <div className="border-t border-gray-200 pt-4" />}
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-3">
   <div className="min-w-0">
     <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at: {vital.created_at ? formatDate(vital.created_at) : '—'}</div>
     

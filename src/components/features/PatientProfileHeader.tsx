@@ -54,6 +54,7 @@ export default function PatientProfileHeader({
                 {patient.case}
               </span>
             )}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
   {/* Age + Gender chip */}
   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-[#024CDB] border border-blue-100">

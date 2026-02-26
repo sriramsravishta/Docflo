@@ -50,45 +50,8 @@ export default function PatientProfileHeader({
           <div className="flex items-center gap-3 flex-wrap mb-3">
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-  {/* Condition / Case */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <FileText className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Condition</div>
-      <div className="text-sm text-gray-900 truncate">{patient.case ?? '—'}</div>
-    </div>
-  </div>
-
-  {/* Age & Gender */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <User className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Age & Gender</div>
-      <div className="text-sm text-gray-900 truncate">{patient.age} yrs • {patient.gender}</div>
-    </div>
-  </div>
-
-  {/* Mobile */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <Phone className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Mobile</div>
-      <div className="text-sm text-gray-900 truncate">{patient.phone}</div>
-    </div>
-  </div>
-
-  {/* Last Visit */}
-  <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-    <Calendar className="w-5 h-5 text-[#024CDB] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">Last Visit</div>
-      <div className="text-sm text-gray-900 truncate">
-        {patient.last_visit_at ? formatDate(patient.last_visit_at) : '—'}
-      </div>
-    </div>
-  </div>
-</div>
+          
+        </div>
         <button
           onClick={onEditPatient}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-4 shrink-0"

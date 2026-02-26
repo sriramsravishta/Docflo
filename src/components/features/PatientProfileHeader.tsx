@@ -55,15 +55,15 @@ export default function PatientProfileHeader({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
             <span>{patient.age} yrs</span>
-            <span className="text-gray-500">•</span>
+            <span className="text-gray-500">·</span>
             <span>{patient.gender}</span>
-            <span className="text-gray-500">•</span>
+            <span className="text-gray-500">·</span>
             <span>{patient.phone}</span>
             {patient.last_visit_at && (
               <>
-                <span className="text-gray-500">•</span>
+                <span className="text-gray-200">·</span>
                 <span>Last visit {formatDate(patient.last_visit_at)}</span>
               </>
             )}

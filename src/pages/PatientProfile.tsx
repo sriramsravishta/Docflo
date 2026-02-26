@@ -875,7 +875,7 @@ export default function PatientProfile() {
   ].map(({ label, value, unit, Icon }) => (
     <div
       key={label}
-      className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"
+      className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3"
     >
       <Icon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
       <div className="min-w-0">

@@ -23,7 +23,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );

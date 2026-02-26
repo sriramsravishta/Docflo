@@ -647,7 +647,7 @@ export default function PatientProfile() {
       View Graphs
     </button>
 
-    {/* Desktop: toggle graph view */}
+    {/* Desktop: toggle graph view */} 
     <div className="hidden md:flex items-center gap-2">
       <span className="text-sm font-medium text-gray-600">Graph view</span>
 

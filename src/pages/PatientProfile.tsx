@@ -677,105 +677,209 @@ export default function PatientProfile() {
     );
 
     const renderGraphsInline = () => (
-      <div className="p-4 space-y-8">
-        <div className="relative">
-          <select
-            onChange={(e) => {
-              const paramName = e.target.value;
-              if (paramName) { const el = document.getElementById(`inline-graph-${paramName}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
-          >
-            <option value="">Jump to parameter...</option>
-            {trends.map((p, idx) => {
-              const paramName = String(p?.parameter_name || '').trim();
-              if (!paramName) return null;
-              return <option key={idx} value={paramName}>{paramName}</option>;
-            })}
-          </select>
-        </div>
-        {trends.map((trend, trendIdx) => {
-          const paramName = String(trend?.parameter_name || '').trim();
-          if (!paramName) return null;
-          const measurements = (trend.measurements || [])
-            .map((m) => ({ ...m, timestamp: new Date((m.measurement_datetime || '').replace('~', '').trim()).getTime() }))
-            .filter((m) => !isNaN(m.timestamp))
-            .sort((a, b) => a.timestamp - b.timestamp);
-          if (measurements.length === 0) return null;
-          const graphWidth = Math.max(700, measurements.length * 120);
-          const graphHeight = 450;
-          const padding = { top: 60, right: 80, bottom: 80, left: 80 };
-          const chartWidth = graphWidth - padding.left - padding.right;
-          const chartHeight = graphHeight - padding.top - padding.bottom;
-          const values = measurements.map((m) => m.value_numeric ?? 0).filter(v => v !== undefined);
-          const minValue = Math.min(...values);
-          const maxValue = Math.max(...values);
-          const valueRange = maxValue - minValue || 1;
-          const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
-          const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
-          const normalRangeMatch = trend.normal_range?.match(/[<>]?\s*(\d+)/);
-          const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
-          const points = measurements.map((m, i) => ({
-            x: padding.left + (i / (measurements.length - 1 || 1)) * chartWidth,
-            y: padding.top + chartHeight - ((((m.value_numeric ?? 0) - yMin) / (yMax - yMin)) * chartHeight),
-            ...m,
-          }));
-          const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-          const yTicks = 6;
-          const yTickValues = Array.from({ length: yTicks }, (_, i) => yMin + ((yMax - yMin) / (yTicks - 1)) * i);
-          const normalZoneY = normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax
-            ? padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight : null;
-          const normalZoneHeight = normalZoneY !== null ? chartHeight - (chartHeight - ((normalThreshold! - yMin) / (yMax - yMin)) * chartHeight) : null;
-          return (
-            <div key={trendIdx} id={`inline-graph-${paramName}`} className="scroll-mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{paramName}</h3>
-                <p className="text-sm text-gray-600">{trend.unit && `Unit: ${trend.unit}`}{trend.normal_range && ` • Normal Range: ${trend.normal_range}`}</p>
-              </div>
-              <div className="overflow-x-auto">
-                <svg width={graphWidth} height={graphHeight} className="bg-white" style={{ minWidth: '700px' }}>
-                  {normalZoneY !== null && normalZoneHeight !== null && (
-                    <rect x={padding.left} y={normalZoneY} width={chartWidth} height={normalZoneHeight} fill="rgba(16, 185, 129, 0.08)" />
-                  )}
-                  {yTickValues.map((val, i) => {
-                    const y = padding.top + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
-                    return (
-                      <g key={i}>
-                        <line x1={padding.left} y1={y} x2={padding.left + chartWidth} y2={y} stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4,4" />
-                        <text x={padding.left - 12} y={y + 4} textAnchor="end" fontSize="12" fill="#6b7280" fontWeight="500">{Math.round(val)}</text>
-                      </g>
-                    );
-                  })}
-                  {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
-                    <g>
-                      <line x1={padding.left} y1={normalZoneY!} x2={padding.left + chartWidth} y2={normalZoneY!} stroke="#10b981" strokeWidth="2" strokeDasharray="6,3" />
-                      <text x={padding.left + chartWidth + 10} y={normalZoneY! + 4} fontSize="11" fill="#10b981" fontWeight="600">Normal</text>
-                    </g>
-                  )}
-                  <line x1={padding.left} y1={padding.top + chartHeight} x2={padding.left + chartWidth} y2={padding.top + chartHeight} stroke="#9ca3af" strokeWidth="2" />
-                  <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#9ca3af" strokeWidth="2" />
-                  <path d={linePath} fill="none" stroke="#024CDB" strokeWidth="2.5" strokeLinejoin="round" />
-                  {points.map((p, i) => {
-                    const val = p.value_numeric ?? 0;
-                    const isAbove = normalThreshold && val > normalThreshold;
-                    const color = isAbove ? '#ef4444' : '#024CDB';
-                    return (
-                      <g key={i}>
-                        <circle cx={p.x} cy={p.y} r="5" fill={color} stroke="white" strokeWidth="2" />
-                        <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="12" fill={color} fontWeight="600">{val}</text>
-                        <text x={p.x} y={padding.top + chartHeight + 20} textAnchor="middle" fontSize="11" fill="#6b7280">
-                          {new Date((p.measurement_datetime || '').replace('~', '').trim()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            </div>
-          );
-        })}
+  <div className="border-t border-gray-200">
+    {/* Sticky header (fixed inside the section) */}
+    <div className="sticky top-0 z-10 bg-white px-4 py-4 border-b border-gray-200">
+      <div className="relative">
+        <select
+          onChange={(e) => {
+            const paramName = e.target.value;
+            if (paramName) {
+              const el = document.getElementById(`inline-graph-${paramName}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
+        >
+          <option value="">Jump to parameter...</option>
+          {trends.map((p, idx) => {
+            const paramName = String(p?.parameter_name || '').trim();
+            if (!paramName) return null;
+            return (
+              <option key={idx} value={paramName}>
+                {paramName}
+              </option>
+            );
+          })}
+        </select>
       </div>
-    );
+    </div>
+
+    {/* Scrollable graphs area (only this scrolls) */}
+    <div className="h-[70vh] max-h-[720px] overflow-y-auto p-4 space-y-8">
+      {trends.map((trend, trendIdx) => {
+        const paramName = String(trend?.parameter_name || '').trim();
+        if (!paramName) return null;
+
+        const measurements = (trend.measurements || [])
+          .map((m) => ({
+            ...m,
+            timestamp: new Date((m.measurement_datetime || '').replace('~', '').trim()).getTime(),
+          }))
+          .filter((m) => !isNaN(m.timestamp))
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        if (measurements.length === 0) return null;
+
+        const graphWidth = Math.max(700, measurements.length * 120);
+        const graphHeight = 450;
+        const padding = { top: 60, right: 80, bottom: 80, left: 80 };
+        const chartWidth = graphWidth - padding.left - padding.right;
+        const chartHeight = graphHeight - padding.top - padding.bottom;
+
+        const values = measurements.map((m) => m.value_numeric ?? 0).filter((v) => v !== undefined);
+        const minValue = Math.min(...values);
+        const maxValue = Math.max(...values);
+        const valueRange = maxValue - minValue || 1;
+
+        const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
+        const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
+
+        const normalRangeMatch = trend.normal_range?.match(/[<>]?\s*(\d+)/);
+        const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
+
+        const points = measurements.map((m, i) => ({
+          x: padding.left + (i / (measurements.length - 1 || 1)) * chartWidth,
+          y: padding.top + chartHeight - ((((m.value_numeric ?? 0) - yMin) / (yMax - yMin)) * chartHeight),
+          ...m,
+        }));
+
+        const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+        const yTicks = 6;
+        const yTickValues = Array.from({ length: yTicks }, (_, i) => yMin + ((yMax - yMin) / (yTicks - 1)) * i);
+
+        const normalZoneY =
+          normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax
+            ? padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight
+            : null;
+
+        const normalZoneHeight =
+          normalZoneY !== null
+            ? chartHeight - (chartHeight - ((normalThreshold! - yMin) / (yMax - yMin)) * chartHeight)
+            : null;
+
+        return (
+          <div
+            key={trendIdx}
+            id={`inline-graph-${paramName}`}
+            className="scroll-mt-24 border border-gray-200 rounded-lg p-6 bg-white"
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">{paramName}</h3>
+              <p className="text-sm text-gray-600">
+                {trend.unit && `Unit: ${trend.unit}`}
+                {trend.normal_range && ` • Normal Range: ${trend.normal_range}`}
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <svg width={graphWidth} height={graphHeight} className="bg-white" style={{ minWidth: '700px' }}>
+                {normalZoneY !== null && normalZoneHeight !== null && (
+                  <rect
+                    x={padding.left}
+                    y={normalZoneY}
+                    width={chartWidth}
+                    height={normalZoneHeight}
+                    fill="rgba(16, 185, 129, 0.08)"
+                  />
+                )}
+
+                {yTickValues.map((val, i) => {
+                  const y = padding.top + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
+                  return (
+                    <g key={i}>
+                      <line
+                        x1={padding.left}
+                        y1={y}
+                        x2={padding.left + chartWidth}
+                        y2={y}
+                        stroke="#f3f4f6"
+                        strokeWidth="1"
+                        strokeDasharray="4,4"
+                      />
+                      <text
+                        x={padding.left - 12}
+                        y={y + 4}
+                        textAnchor="end"
+                        fontSize="12"
+                        fill="#6b7280"
+                        fontWeight="500"
+                      >
+                        {Math.round(val)}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
+                  <g>
+                    <line
+                      x1={padding.left}
+                      y1={normalZoneY!}
+                      x2={padding.left + chartWidth}
+                      y2={normalZoneY!}
+                      stroke="#10b981"
+                      strokeWidth="2"
+                      strokeDasharray="6,3"
+                    />
+                    <text
+                      x={padding.left + chartWidth + 10}
+                      y={normalZoneY! + 4}
+                      fontSize="11"
+                      fill="#10b981"
+                      fontWeight="600"
+                    >
+                      Normal
+                    </text>
+                  </g>
+                )}
+
+                <line
+                  x1={padding.left}
+                  y1={padding.top + chartHeight}
+                  x2={padding.left + chartWidth}
+                  y2={padding.top + chartHeight}
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+                <line
+                  x1={padding.left}
+                  y1={padding.top}
+                  x2={padding.left}
+                  y2={padding.top + chartHeight}
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+
+                <path d={linePath} fill="none" stroke="#024CDB" strokeWidth="2.5" strokeLinejoin="round" />
+
+                {points.map((p, i) => {
+                  const val = p.value_numeric ?? 0;
+                  const isAbove = normalThreshold && val > normalThreshold;
+                  const color = isAbove ? '#ef4444' : '#024CDB';
+                  return (
+                    <g key={i}>
+                      <circle cx={p.x} cy={p.y} r="5" fill={color} stroke="white" strokeWidth="2" />
+                      <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="12" fill={color} fontWeight="600">
+                        {val}
+                      </text>
+                      <text x={p.x} y={padding.top + chartHeight + 20} textAnchor="middle" fontSize="11" fill="#6b7280">
+                        {new Date((p.measurement_datetime || '').replace('~', '').trim())
+                          .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })
+                          .toUpperCase()}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
 
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

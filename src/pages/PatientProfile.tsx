@@ -842,8 +842,8 @@ export default function PatientProfile() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           {todaysVitals.length > 0 && (
-            <div className="mb-3">
-              <div className="p-6">
+            <div className="mb-6">
+              <div className="p-3">
                 <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2></div>
                 <div className="space-y-4">
                   {todaysVitals.map((vital, index) => (

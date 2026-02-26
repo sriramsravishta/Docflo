@@ -147,6 +147,8 @@ function MobileRow({
     </button>
   </div>
 )}
+        </div>
+      )}
     </div>
   );
 }

@@ -69,12 +69,9 @@ function MobileRow({
           <ChevronRight
             className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
           />
-          <span
-            className="font-medium text-gray-900 truncate"
-            onClick={(e) => { e.stopPropagation(); navigate(`/patient/${appointment.patient_id}`); }}
-          >
-            {p?.name}
-          </span>
+          <span className="font-medium text-gray-900 truncate">
+  {p?.name}
+</span>
         </div>
         <div className="flex items-center gap-1.5 ml-2 shrink-0">
           <StatusBadge done={appointment.pre_consult_filled} trueLabel="Pre-consult" falseLabel="Pre-consult" compact />

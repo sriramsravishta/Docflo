@@ -56,6 +56,9 @@ function MobileRow({
   const p = appointment.patients;
   const idx = pendingOnly.findIndex((a) => a.id === appointment.id);
 
+  // hide 3 dots if row is completed
+  const canShowActions = showActions && !appointment.completed;
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg mb-2 overflow-hidden">
       <div
@@ -104,7 +107,7 @@ function MobileRow({
             >
               View Profile
             </button>
-            {showActions && (
+            {canShowActions && (
               <div className="relative">
                 <button
                   onClick={(e) => {
@@ -116,7 +119,7 @@ function MobileRow({
                   <MoreVertical className="w-4 h-4 text-gray-400" />
                 </button>
                 {showKebabMenu === appointment.id && (
-                  <div className="absolute right-0 bottom-10 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[130px]">
+                  <div className="absolute right-0 bottom-10 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[130px]">
                     <button
                       disabled={idx === 0}
                       onClick={() => onMoveUp(appointment)}
@@ -165,22 +168,27 @@ export default function PatientQueueTable({
 
   return (
     <>
-      <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Desktop table — overflow-visible so dropdown is never clipped */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-visible">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Name</th>
+              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tl-xl">Name</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Age & Gender</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Last Visit</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pre-Consultation</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Consultation</th>
-              {showActions && <th className="w-10 px-4 py-3" />}
+              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tr-xl">Consultation</th>
+              {/* Always reserve the action column so layout doesn't shift */}
+              <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {appointments.map((apt) => {
               const p = apt.patients;
               const idx = pendingOnly.findIndex((a) => a.id === apt.id);
+              // hide 3 dots if row is completed
+              const canShowActions = showActions && !apt.completed;
+
               return (
                 <tr
                   key={apt.id}
@@ -194,8 +202,8 @@ export default function PatientQueueTable({
                   </td>
                   <td className="px-4 py-3"><StatusBadge done={apt.pre_consult_filled} /></td>
                   <td className="px-4 py-3"><StatusBadge done={apt.completed} /></td>
-                  {showActions && (
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    {canShowActions && (
                       <div className="relative">
                         <button
                           onClick={(e) => {
@@ -207,7 +215,7 @@ export default function PatientQueueTable({
                           <MoreVertical className="w-4 h-4 text-gray-400" />
                         </button>
                         {showKebabMenu === apt.id && (
-                          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[140px]">
+                          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[140px]">
                             <button
                               disabled={idx === 0}
                               onClick={() => onMoveUp(apt)}
@@ -231,8 +239,8 @@ export default function PatientQueueTable({
                           </div>
                         )}
                       </div>
-                    </td>
-                  )}
+                    )}
+                  </td>
                 </tr>
               );
             })}

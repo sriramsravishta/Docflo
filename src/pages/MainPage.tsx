@@ -254,7 +254,7 @@ const completedTodaysAppointments = filteredTodaysAppointments.filter((a) => a.c
             className="btn-primary flex items-center space-x-2 shrink-0"
           >
             <Plus className="w-5 h-5" />
-            <span>Add Patient</span>
+            <span>Patient</span>
           </button>
         </div>
 

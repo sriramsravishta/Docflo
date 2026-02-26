@@ -742,7 +742,7 @@ export default function PatientProfile() {
           pastOpen,
           () => setExpandedSections((prev) => ({ ...prev, pastMeds: !pastOpen })),
           pastMeds.length === 0 ? <p className="text-gray-500">No past medications</p> : (
-            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
+            <div className="mt-2 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
               {pastMeds.map((med, idx) => medCard(med, idx, true))}
             </div>
           )

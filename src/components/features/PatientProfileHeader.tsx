@@ -57,9 +57,9 @@ export default function PatientProfileHeader({
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
             <span>{patient.age} yrs</span>
-            <span className="text-gray-300">·</span>
+            <span className="text-gray-500">·</span>
             <span>{patient.gender}</span>
-            <span className="text-gray-300">·</span>
+            <span className="text-gray-500">·</span>
             <span>{patient.phone}</span>
             {patient.last_visit_at && (
               <>

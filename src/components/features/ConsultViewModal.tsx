@@ -1,11 +1,11 @@
-import { X, ChevronDown, ChevronRight, Download, MessageSquare } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import { X, ChevronDown, ChevronRight, Download, CheckCircle } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 import {
   getConsultSummary,
-  isConsultProcessed,
-  isConsultError,
   getElapsedSeconds,
   getProgressPercent,
   getViewModeMedicines,
@@ -40,38 +40,56 @@ function AccordionSection({
   sectionKey: string;
   expanded: boolean;
   onToggle: (k: string) => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="border-b border-gray-200 last:border-b-0">
       <button
         onClick={() => onToggle(sectionKey)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
       >
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        {expanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+        {expanded ? (
+          <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
+        ) : (
+          <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
+        )}
+        <h3 className="font-semibold text-gray-900 flex-1">{title}</h3>
       </button>
       {expanded && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
 
+function isBlankString(v: unknown) {
+  return typeof v === 'string' && v.trim().length === 0;
+}
+
 function renderDiagnosis(diagnosis: unknown) {
   const parsed = safeJsonParse(diagnosis);
   const d = parsed ?? diagnosis;
+
+  if (d == null || isBlankString(d)) return <p className="text-gray-800">No diagnosis recorded</p>;
+
   if (typeof d === 'string') return <p className="text-gray-800 whitespace-pre-line">{d}</p>;
+
   if (typeof d === 'object' && d !== null) {
     const dd = d as DiagnosisSummary;
     const hasProvisional = Array.isArray(dd.provisional) && dd.provisional.length > 0;
     const hasKeyFindings = Array.isArray(dd.key_findings) && dd.key_findings.length > 0;
+
     if (!hasProvisional && !hasKeyFindings) return <p className="text-gray-800">No detailed diagnosis available</p>;
+
     return (
       <div className="space-y-3">
         {hasProvisional && (
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
             <ul className="list-disc list-inside space-y-1">
-              {dd.provisional!.map((item, idx) => <li key={idx} className="text-gray-800">{item}</li>)}
+              {dd.provisional!.map((item, idx) => (
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
+              ))}
             </ul>
           </div>
         )}
@@ -79,47 +97,78 @@ function renderDiagnosis(diagnosis: unknown) {
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
             <ul className="list-disc list-inside space-y-1">
-              {dd.key_findings!.map((item, idx) => <li key={idx} className="text-gray-800">{item}</li>)}
+              {dd.key_findings!.map((item, idx) => (
+                <li key={idx} className="text-gray-800">
+                  {item}
+                </li>
+              ))}
             </ul>
           </div>
         )}
       </div>
     );
   }
-  return <p className="text-gray-800">No detailed diagnosis available</p>;
+
+  return <p className="text-gray-800">No diagnosis recorded</p>;
 }
 
-function renderArrayContent(content: unknown) {
+function renderArrayContent(content: unknown, emptyText: string) {
   const parsed = safeJsonParse(content);
   const c = parsed ?? content;
+
+  if (c == null || isBlankString(c)) return <p className="text-gray-800">{emptyText}</p>;
+
   if (typeof c === 'string') return <p className="text-gray-800 whitespace-pre-line">{c}</p>;
+
   if (Array.isArray(c)) {
+    if (c.length === 0) return <p className="text-gray-800">{emptyText}</p>;
     return (
       <ul className="list-disc list-inside space-y-1">
-        {c.map((item, idx) => <li key={idx} className="text-gray-800">{item}</li>)}
+        {c.map((item, idx) => (
+          <li key={idx} className="text-gray-800">
+            {String(item)}
+          </li>
+        ))}
       </ul>
     );
   }
-  try { return <p className="text-gray-800 whitespace-pre-line">{JSON.stringify(c, null, 2)}</p>; }
-  catch { return <p className="text-gray-800">{String(c)}</p>; }
+
+  try {
+    const s = JSON.stringify(c, null, 2);
+    if (!s) return <p className="text-gray-800">{emptyText}</p>;
+    return <p className="text-gray-800 whitespace-pre-line">{s}</p>;
+  } catch {
+    return <p className="text-gray-800">{String(c)}</p>;
+  }
 }
 
 function renderTreatmentSuggested(treatment: unknown) {
   const parsed = safeJsonParse(treatment);
   const t = parsed ?? treatment;
+
+  if (t == null || isBlankString(t)) return <p className="text-gray-800">No treatment recorded</p>;
+
   if (typeof t === 'string') return <p className="text-gray-800 whitespace-pre-line">{t}</p>;
+
   if (!t || typeof t !== 'object') return <p className="text-gray-800">No treatment recorded</p>;
+
   const tt = t as TreatmentSummary;
   const immediate = Array.isArray(tt.immediate_plan) ? tt.immediate_plan : [];
   const contingent = Array.isArray(tt.contingent_plan) ? tt.contingent_plan : [];
+
   if (!immediate.length && !contingent.length) return <p className="text-gray-800">No treatment recorded</p>;
+
   return (
     <div className="space-y-3">
       {immediate.length > 0 && (
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
           <ul className="list-disc list-inside space-y-1">
-            {immediate.map((item, idx) => <li key={idx} className="text-gray-800">{item}</li>)}
+            {immediate.map((item, idx) => (
+              <li key={idx} className="text-gray-800">
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
       )}
@@ -127,7 +176,11 @@ function renderTreatmentSuggested(treatment: unknown) {
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
           <ul className="list-disc list-inside space-y-1">
-            {contingent.map((item, idx) => <li key={idx} className="text-gray-800">{item}</li>)}
+            {contingent.map((item, idx) => (
+              <li key={idx} className="text-gray-800">
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
       )}
@@ -136,13 +189,19 @@ function renderTreatmentSuggested(treatment: unknown) {
 }
 
 function renderMedications(medications: ReturnType<typeof getViewModeMedicines>) {
+  if (!Array.isArray(medications) || medications.length === 0) {
+    return <p className="text-gray-800">No medications recorded</p>;
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-50">
-            {['Name','Dosage','Quantity','Type','Frequency','Time','AF/BF','Duration','Instructions','Flags'].map((h) => (
-              <th key={h} className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">{h}</th>
+            {['Name', 'Dosage', 'Quantity', 'Type', 'Frequency', 'Time', 'AF/BF', 'Duration', 'Instructions', 'Flags'].map((h) => (
+              <th key={h} className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
@@ -172,12 +231,19 @@ function renderMedications(medications: ReturnType<typeof getViewModeMedicines>)
 function renderInvestigations(investigations: unknown) {
   const parsed = safeJsonParse(investigations);
   const inv = parsed ?? investigations;
+
+  if (inv == null || isBlankString(inv)) return <p className="text-gray-800">No investigations recorded</p>;
+
   if (typeof inv === 'string') return <p className="text-gray-800 whitespace-pre-line">{inv}</p>;
+
   if (!inv || typeof inv !== 'object') return <p className="text-gray-800">No investigations recorded</p>;
+
   const ii = inv as InvestigationsSummary;
   const ordered = Array.isArray(ii.ordered) ? ii.ordered : [];
   const notes = ii.notes;
+
   if (!ordered.length && !notes) return <p className="text-gray-800">No investigations recorded</p>;
+
   return (
     <div className="space-y-3">
       {ordered.length > 0 && (
@@ -225,6 +291,14 @@ export default function ConsultViewModal({
   const summary = getConsultSummary(consult) as ConsultSummary | null;
   const meds = getViewModeMedicines(summary, consultMedicines);
 
+  // UI-only acknowledgement state (not persisted)
+  const [ackFlags, setAckFlags] = useState<Record<number, boolean>>({});
+
+  const flags = useMemo(() => {
+    const arr = summary && Array.isArray(summary.flags_for_review) ? summary.flags_for_review : [];
+    return arr.filter((f) => typeof f === 'string' && f.trim().length > 0);
+  }, [summary]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
@@ -238,103 +312,109 @@ export default function ConsultViewModal({
               <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
+
           <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={onEdit}
                 className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
               >
-                <Edit className="w-4 h-4" /><span>Edit</span>
+                <Edit className="w-4 h-4" />
+                <span>Edit</span>
               </button>
+
               <button
                 onClick={onDownloadPDF}
                 className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
               >
-                <Download className="w-4 h-4" /><span>Download PDF</span>
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
               </button>
-              
             </div>
           </div>
         </div>
 
         {summary ? (
           <>
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                {summary.chief_complaints && (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                    {Array.isArray(summary.chief_complaints) ? summary.chief_complaints.length : 1} Complaints
-                  </span>
-                )}
-                {meds.length > 0 && (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">{meds.length} Medications</span>
-                )}
-                {summary.investigations && typeof summary.investigations === 'object' &&
-                  Array.isArray((summary.investigations as InvestigationsSummary).ordered) && (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
-                    {(summary.investigations as InvestigationsSummary).ordered!.length} Investigations
-                  </span>
-                )}
-                {Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0 && (
-                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
-                    {summary.flags_for_review.length} Flags
-                  </span>
-                )}
+            {/* ✅ Removed the “chips count” bar completely (2 complaints, 3 flags, etc.) */}
+
+            {/* ✅ Flags always visible at top (no chevron/accordion) */}
+            {flags.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Flags for Review</h3>
+                <div className="space-y-2">
+                  {flags.map((flag, idx) => {
+                    const acknowledged = !!ackFlags[idx];
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex items-start justify-between gap-3 rounded-lg border p-3 ${
+                          acknowledged
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className={`text-sm font-medium ${acknowledged ? 'text-green-800' : 'text-red-800'}`}>
+                            ⚠ {flag}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAckFlags((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                          }
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                            acknowledged
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                          title={acknowledged ? 'Acknowledged' : 'Acknowledge'}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>{acknowledged ? 'Acknowledged' : 'Acknowledge'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="divide-y divide-gray-200">
-              {summary.diagnosis && (
-                <AccordionSection title="Diagnosis" sectionKey="diagnosis" expanded={!!expandedSections.diagnosis} onToggle={onToggleSection}>
-                  {renderDiagnosis(summary.diagnosis)}
-                </AccordionSection>
-              )}
-              {summary.chief_complaints && (
-                <AccordionSection title="Chief Complaints" sectionKey="chiefComplaints" expanded={!!expandedSections.chiefComplaints} onToggle={onToggleSection}>
-                  {renderArrayContent(summary.chief_complaints)}
-                </AccordionSection>
-              )}
-              {summary.treatment_suggested && (
-                <AccordionSection title="Treatment Suggested" sectionKey="treatmentSuggested" expanded={!!expandedSections.treatmentSuggested} onToggle={onToggleSection}>
-                  {renderTreatmentSuggested(summary.treatment_suggested)}
-                </AccordionSection>
-              )}
-              {meds.length > 0 && (
-                <AccordionSection title="Medications" sectionKey="medications" expanded={!!expandedSections.medications} onToggle={onToggleSection}>
-                  {renderMedications(meds)}
-                </AccordionSection>
-              )}
-              {summary.investigations && (
-                <AccordionSection title="Investigations" sectionKey="investigations" expanded={!!expandedSections.investigations} onToggle={onToggleSection}>
-                  {renderInvestigations(summary.investigations)}
-                </AccordionSection>
-              )}
-              {summary.history && (
-                <AccordionSection title="History" sectionKey="history" expanded={!!expandedSections.history} onToggle={onToggleSection}>
-                  {renderArrayContent(summary.history)}
-                </AccordionSection>
-              )}
-              {summary.followup_recommendations && (
-                <AccordionSection title="Follow-up Recommendations" sectionKey="followupRecommendations" expanded={!!expandedSections.followupRecommendations} onToggle={onToggleSection}>
-                  {renderArrayContent(summary.followup_recommendations)}
-                </AccordionSection>
-              )}
-              {summary.key_personal_insights && (
-                <AccordionSection title="Key Personal Insights" sectionKey="keyPersonalInsights" expanded={!!expandedSections.keyPersonalInsights} onToggle={onToggleSection}>
-                  {renderArrayContent(summary.key_personal_insights)}
-                </AccordionSection>
-              )}
-              {Array.isArray(summary.flags_for_review) && summary.flags_for_review.length > 0 && (
-                <AccordionSection title="Flags for Review" sectionKey="flagsForReview" expanded={!!expandedSections.flagsForReview} onToggle={onToggleSection}>
-                  <div className="space-y-2">
-                    {summary.flags_for_review.map((flag, idx) => (
-                      <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
-                        <span className="text-red-800 font-medium">⚠ {flag}</span>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionSection>
-              )}
+              {/* Best UX: keep a consistent structure with clear empty states */}
+              <AccordionSection title="Diagnosis" sectionKey="diagnosis" expanded={!!expandedSections.diagnosis} onToggle={onToggleSection}>
+                {renderDiagnosis(summary.diagnosis)}
+              </AccordionSection>
+
+              <AccordionSection title="Chief Complaints" sectionKey="chiefComplaints" expanded={!!expandedSections.chiefComplaints} onToggle={onToggleSection}>
+                {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
+              </AccordionSection>
+
+              <AccordionSection title="Treatment Suggested" sectionKey="treatmentSuggested" expanded={!!expandedSections.treatmentSuggested} onToggle={onToggleSection}>
+                {renderTreatmentSuggested(summary.treatment_suggested)}
+              </AccordionSection>
+
+              <AccordionSection title="Medications" sectionKey="medications" expanded={!!expandedSections.medications} onToggle={onToggleSection}>
+                {renderMedications(meds)}
+              </AccordionSection>
+
+              <AccordionSection title="Investigations" sectionKey="investigations" expanded={!!expandedSections.investigations} onToggle={onToggleSection}>
+                {renderInvestigations(summary.investigations)}
+              </AccordionSection>
+
+              <AccordionSection title="History" sectionKey="history" expanded={!!expandedSections.history} onToggle={onToggleSection}>
+                {renderArrayContent(summary.history, 'No history recorded')}
+              </AccordionSection>
+
+              <AccordionSection title="Follow-up Recommendations" sectionKey="followupRecommendations" expanded={!!expandedSections.followupRecommendations} onToggle={onToggleSection}>
+                {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
+              </AccordionSection>
+
+              <AccordionSection title="Key Personal Insights" sectionKey="keyPersonalInsights" expanded={!!expandedSections.keyPersonalInsights} onToggle={onToggleSection}>
+                {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
+              </AccordionSection>
             </div>
           </>
         ) : (
@@ -357,16 +437,11 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-3">
         <p className="text-sm font-semibold text-gray-900">
-          {isError
-            ? 'Consultation summary failed'
-            : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
+          {isError ? 'Consultation summary failed' : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
         </p>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div
-          className="h-3 rounded-full bg-[#024CDB] transition-all"
-          style={{ width: `${isError ? 100 : pct}%` }}
-        />
+        <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
       </div>
       <div className="mt-3 text-center">
         {isError ? (

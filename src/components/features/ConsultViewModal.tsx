@@ -78,7 +78,9 @@ function renderDiagnosis(diagnosis: unknown) {
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
             <ul className="list-disc list-inside space-y-1">
-              {dd.provisional!.map((item, idx) => <li key={idx}>{item}</li>)}
+              {dd.provisional!.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
             </ul>
           </div>
         )}
@@ -86,7 +88,9 @@ function renderDiagnosis(diagnosis: unknown) {
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
             <ul className="list-disc list-inside space-y-1">
-              {dd.key_findings!.map((item, idx) => <li key={idx}>{item}</li>)}
+              {dd.key_findings!.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
             </ul>
           </div>
         )}
@@ -109,7 +113,9 @@ function renderArrayContent(content: unknown, emptyText: string) {
     if (c.length === 0) return <p>{emptyText}</p>;
     return (
       <ul className="list-disc list-inside space-y-1">
-        {c.map((item, idx) => <li key={idx}>{String(item)}</li>)}
+        {c.map((item, idx) => (
+          <li key={idx}>{String(item)}</li>
+        ))}
       </ul>
     );
   }
@@ -145,7 +151,9 @@ function renderTreatmentSuggested(treatment: unknown) {
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
           <ul className="list-disc list-inside space-y-1">
-            {immediate.map((item, idx) => <li key={idx}>{item}</li>)}
+            {immediate.map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -153,7 +161,9 @@ function renderTreatmentSuggested(treatment: unknown) {
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
           <ul className="list-disc list-inside space-y-1">
-            {contingent.map((item, idx) => <li key={idx}>{item}</li>)}
+            {contingent.map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -166,12 +176,13 @@ function renderMedications(medications: ReturnType<typeof getViewModeMedicines>)
     return <p>No medications recorded</p>;
   }
 
+  // Keep table text readable while still lighter than titles
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse border border-gray-300 text-gray-600">
         <thead>
           <tr className="bg-gray-50">
-            {['Name','Dosage','Quantity','Type','Frequency','Time','AF/BF','Duration','Instructions','Flags'].map((h) => (
+            {['Name', 'Dosage', 'Quantity', 'Type', 'Frequency', 'Time', 'AF/BF', 'Duration', 'Instructions', 'Flags'].map((h) => (
               <th key={h} className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
                 {h}
               </th>
@@ -262,6 +273,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {/* same sizing/padding as edit modal -> smoother perceived transition */}
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto pb-8">
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -296,6 +308,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
         {summary ? (
           <div className="px-6 pt-6 space-y-6">
+            {/* Flags (no acknowledge button) */}
             {flags.length > 0 && (
               <SectionCard title="Flags for Review" tone="danger">
                 <div className="space-y-2">
@@ -308,6 +321,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
               </SectionCard>
             )}
 
+            {/* Two-column layout on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SectionCard title="Diagnosis">{renderDiagnosis(summary.diagnosis)}</SectionCard>
 
@@ -319,20 +333,16 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 {renderTreatmentSuggested(summary.treatment_suggested)}
               </SectionCard>
 
-              {/* ✅ Investigations above Medications */}
-              <SectionCard title="Investigations">{renderInvestigations(summary.investigations)}</SectionCard>
-
-              {/* ✅ Medications full-width, now after Investigations */}
+              {/* Medications right below Treatment Suggested, full width */}
               <div className="lg:col-span-2">
                 <SectionCard title="Medications">{renderMedications(meds)}</SectionCard>
               </div>
 
-              {/* ✅ History full-width */}
-              <div className="lg:col-span-2">
-                <SectionCard title="History">
-                  {renderArrayContent(summary.history, 'No history recorded')}
-                </SectionCard>
-              </div>
+              <SectionCard title="Investigations">{renderInvestigations(summary.investigations)}</SectionCard>
+
+              <SectionCard title="History">
+                {renderArrayContent(summary.history, 'No history recorded')}
+              </SectionCard>
 
               <SectionCard title="Follow-up Recommendations">
                 {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}

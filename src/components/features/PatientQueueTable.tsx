@@ -178,7 +178,7 @@ export default function PatientQueueTable({
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pre-Consultation</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Consultation</th>
 
-<th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tr-xl w-[160px]">
+<th className="text-left text-xs font-semibold text-gray-500 tracking-wider px-4 py-3 rounded-tr-xl w-[160px]">
   More Options
 </th>
             </tr>

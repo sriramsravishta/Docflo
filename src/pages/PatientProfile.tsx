@@ -912,7 +912,7 @@ export default function PatientProfile() {
           {renderDiagnosticTrendsTab()}
         </div>
         {renderCollapsible(
-          `Current Medications (${currentMeds.length})`,
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Current Medications (${currentMeds.length})<h3/>,
           currentOpen,
           () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
           currentMeds.length === 0 ? <p className="text-gray-500">No current medications</p> : (

@@ -911,8 +911,9 @@ export default function PatientProfile() {
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
           {renderDiagnosticTrendsTab()}
         </div>
+        <div className="text-lg font-semibold text-gray-900 mb-3">
         {renderCollapsible(
-          '<h3 className="text-lg font-semibold text-gray-900 mb-3">Current Medications (${currentMeds.length})<h3/>',
+          'Current Medications (${currentMeds.length})',
           currentOpen,
           () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
           currentMeds.length === 0 ? <p className="text-gray-500">No current medications</p> : (
@@ -920,7 +921,7 @@ export default function PatientProfile() {
               {currentMeds.map((med, idx) => medCard(med, idx, false))}
             </div>
           )
-        )}
+        )}<div/>
         {renderCollapsible(
           `Past Medications (${pastMeds.length})`,
           pastOpen,

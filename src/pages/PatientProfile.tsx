@@ -136,7 +136,7 @@ export default function PatientProfile() {
   const [medicineSearchResults, setMedicineSearchResults] = useState<{ name: string }[]>([]);
   const [openTimeDropdownId, setOpenTimeDropdownId] = useState<string | null>(null);
   const timeDropdownRef = useRef<HTMLDivElement | null>(null);
-const diagnosticGraphsScrollRef = useRef<HTMLDivElement | null>(null);
+ 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     diagnosis: true,
     chiefComplaints: true,
@@ -686,18 +686,7 @@ const diagnosticGraphsScrollRef = useRef<HTMLDivElement | null>(null);
             const paramName = e.target.value;
             if (paramName) {
               const el = document.getElementById(`inline-graph-${paramName}`);
-const container = diagnosticGraphsScrollRef.current;
-
-if (el && container) {
-  const containerRect = container.getBoundingClientRect();
-  const elRect = el.getBoundingClientRect();
-  const delta = elRect.top - containerRect.top;
-
-  container.scrollTo({
-    top: container.scrollTop + delta - 12, // 12px padding offset
-    behavior: 'smooth',
-  });
-}
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
           }}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
@@ -717,10 +706,7 @@ if (el && container) {
     </div>
 
     {/* Scrollable graphs area (only this scrolls) */}
-    <div
-  ref={diagnosticGraphsScrollRef}
-  className="h-[70vh] max-h-[720px] overflow-y-auto overscroll-contain p-4 space-y-8"
->
+    <div className="h-[70vh] max-h-[720px] overflow-y-auto p-4 space-y-8">
       {trends.map((trend, trendIdx) => {
         const paramName = String(trend?.parameter_name || '').trim();
         if (!paramName) return null;

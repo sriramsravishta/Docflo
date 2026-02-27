@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import { X, ChevronDown, ChevronRight, Download, CheckCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { X, Download } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
@@ -29,33 +28,26 @@ interface ConsultViewModalProps {
   uiNow: number;
 }
 
-function AccordionSection({
+function SectionCard({
   title,
-  sectionKey,
-  expanded,
-  onToggle,
   children,
+  tone = 'default',
 }: {
   title: string;
-  sectionKey: string;
-  expanded: boolean;
-  onToggle: (k: string) => void;
-  children: ReactNode;
+  children: React.ReactNode;
+  tone?: 'default' | 'danger';
 }) {
+  const toneClasses =
+    tone === 'danger'
+      ? 'border-red-200 bg-red-50'
+      : 'border-gray-200 bg-white';
+
   return (
-    <div className="last:border-b-0">
-      <button
-        onClick={() => onToggle(sectionKey)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
-      >
-        {expanded ? (
-          <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
-        ) : (
-          <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
-        )}
-        <h3 className="font-semibold text-gray-900 flex-1">{title}</h3>
-      </button>
-      {expanded && <div className="px-4 pb-4">{children}</div>}
+    <div className={`border rounded-lg ${toneClasses} overflow-hidden`}>
+      <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+      </div>
+      <div className="px-4 py-4">{children}</div>
     </div>
   );
 }
@@ -276,31 +268,30 @@ function renderInvestigations(investigations: unknown) {
   );
 }
 
-export default function ConsultViewModal({
-  consult,
-  consultMedicines,
-  expandedSections,
-  onToggleSection,
-  onClose,
-  onEdit,
-  onDownloadPDF,
-  onSendWhatsApp,
-  formatDate,
-  uiNow,
-}: ConsultViewModalProps) {
+export default function ConsultViewModal(props: ConsultViewModalProps) {
+  const { consult, consultMedicines, onClose, onEdit, onDownloadPDF, formatDate, uiNow } = props;
+
   const summary = getConsultSummary(consult) as ConsultSummary | null;
   const meds = getViewModeMedicines(summary, consultMedicines);
 
-  // UI-only acknowledgement state (not persisted)
-  const [ackFlags, setAckFlags] = useState<Record<number, boolean>>({});
-const [flagsOpen, setFlagsOpen] = useState(true);
   const flags = useMemo(() => {
     const arr = summary && Array.isArray(summary.flags_for_review) ? summary.flags_for_review : [];
     return arr.filter((f) => typeof f === 'string' && f.trim().length > 0);
   }, [summary]);
 
+  // content presence helpers (UI-only)
+  const hasComplaints =
+    !!summary?.chief_complaints &&
+    !isBlankString(summary.chief_complaints) &&
+    (!Array.isArray(summary.chief_complaints) || summary.chief_complaints.length > 0);
+
+  const hasHistory = !!summary?.history && !isBlankString(summary.history);
+  const hasFollowup = !!summary?.followup_recommendations && !isBlankString(summary.followup_recommendations);
+  const hasInsights = !!summary?.key_personal_insights && !isBlankString(summary.key_personal_insights);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {/* same container sizing as Edit modal -> smoother perceived transition */}
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto pb-8">
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -322,7 +313,6 @@ const [flagsOpen, setFlagsOpen] = useState(true);
                 <Edit className="w-4 h-4" />
                 <span>Edit</span>
               </button>
-
               <button
                 onClick={onDownloadPDF}
                 className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -335,100 +325,81 @@ const [flagsOpen, setFlagsOpen] = useState(true);
         </div>
 
         {summary ? (
-          <>
-            {/* ✅ Removed the “chips count” bar completely (2 complaints, 3 flags, etc.) */}
-
-            {/* ✅ Flags (collapsible with chevron, open by default) */}
-{flags.length > 0 && (
-  <div className="border-b border-gray-200">
-    <button
-      type="button"
-      onClick={() => setFlagsOpen((v) => !v)}
-      className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
-    >
-      {flagsOpen ? (
-        <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
-      ) : (
-        <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
-      )}
-      <h3 className="font-semibold text-gray-900 flex-1">Flags for Review</h3>
-    </button>
-
-    {flagsOpen && (
-      <div className="px-4 pb-4">
-        <div className="space-y-2">
-          {flags.map((flag, idx) => {
-            const acknowledged = !!ackFlags[idx];
-            return (
-              <div
-                key={idx}
-                className={`flex items-start justify-between gap-3 rounded-lg border p-3 ${
-                  acknowledged ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                }`}
-              >
-                <div className="min-w-0">
-                  <p className={`text-sm font-medium ${acknowledged ? 'text-green-800' : 'text-red-800'}`}>
-                    ⚠ {flag}
-                  </p>
+          <div className="px-6 pt-6 space-y-6">
+            {/* Flags (no acknowledge button for now) */}
+            {flags.length > 0 && (
+              <SectionCard title="Flags for Review" tone="danger">
+                <div className="space-y-2">
+                  {flags.map((flag, idx) => (
+                    <div key={idx} className="bg-white border border-red-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-red-800">⚠ {flag}</p>
+                    </div>
+                  ))}
                 </div>
+              </SectionCard>
+            )}
 
-                <button
-                  type="button"
-                  onClick={() => setAckFlags((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                    acknowledged
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                  }`}
-                  title={acknowledged ? 'Acknowledged' : 'Acknowledge'}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{acknowledged ? 'Acknowledged' : 'Acknowledge'}</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    )}
-  </div>
-)}
-
-            <div className="divide-y divide-gray-200">
-              {/* Best UX: keep a consistent structure with clear empty states */}
-              <AccordionSection title="Diagnosis" sectionKey="diagnosis" expanded={!!expandedSections.diagnosis} onToggle={onToggleSection}>
+            {/* Two-column layout on desktop for readability */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SectionCard title="Diagnosis">
                 {renderDiagnosis(summary.diagnosis)}
-              </AccordionSection>
+              </SectionCard>
 
-              <AccordionSection title="Chief Complaints" sectionKey="chiefComplaints" expanded={!!expandedSections.chiefComplaints} onToggle={onToggleSection}>
-                {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
-              </AccordionSection>
+              {/* Only show these cards if they have content (reduces clutter) */}
+              {hasComplaints ? (
+                <SectionCard title="Chief Complaints">
+                  {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
+                </SectionCard>
+              ) : (
+                <SectionCard title="Chief Complaints">
+                  {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
+                </SectionCard>
+              )}
 
-              <AccordionSection title="Treatment Suggested" sectionKey="treatmentSuggested" expanded={!!expandedSections.treatmentSuggested} onToggle={onToggleSection}>
+              <SectionCard title="Treatment Suggested">
                 {renderTreatmentSuggested(summary.treatment_suggested)}
-              </AccordionSection>
+              </SectionCard>
 
-              <AccordionSection title="Medications" sectionKey="medications" expanded={!!expandedSections.medications} onToggle={onToggleSection}>
-                {renderMedications(meds)}
-              </AccordionSection>
-
-              <AccordionSection title="Investigations" sectionKey="investigations" expanded={!!expandedSections.investigations} onToggle={onToggleSection}>
+              <SectionCard title="Investigations">
                 {renderInvestigations(summary.investigations)}
-              </AccordionSection>
+              </SectionCard>
 
-              <AccordionSection title="History" sectionKey="history" expanded={!!expandedSections.history} onToggle={onToggleSection}>
-                {renderArrayContent(summary.history, 'No history recorded')}
-              </AccordionSection>
+              {hasHistory ? (
+                <SectionCard title="History">
+                  {renderArrayContent(summary.history, 'No history recorded')}
+                </SectionCard>
+              ) : (
+                <SectionCard title="History">
+                  {renderArrayContent(summary.history, 'No history recorded')}
+                </SectionCard>
+              )}
 
-              <AccordionSection title="Follow-up Recommendations" sectionKey="followupRecommendations" expanded={!!expandedSections.followupRecommendations} onToggle={onToggleSection}>
-                {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
-              </AccordionSection>
+              {hasFollowup ? (
+                <SectionCard title="Follow-up Recommendations">
+                  {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
+                </SectionCard>
+              ) : (
+                <SectionCard title="Follow-up Recommendations">
+                  {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
+                </SectionCard>
+              )}
 
-              <AccordionSection title="Key Personal Insights" sectionKey="keyPersonalInsights" expanded={!!expandedSections.keyPersonalInsights} onToggle={onToggleSection}>
-                {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
-              </AccordionSection>
+              {hasInsights ? (
+                <SectionCard title="Key Personal Insights">
+                  {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
+                </SectionCard>
+              ) : (
+                <SectionCard title="Key Personal Insights">
+                  {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
+                </SectionCard>
+              )}
             </div>
-          </>
+
+            {/* Medications full-width for table */}
+            <SectionCard title="Medications">
+              {renderMedications(meds)}
+            </SectionCard>
+          </div>
         ) : (
           <div className="p-6">
             <ProcessingState consult={consult} uiNow={uiNow} />
@@ -453,7 +424,10 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         </p>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
+        <div
+          className="h-3 rounded-full bg-[#024CDB] transition-all"
+          style={{ width: `${isError ? 100 : pct}%` }}
+        />
       </div>
       <div className="mt-3 text-center">
         {isError ? (

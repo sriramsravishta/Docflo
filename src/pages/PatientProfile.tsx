@@ -841,12 +841,7 @@ export default function PatientProfile() {
     </button>
   </div>
 </div>
-        <div className="md:hidden">
-          {renderTable()}
-        </div>
-        <div className="hidden md:block">
-          {showGraphView ? renderGraphsInline() : renderTable()}
-        </div>
+        {showGraphView ? renderGraphsInline() : renderTable()}
       </div>
     );
   };

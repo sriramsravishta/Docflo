@@ -748,7 +748,7 @@ function MedicationsTable({
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
                     </button>
-                  </td>
+                  </td> 
                 )}
               </tr>
             );

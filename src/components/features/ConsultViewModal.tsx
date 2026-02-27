@@ -621,7 +621,7 @@ function MedicationsTable({
                 )}
               </tr>
             );
-          })} 
+          })}
         </tbody>
       </table>
     </div>

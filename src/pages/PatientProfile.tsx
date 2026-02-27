@@ -1161,7 +1161,7 @@ const saveMedicineDraftsToDB = async () => {
       instructions: '',
       flags: '',          // ✅ NEW
     });
-    setConsultMedicines(prev => [newMedicine, ...prev]);
+    setConsultMedicines([...consultMedicines, newMedicine]);
   } catch (error) {
     console.error('Error adding medicine:', error);
   }
@@ -3172,10 +3172,11 @@ const isComplete = !!hasAiSummary;
                       <span>Add Medicine</span>
                     </button>
                   </div>
-                  <div className="rounded-lg">
+
+                  <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-4">
                       {consultMedicines.map((medicine, index) => {
-  const d = medicineDrafts[medicine.id] || { 
+  const d = medicineDrafts[medicine.id] || {
     name: medicine.name || '',
     quantity: medicine.quantity || '',
     frequency: medicine.frequency || '',
@@ -3185,16 +3186,15 @@ const isComplete = !!hasAiSummary;
     instructions: medicine.instructions || '',
   };
 
-  return ( 
+  return (
 
-                        <div key={medicine.id} className="bg-[#FAFAFA] border border-gray-200 rounded-lg p-4">
+                        <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <span className="font-medium text-[#2563EB]">Medicine {index + 1}</span>
                             <button onClick={() => handleDeleteMedicine(medicine.id)} className="text-red-600 hover:text-red-800">
                               <Trash2 className="w-4 h-4" />
                             </button> 
                           </div>
-                          <div className="mt-2 mb-4 border-b border-gray-200" />
 
                           <div className="flex flex-wrap gap-3 items-end">
   <div className="relative min-w-[250px] flex-1">
@@ -3302,6 +3302,7 @@ const isComplete = !!hasAiSummary;
       placeholder="e.g.7 days"
     />
   </div>
+
   <div className="min-w-[250px] flex-1">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
@@ -3313,7 +3314,7 @@ const isComplete = !!hasAiSummary;
         onClick={() =>
           setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
         }
-        className="input-field flex items-center bg-white justify-between"
+        className="input-field flex items-center justify-between"
       >
         <span className="text-gray-900">
           {Array.isArray(d.time) && d.time.length > 0

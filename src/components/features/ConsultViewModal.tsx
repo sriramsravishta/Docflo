@@ -423,7 +423,7 @@ function MedicationsTable({
             return (
               <tr key={m.id} className="hover:bg-gray-50">
                 {/* Name */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">{d.name || '-'}</span>
                   ) : (

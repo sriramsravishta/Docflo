@@ -76,7 +76,7 @@ function AutoResizeTextarea({
     const target = Math.max(nextHeight, minHeight, parentH || 0);
 
     el.style.minHeight = `${minHeight}px`;
-    el.style.height = `${Math.min(target, Math.max(maxHeight, target))}px`;
+    el.style.height = `${Math.min(target, maxHeight)}px`;
     el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
   };
 

@@ -632,55 +632,102 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {isEditing ? 'Edit Consultation Summary' : 'Consultation Summary'}
-              </h2>
-              <p className="text-sm text-gray-600">{formatDate(consult.created_at)}</p>
-            </div>
+         <div className="flex items-start justify-between gap-3">
+  {/* Left: Title + time + (mobile buttons below) */}
+  <div className="min-w-0 flex-1">
+    <h2 className="text-xl font-semibold text-gray-900">
+      {isEditing ? 'Edit Consultation Summary' : 'Consultation Summary'}
+    </h2>
+    <p className="text-sm text-gray-600">{formatDate(consult.created_at)}</p>
 
-            <div className="flex items-center gap-2">
-              {!isEditing ? (
-                <button
-                  onClick={onStartEdit}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={onCancelEdit}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Cancel</span>
-                  </button>
-                  <button
-                    onClick={onSaveEdit}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded text-sm transition-colors"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save</span>
-                  </button>
-                </>
-              )}
+    {/* Mobile actions (below title/time) */}
+    <div className="mt-3 flex flex-wrap gap-2 md:hidden">
+      {!isEditing ? (
+        <>
+          <button
+            onClick={onStartEdit}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit</span>
+          </button>
 
-              <button
-                onClick={onDownloadPDF}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>PDF</span>
-              </button>
+          <button
+            onClick={onDownloadPDF}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>PDF</span>
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={onCancelEdit}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <XCircle className="w-4 h-4" />
+            <span>Cancel</span>
+          </button>
 
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={onSaveEdit}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded text-sm transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save</span>
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+
+  {/* Right: Desktop actions + Close */}
+  <div className="flex items-center gap-2">
+    {/* Desktop actions stay on the right */}
+    <div className="hidden md:flex items-center gap-2">
+      {!isEditing ? (
+        <button
+          onClick={onStartEdit}
+          className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+        >
+          <Edit className="w-4 h-4" />
+          <span>Edit</span>
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={onCancelEdit}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <XCircle className="w-4 h-4" />
+            <span>Cancel</span>
+          </button>
+          <button
+            onClick={onSaveEdit}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#024CDB] hover:bg-[#023BA3] text-white rounded text-sm transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save</span>
+          </button>
+        </>
+      )}
+
+      <button
+        onClick={onDownloadPDF}
+        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+      >
+        <Download className="w-4 h-4" />
+        <span>PDF</span>
+      </button>
+    </div>
+
+    {/* Close stays top-right on all sizes */}
+    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <X className="w-5 h-5 text-gray-600" />
+    </button>
+  </div>
+</div>
         </div>
 
         {/* Body */}

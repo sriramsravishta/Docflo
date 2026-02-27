@@ -652,7 +652,7 @@ function MedicationsTable({
       </table>
     </div>
   );
-} 
+}
 
 export default function ConsultViewModal(props: ConsultViewModalProps) {
   const {

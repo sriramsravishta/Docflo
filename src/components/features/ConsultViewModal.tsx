@@ -43,7 +43,7 @@ function AccordionSection({
   children: ReactNode;
 }) {
   return (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div className="last:border-b-0">
       <button
         onClick={() => onToggle(sectionKey)}
         className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"

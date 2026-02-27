@@ -375,84 +375,6 @@ function MedicationsTable({
   onMedicineSearch: (q: string) => void;
   setMedicineSearchResults: (r: { name: string }[]) => void;
 }) {
-  const W_NAME = 'max-w-[150px]';
-  const W_SMALL = 'max-w-[100px]';
-  const W_LONG = 'max-w-[300px]';
-
-  const ViewText = ({ value }: { value: string }) => (
-    <div className="text-sm text-gray-600 whitespace-normal break-words leading-5">
-      {value || '-'}
-    </div>
-  );
-
-  // Single-line value, but visually wraps + auto-grows in height (no newline allowed)
-  const WrapEditTextarea = ({
-    value,
-    onChange,
-    widthClass,
-    placeholder,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    widthClass: string;
-    placeholder?: string;
-  }) => {
-    const ref = useRef<HTMLTextAreaElement | null>(null);
-
-    const resize = () => {
-      const el = ref.current;
-      if (!el) return;
-      el.style.height = '0px';
-      el.style.height = `${Math.min(el.scrollHeight, 120)}px`; // cap per-cell height
-      el.style.overflowY = el.scrollHeight > 120 ? 'auto' : 'hidden';
-    };
-
-    useLayoutEffect(() => {
-      resize();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value]);
-
-    return (
-      <div className={`w-full ${widthClass}`}>
-        <textarea
-          ref={ref}
-          value={value}
-          placeholder={placeholder}
-          rows={1}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.preventDefault(); // keep “single-line” semantics
-          }}
-          onChange={(e) => {
-            onChange(e.target.value);
-            requestAnimationFrame(resize);
-          }}
-          className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm whitespace-normal break-words leading-5 resize-none"
-        />
-      </div>
-    );
-  };
-
-  const EditInput = ({
-    value,
-    onChange,
-    widthClass,
-    placeholder,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    widthClass: string;
-    placeholder?: string;
-  }) => (
-    <div className={`w-full ${widthClass}`}>
-      <input
-        className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-
   if (!consultMedicines.length) {
     return <p className="text-sm text-gray-600">No medications recorded</p>;
   }
@@ -462,22 +384,8 @@ function MedicationsTable({
       <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-50">
-            {[
-              'Name',
-              'Dosage',
-              'Quantity',
-              'Type',
-              'Frequency',
-              'Time',
-              'AF/BF',
-              'Duration',
-              'Instructions',
-              'Flags',
-            ].map((h) => (
-              <th
-                key={h}
-                className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700 align-top"
-              >
+            {['Name','Dosage','Quantity','Type','Frequency','Time','AF/BF','Duration','Instructions','Flags'].map((h) => (
+              <th key={h} className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700">
                 {h}
               </th>
             ))}
@@ -490,7 +398,7 @@ function MedicationsTable({
         </thead>
 
         <tbody>
-          {consultMedicines.map((m, idx) => {
+          {consultMedicines.map((m) => {
             const d: MedicineDraft = medicineDrafts[m.id] || {
               name: m.name || '',
               dosage: m.dosage || '',
@@ -504,25 +412,26 @@ function MedicationsTable({
               flags: m.flags || '',
             };
 
+            const cellInput = (val: string, onVal: (v: string) => void) => (
+              <input
+                className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+                value={val}
+                onChange={(e) => onVal(e.target.value)}
+              />
+            );
+
             return (
               <tr key={m.id} className="hover:bg-gray-50">
-                {/* Name (max 150, wraps in view+edit) */}
+                {/* Name */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
                   {!isEditing ? (
-                    <div className={W_NAME}>
-                      <ViewText value={d.name || '-'} />
-                    </div>
+                    <span className="text-sm text-gray-600">{d.name || '-'}</span>
                   ) : (
-                    <div className={`relative ${W_NAME}`}>
-                      <WrapEditTextarea
-                        value={d.name}
-                        onChange={(v) => {
-                          updateMedicineDraft(m.id, { name: v });
-                          onMedicineSearch(v);
-                        }}
-                        widthClass=""
-                        placeholder="Search medicine..."
-                      />
+                    <div className="relative">
+                      {cellInput(d.name, (v) => {
+                        updateMedicineDraft(m.id, { name: v });
+                        onMedicineSearch(v);
+                      })}
                       {medicineSearchResults.length > 0 && (
                         <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                           {medicineSearchResults.map((r, i) => (
@@ -544,198 +453,115 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* Dosage (max 100) */}
+                {/* Dosage */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.dosage || '-'} />
-                    </div>
-                  ) : (
-                    <EditInput
-                      value={d.dosage}
-                      onChange={(v) => updateMedicineDraft(m.id, { dosage: v })}
-                      widthClass={W_SMALL}
-                      placeholder="e.g. 500 mg"
-                    />
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.dosage || '-'}</span> : cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))}
                 </td>
 
-                {/* Quantity (max 100) */}
+                {/* Quantity */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.quantity || '-'} />
-                    </div>
-                  ) : (
-                    <EditInput
-                      value={d.quantity}
-                      onChange={(v) => updateMedicineDraft(m.id, { quantity: v })}
-                      widthClass={W_SMALL}
-                      placeholder="e.g. 1 tab"
-                    />
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.quantity || '-'}</span> : cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))}
                 </td>
 
-                {/* Type (max 100) */}
+                {/* Type */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.type || '-'} />
-                    </div>
-                  ) : (
-                    <EditInput
-                      value={d.type}
-                      onChange={(v) => updateMedicineDraft(m.id, { type: v })}
-                      widthClass={W_SMALL}
-                      placeholder="e.g. Tablet"
-                    />
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.type || '-'}</span> : cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))}
                 </td>
 
-                {/* Frequency (max 100) */}
+                {/* Frequency */}
+                <td className="border border-gray-300 px-3 py-2 align-top">
+  <div className="min-w-[110px] max-w-[110px]">
+    {!isEditing ? (
+      <span className="text-sm text-gray-600 whitespace-normal break-words">
+        {d.frequency || '-'}
+      </span>
+    ) : (
+      <select
+        className="min-w-[110px] w-full max-w-[110px] px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+        value={d.frequency}
+        onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
+      >
+        <option value="">Select</option>
+        {FREQUENCY_OPTIONS.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    )}
+  </div>
+</td>
+
+                {/* Time */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
                   {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.frequency || '-'} />
-                    </div>
+                    <span className="text-sm text-gray-600">
+                      {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}
+                    </span>
                   ) : (
-                    <div className={W_SMALL}>
-                      <select
-                        className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
-                        value={d.frequency}
-                        onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
+                    <div ref={openTimeDropdownId === m.id ? timeDropdownRef : null} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setOpenTimeDropdownId(openTimeDropdownId === m.id ? null : m.id)}
+                        className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm text-left"
                       >
-                        <option value="">Select</option>
-                        {FREQUENCY_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
+                        {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : 'Select time'}
+                      </button>
+
+                      {openTimeDropdownId === m.id && (
+                        <div className="absolute z-30 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+                          {TIME_OPTIONS.map((opt) => {
+                            const current = Array.isArray(d.time) ? d.time : [];
+                            const checked = current.includes(opt);
+                            return (
+                              <label key={opt} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
+                                    updateMedicineDraft(m.id, { time: next });
+                                  }}
+                                />
+                                <span className="text-sm text-gray-800">{opt}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </td>
 
-                {/* Time (max 100 visual cap; dropdown) */}
+                {/* AF/BF */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
                   {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText
-                        value={
-                          Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'
-                        }
-                      />
-                    </div>
+                    <span className="text-sm text-gray-600">{d.food || '-'}</span>
                   ) : (
-                    <div className={W_SMALL}>
-                      <div ref={openTimeDropdownId === m.id ? timeDropdownRef : null} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setOpenTimeDropdownId(openTimeDropdownId === m.id ? null : m.id)}
-                          className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm text-left"
-                        >
-                          {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : 'Select time'}
-                        </button>
-
-                        {openTimeDropdownId === m.id && (
-                          <div className="absolute z-30 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2">
-                            {TIME_OPTIONS.map((opt) => {
-                              const current = Array.isArray(d.time) ? d.time : [];
-                              const checked = current.includes(opt);
-                              return (
-                                <label
-                                  key={opt}
-                                  className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => {
-                                      const next = checked ? current.filter((x) => x !== opt) : [...current, opt];
-                                      updateMedicineDraft(m.id, { time: next });
-                                    }}
-                                  />
-                                  <span className="text-sm text-gray-800">{opt}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <select
+                      className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+                      value={d.food}
+                      onChange={(e) => updateMedicineDraft(m.id, { food: e.target.value })}
+                    >
+                      <option value="">Select</option>
+                      {FOOD_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
                   )}
                 </td>
 
-                {/* AF/BF (max 100) */}
+                {/* Duration */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.food || '-'} />
-                    </div>
-                  ) : (
-                    <div className={W_SMALL}>
-                      <select
-                        className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
-                        value={d.food}
-                        onChange={(e) => updateMedicineDraft(m.id, { food: e.target.value })}
-                      >
-                        <option value="">Select</option>
-                        {FOOD_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.duration || '-'}</span> : cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))}
                 </td>
 
-                {/* Duration (max 100) */}
+                {/* Instructions */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_SMALL}>
-                      <ViewText value={d.duration || '-'} />
-                    </div>
-                  ) : (
-                    <EditInput
-                      value={d.duration}
-                      onChange={(v) => updateMedicineDraft(m.id, { duration: v })}
-                      widthClass={W_SMALL}
-                      placeholder="e.g. 7 days"
-                    />
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.instructions || '-'}</span> : cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))}
                 </td>
 
-                {/* Instructions (max 300, wraps in view+edit) */}
+                {/* Flags */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_LONG}>
-                      <ViewText value={d.instructions || '-'} />
-                    </div>
-                  ) : (
-                    <WrapEditTextarea
-                      value={d.instructions}
-                      onChange={(v) => updateMedicineDraft(m.id, { instructions: v })}
-                      widthClass={W_LONG}
-                      placeholder="Instructions..."
-                    />
-                  )}
-                </td>
-
-                {/* Flags (max 300, wraps in view+edit) */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <div className={W_LONG}>
-                      <ViewText value={d.flags || '-'} />
-                    </div>
-                  ) : (
-                    <WrapEditTextarea
-                      value={d.flags || ''}
-                      onChange={(v) => updateMedicineDraft(m.id, { flags: v })}
-                      widthClass={W_LONG}
-                      placeholder="Flags..."
-                    />
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.flags || '-'}</span> : cellInput(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))}
                 </td>
 
                 {isEditing && (
@@ -755,7 +581,7 @@ function MedicationsTable({
           })}
         </tbody>
       </table>
-    </div>
+    </div> 
   );
 }
 

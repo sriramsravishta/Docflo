@@ -62,6 +62,33 @@ function AutoResizeTextarea({
   );
 }
 
+function Card({
+  title,
+  children,
+  right,
+  fullWidth = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col min-h-[220px]',
+        fullWidth ? 'lg:col-span-2' : '',
+      ].join(' ')}
+    >
+      <div className="px-4 py-3 border-b border-gray-200 bg-white/60 flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        {right}
+      </div>
+      <div className="px-4 py-4 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export default function ConsultEditModal({
   consult,
   editedConsult,
@@ -109,10 +136,13 @@ export default function ConsultEditModal({
           <div className="px-6 pt-6 pb-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card title="Diagnosis">
-               <AutoResizeTextarea
-  value={editedDiagnosisText}
-  onChange={(e) => setEditedDiagnosisText(e.target.value)}
-/>
+                <AutoResizeTextarea
+                  value={editedDiagnosisText}
+                  onChange={(e) => setEditedDiagnosisText(e.target.value)}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
+                />
               </Card>
 
               <Card title="Chief Complaints">

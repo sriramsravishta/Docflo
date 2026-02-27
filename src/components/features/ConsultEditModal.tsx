@@ -46,7 +46,7 @@ function AutoResizeTextarea({
   value,
   onChange,
   minRows = 3,
-  maxHeight = 560,
+  maxHeight = 520,
   className = '',
   fillParent = false,
 }: {
@@ -68,46 +68,21 @@ function AutoResizeTextarea({
     const cs = window.getComputedStyle(el);
     const lineHeight = parseFloat(cs.lineHeight || '20') || 20;
     const minHeight = Math.ceil(lineHeight * minRows + 16);
+
     const nextHeight = Math.min(el.scrollHeight, maxHeight);
 
-    if (!fillParent) {
-      el.style.minHeight = `${minHeight}px`;
-      el.style.height = `${Math.max(nextHeight, minHeight)}px`;
-      el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
-      return;
-    }
-
-    // fill-parent mode: match card body height too
-    const parent = el.parentElement as HTMLElement | null;
-    if (!parent) return;
-
-    const pcs = window.getComputedStyle(parent);
-    const padY = (parseFloat(pcs.paddingTop || '0') || 0) + (parseFloat(pcs.paddingBottom || '0') || 0);
-    const avail = Math.max(0, parent.clientHeight - padY);
-
-    const target = Math.max(minHeight, nextHeight, avail);
+    // If a sibling card is taller (grid row height), fill the available space so we don’t get “blank area”.
+    const parentH = fillParent ? el.parentElement?.clientHeight : undefined;
+    const target = Math.max(nextHeight, minHeight, parentH || 0);
 
     el.style.minHeight = `${minHeight}px`;
-    el.style.height = `${Math.min(target, maxHeight)}px`;
+    el.style.height = `${Math.min(target, Math.max(maxHeight, target))}px`;
     el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
   };
 
   useLayoutEffect(() => {
     resize();
   }, [value, minRows, maxHeight, fillParent]);
-
-  // ✅ KEY: re-run resize when the parent/card grows because the other column grew
-  useLayoutEffect(() => {
-    if (!fillParent) return;
-    const el = ref.current;
-    const parent = el?.parentElement as HTMLElement | null;
-    if (!el || !parent || typeof ResizeObserver === 'undefined') return;
-
-    const ro = new ResizeObserver(() => resize());
-    ro.observe(parent);
-
-    return () => ro.disconnect();
-  }, [fillParent]);
 
   return (
     <textarea
@@ -144,7 +119,7 @@ function Card({
         <h3 className="font-semibold text-gray-900">{title}</h3>
         {right}
       </div>
-      <div className="px-4 py-4 flex-1 min-h-0">{children}</div>
+      <div className="px-4 py-4 flex-1">{children}</div>
     </div>
   );
 }

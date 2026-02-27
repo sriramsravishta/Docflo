@@ -379,21 +379,41 @@ function MedicationsTable({
     return <p className="text-sm text-gray-600">No medications recorded</p>;
   }
 
-  // Column sizing rules (applies to BOTH view + edit)
-  const COL_NAME = 'min-w-[170px] w-[170px]';
-  const COL_STD = 'min-w-[120px] w-[120px]';
-  const COL_WIDE = 'min-w-[120px] w-[120px] max-w-[300px]'; // max 300, can shrink down to 120
+  const draftFor = (m: ConsultMedicineRow): MedicineDraft => ({
+    name: medicineDrafts[m.id]?.name ?? m.name ?? '',
+    dosage: medicineDrafts[m.id]?.dosage ?? m.dosage ?? '',
+    quantity: medicineDrafts[m.id]?.quantity ?? m.quantity ?? '',
+    type: medicineDrafts[m.id]?.type ?? m.type ?? '',
+    frequency: medicineDrafts[m.id]?.frequency ?? m.frequency ?? '',
+    food: medicineDrafts[m.id]?.food ?? m.food ?? '',
+    time: medicineDrafts[m.id]?.time ?? normalizeTime(m.time),
+    duration: medicineDrafts[m.id]?.duration ?? m.duration ?? '',
+    instructions: medicineDrafts[m.id]?.instructions ?? m.instructions ?? '',
+    flags: medicineDrafts[m.id]?.flags ?? m.flags ?? '',
+  });
+
+  // ✅ Instructions/Flags can be wider ONLY if there is any content in the column
+  const hasAnyInstructions = consultMedicines.some((m) => (draftFor(m).instructions || '').trim().length > 0);
+  const hasAnyFlags = consultMedicines.some((m) => (draftFor(m).flags || '').trim().length > 0);
+
+  // Column sizing rules (BOTH view + edit)
+  const COL_NAME = 'min-w-[170px]';
+  const COL_STD = 'min-w-[120px]';
+  const COL_INSTR = `min-w-[120px] ${hasAnyInstructions ? 'max-w-[300px]' : 'max-w-[120px]'}`;
+  const COL_FLAGS = `min-w-[120px] ${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'}`;
   const COL_ACTION = 'w-[70px] min-w-[70px]';
 
   const thBase = 'border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700 align-top';
-  const tdBase = 'border border-gray-300 px-1.5 py-1 align-top'; // reduced outside padding
+  const tdBase = 'border border-gray-300 px-1.5 py-1 align-top'; // ✅ reduced outside padding
 
   const viewText = 'text-sm text-gray-600 whitespace-normal break-words';
+
+  // ✅ smaller inside padding for inputs (you asked to reduce)
   const inputBase =
-    'w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm ' +
+    'w-full px-1.5 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm ' +
     'whitespace-normal break-words';
 
-  // Use textarea in edit mode where you want wrapping (inputs do NOT wrap)
+  // ✅ Use textarea in edit mode to support wrap (inputs don’t wrap)
   const cellTextarea = (val: string, onVal: (v: string) => void) => (
     <textarea
       className={`${inputBase} resize-none leading-5`}
@@ -403,18 +423,10 @@ function MedicationsTable({
     />
   );
 
-  const cellInput = (val: string, onVal: (v: string) => void) => (
-    <input
-      className={inputBase}
-      value={val}
-      onChange={(e) => onVal(e.target.value)}
-    />
-  );
-
   return (
     <div className="max-h-[520px] overflow-auto">
-      {/* fixed table layout makes widths obey the column classes */}
-      <table className="w-full border-collapse border border-gray-300 table-fixed">
+      {/* table-auto so columns can shrink; min/max widths enforced by cell constraints */}
+      <table className="w-full border-collapse border border-gray-300 table-auto">
         <thead>
           <tr className="bg-gray-50">
             <th className={`${thBase} ${COL_NAME}`}>Name</th>
@@ -425,40 +437,30 @@ function MedicationsTable({
             <th className={`${thBase} ${COL_STD}`}>Time</th>
             <th className={`${thBase} ${COL_STD}`}>AF/BF</th>
             <th className={`${thBase} ${COL_STD}`}>Duration</th>
-            <th className={`${thBase} ${COL_WIDE}`}>Instructions</th>
-            <th className={`${thBase} ${COL_WIDE}`}>Flags</th>
+            <th className={`${thBase} ${COL_INSTR}`}>Instructions</th>
+            <th className={`${thBase} ${COL_FLAGS}`}>Flags</th>
             {isEditing && <th className={`${thBase} ${COL_ACTION}`}>Action</th>}
           </tr>
         </thead>
 
         <tbody>
           {consultMedicines.map((m) => {
-            const d: MedicineDraft = medicineDrafts[m.id] || {
-              name: m.name || '',
-              dosage: m.dosage || '',
-              quantity: m.quantity || '',
-              type: m.type || '',
-              frequency: m.frequency || '',
-              food: m.food || '',
-              time: normalizeTime(m.time),
-              duration: m.duration || '',
-              instructions: m.instructions || '',
-              flags: m.flags || '',
-            };
+            const d = draftFor(m);
 
             return (
               <tr key={m.id} className="hover:bg-gray-50">
-                {/* Name (170px, wrap in view + edit) */}
+                {/* Name (min 170, wrap in view + edit) */}
                 <td className={`${tdBase} ${COL_NAME}`}>
                   {!isEditing ? (
-                    <span className={viewText}>{d.name || '-'}</span>
+                    <div className="max-w-[170px] whitespace-normal break-words">
+                      <span className={viewText}>{d.name || '-'}</span>
+                    </div>
                   ) : (
-                    <div className="relative">
+                    <div className="relative max-w-[170px]">
                       {cellTextarea(d.name, (v) => {
                         updateMedicineDraft(m.id, { name: v });
                         onMedicineSearch(v);
                       })}
-
                       {medicineSearchResults.length > 0 && (
                         <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                           {medicineSearchResults.map((r, i) => (
@@ -480,40 +482,28 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* Dosage (120px) */}
+                {/* Dosage */}
                 <td className={`${tdBase} ${COL_STD}`}>
-                  {!isEditing ? (
-                    <span className={viewText}>{d.dosage || '-'}</span>
-                  ) : (
-                    cellTextarea(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))
-                  )}
+                  {!isEditing ? <span className={viewText}>{d.dosage || '-'}</span> : cellTextarea(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))}
                 </td>
 
-                {/* Quantity (120px) */}
+                {/* Quantity */}
                 <td className={`${tdBase} ${COL_STD}`}>
-                  {!isEditing ? (
-                    <span className={viewText}>{d.quantity || '-'}</span>
-                  ) : (
-                    cellTextarea(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))
-                  )}
+                  {!isEditing ? <span className={viewText}>{d.quantity || '-'}</span> : cellTextarea(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))}
                 </td>
 
-                {/* Type (120px) */}
+                {/* Type */}
                 <td className={`${tdBase} ${COL_STD}`}>
-                  {!isEditing ? (
-                    <span className={viewText}>{d.type || '-'}</span>
-                  ) : (
-                    cellTextarea(d.type, (v) => updateMedicineDraft(m.id, { type: v }))
-                  )}
+                  {!isEditing ? <span className={viewText}>{d.type || '-'}</span> : cellTextarea(d.type, (v) => updateMedicineDraft(m.id, { type: v }))}
                 </td>
 
-                {/* Frequency (120px) */}
+                {/* Frequency */}
                 <td className={`${tdBase} ${COL_STD}`}>
                   {!isEditing ? (
                     <span className={viewText}>{d.frequency || '-'}</span>
                   ) : (
                     <select
-                      className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+                      className={inputBase}
                       value={d.frequency}
                       onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
                     >
@@ -527,18 +517,16 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* Time (120px) */}
+                {/* Time */}
                 <td className={`${tdBase} ${COL_STD}`}>
                   {!isEditing ? (
-                    <span className={viewText}>
-                      {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}
-                    </span>
+                    <span className={viewText}>{Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}</span>
                   ) : (
                     <div ref={openTimeDropdownId === m.id ? timeDropdownRef : null} className="relative">
                       <button
                         type="button"
                         onClick={() => setOpenTimeDropdownId(openTimeDropdownId === m.id ? null : m.id)}
-                        className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm text-left whitespace-normal break-words"
+                        className={`${inputBase} text-left hover:bg-gray-100`}
                       >
                         {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : 'Select time'}
                       </button>
@@ -549,10 +537,7 @@ function MedicationsTable({
                             const current = Array.isArray(d.time) ? d.time : [];
                             const checked = current.includes(opt);
                             return (
-                              <label
-                                key={opt}
-                                className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
-                              >
+                              <label key={opt} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={checked}
@@ -571,13 +556,13 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* AF/BF (120px) */}
+                {/* AF/BF */}
                 <td className={`${tdBase} ${COL_STD}`}>
                   {!isEditing ? (
                     <span className={viewText}>{d.food || '-'}</span>
                   ) : (
                     <select
-                      className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+                      className={inputBase}
                       value={d.food}
                       onChange={(e) => updateMedicineDraft(m.id, { food: e.target.value })}
                     >
@@ -591,30 +576,34 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* Duration (120px) */}
+                {/* Duration */}
                 <td className={`${tdBase} ${COL_STD}`}>
+                  {!isEditing ? <span className={viewText}>{d.duration || '-'}</span> : cellTextarea(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))}
+                </td>
+
+                {/* Instructions (max 300 ONLY if any content exists in column) */}
+                <td className={`${tdBase} ${COL_INSTR}`}>
                   {!isEditing ? (
-                    <span className={viewText}>{d.duration || '-'}</span>
+                    <div className={hasAnyInstructions ? 'max-w-[300px]' : 'max-w-[120px]'}>
+                      <span className={viewText}>{d.instructions || '-'}</span>
+                    </div>
                   ) : (
-                    cellTextarea(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))
+                    <div className={hasAnyInstructions ? 'max-w-[300px]' : 'max-w-[120px]'}>
+                      {cellTextarea(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))}
+                    </div>
                   )}
                 </td>
 
-                {/* Instructions (max 300, can shrink, wrap in both modes) */}
-                <td className={`${tdBase} ${COL_WIDE}`}>
+                {/* Flags (max 300 ONLY if any content exists in column) */}
+                <td className={`${tdBase} ${COL_FLAGS}`}>
                   {!isEditing ? (
-                    <span className={viewText}>{d.instructions || '-'}</span>
+                    <div className={hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'}>
+                      <span className={viewText}>{d.flags || '-'}</span>
+                    </div>
                   ) : (
-                    cellTextarea(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))
-                  )}
-                </td>
-
-                {/* Flags (max 300, can shrink, wrap in both modes) */}
-                <td className={`${tdBase} ${COL_WIDE}`}>
-                  {!isEditing ? (
-                    <span className={viewText}>{d.flags || '-'}</span>
-                  ) : (
-                    cellTextarea(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))
+                    <div className={hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'}>
+                      {cellTextarea(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))}
+                    </div>
                   )}
                 </td>
 

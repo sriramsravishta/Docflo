@@ -355,7 +355,7 @@ const [flagsOpen, setFlagsOpen] = useState(true);
     </button>
 
     {flagsOpen && (
-      <div className="px-6 pb-4">
+      <div className="px-4 pb-4">
         <div className="space-y-2">
           {flags.map((flag, idx) => {
             const acknowledged = !!ackFlags[idx];

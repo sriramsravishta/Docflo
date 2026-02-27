@@ -252,12 +252,7 @@ export default function ConsultViewModal({
               >
                 <Download className="w-4 h-4" /><span>Download PDF</span>
               </button>
-              <button
-                onClick={onSendWhatsApp}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" /><span>Send via WhatsApp</span>
-              </button>
+              
             </div>
           </div>
         </div>

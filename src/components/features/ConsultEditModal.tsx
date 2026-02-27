@@ -46,33 +46,43 @@ function AutoResizeTextarea({
   value,
   onChange,
   minRows = 3,
-  maxHeight = 240,
+  maxHeight = 520,
   className = '',
+  fillParent = false,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   minRows?: number;
   maxHeight?: number;
   className?: string;
+  fillParent?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
   const resize = () => {
     const el = ref.current;
     if (!el) return;
+
     el.style.height = 'auto';
+
     const cs = window.getComputedStyle(el);
     const lineHeight = parseFloat(cs.lineHeight || '20') || 20;
     const minHeight = Math.ceil(lineHeight * minRows + 16);
+
     const nextHeight = Math.min(el.scrollHeight, maxHeight);
+
+    // If a sibling card is taller (grid row height), fill the available space so we don’t get “blank area”.
+    const parentH = fillParent ? el.parentElement?.clientHeight : undefined;
+    const target = Math.max(nextHeight, minHeight, parentH || 0);
+
     el.style.minHeight = `${minHeight}px`;
-    el.style.height = `${Math.max(nextHeight, minHeight)}px`;
+    el.style.height = `${Math.min(target, Math.max(maxHeight, target))}px`;
     el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
   };
 
   useLayoutEffect(() => {
     resize();
-  }, [value, minRows, maxHeight]);
+  }, [value, minRows, maxHeight, fillParent]);
 
   return (
     <textarea
@@ -82,8 +92,35 @@ function AutoResizeTextarea({
         onChange(e);
         requestAnimationFrame(resize);
       }}
-      className={`input-field resize-none ${className}`}
+      className={`input-field resize-none bg-gray-50 focus:bg-white ${className}`}
     />
+  );
+}
+
+function Card({
+  title,
+  children,
+  right,
+  fullWidth = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col min-h-[220px]',
+        fullWidth ? 'lg:col-span-2' : '',
+      ].join(' ')}
+    >
+      <div className="px-4 py-3 border-b border-gray-200 bg-white/60 flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        {right}
+      </div>
+      <div className="px-4 py-4 flex-1">{children}</div>
+    </div>
   );
 }
 
@@ -114,10 +151,10 @@ export default function ConsultEditModal({
 }: ConsultEditModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      {/* ✅ Same container as View modal (incl. bottom padding so last section never hides) */}
-      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto pb-8">
-        {/* ✅ Same header structure as View modal */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
+      {/* ✅ No bottom “gap”: modal is a flex column with its own scroll area */}
+      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header (same language as View modal) */}
+        <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Edit Consultation Summary</h2>
@@ -129,83 +166,65 @@ export default function ConsultEditModal({
           </div>
         </div>
 
-        {/* ✅ Same spacing + “card grid” feel as View modal */}
-        <div className="px-6 pt-6 pb-28 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Diagnosis */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">Diagnosis</h3>
-              </div>
-              <div className="px-4 py-4">
+        {/* Scrollable content (footer does NOT overlay, so last content never hides) */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 pt-6 pb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card title="Diagnosis">
                 <AutoResizeTextarea
                   value={editedDiagnosisText}
                   onChange={(e) => setEditedDiagnosisText(e.target.value)}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
-            </div>
+              </Card>
 
-            {/* Chief Complaints */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">Chief Complaints</h3>
-              </div>
-              <div className="px-4 py-4">
+              <Card title="Chief Complaints">
                 <AutoResizeTextarea
                   value={(editedConsult?.chief_complaints as string) || ''}
                   onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
-            </div>
+              </Card>
 
-            {/* Treatment Suggested */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">Treatment Suggested</h3>
-              </div>
-              <div className="px-4 py-4">
+              <Card title="Treatment Suggested">
                 <AutoResizeTextarea
                   value={editedTreatmentText}
                   onChange={(e) => setEditedTreatmentText(e.target.value)}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
-            </div>
+              </Card>
 
-            {/* ✅ Investigations ABOVE Medications */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">Investigations</h3>
-              </div>
-              <div className="px-4 py-4">
+              {/* ✅ Investigations ABOVE medications (matches View modal order) */}
+              <Card title="Investigations">
                 <AutoResizeTextarea
                   value={editedInvestigationsText}
                   onChange={(e) => setEditedInvestigationsText(e.target.value)}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
-            </div>
+              </Card>
 
-            {/* ✅ Medications FULL WIDTH */}
-            <div className="lg:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60 flex items-center justify-between gap-3">
-                <h3 className="font-semibold text-gray-900">Medications</h3>
-                <button
-                  onClick={onAddMedicine}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Medicine</span>
-                </button>
-              </div>
-
-              <div className="px-4 py-4">
+              {/* ✅ Medications FULL WIDTH */}
+              <Card
+                title="Medications"
+                fullWidth
+                right={
+                  <button
+                    onClick={onAddMedicine}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Medicine</span>
+                  </button>
+                }
+              >
                 <div className="space-y-4">
                   {consultMedicines.map((medicine, index) => {
                     const d: MedicineDraft = medicineDrafts[medicine.id] || {
@@ -227,6 +246,7 @@ export default function ConsultEditModal({
                           <button
                             onClick={() => onDeleteMedicine(medicine.id)}
                             className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Delete"
                           >
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </button>
@@ -242,7 +262,7 @@ export default function ConsultEditModal({
                                 updateMedicineDraft(medicine.id, { name: e.target.value });
                                 onMedicineSearch(e.target.value);
                               }}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="Search medicine..."
                             />
                             {medicineSearchResults.length > 0 && (
@@ -270,7 +290,7 @@ export default function ConsultEditModal({
                               type="text"
                               value={d.dosage}
                               onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="e.g. 500 mg"
                             />
                           </div>
@@ -281,7 +301,7 @@ export default function ConsultEditModal({
                               type="text"
                               value={d.quantity}
                               onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="e.g. 1 tab"
                             />
                           </div>
@@ -292,7 +312,7 @@ export default function ConsultEditModal({
                               type="text"
                               value={d.type}
                               onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="e.g. Tablet"
                             />
                           </div>
@@ -302,7 +322,7 @@ export default function ConsultEditModal({
                             <select
                               value={d.frequency}
                               onChange={(e) => updateMedicineDraft(medicine.id, { frequency: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                             >
                               <option value="" disabled>
                                 Select frequency
@@ -320,7 +340,7 @@ export default function ConsultEditModal({
                             <select
                               value={d.food}
                               onChange={(e) => updateMedicineDraft(medicine.id, { food: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                             >
                               <option value="" disabled>
                                 Select food instruction
@@ -339,7 +359,7 @@ export default function ConsultEditModal({
                               type="text"
                               value={d.duration}
                               onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="e.g. 7 days"
                             />
                           </div>
@@ -350,7 +370,7 @@ export default function ConsultEditModal({
                               <button
                                 type="button"
                                 onClick={() => setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)}
-                                className="input-field flex items-center bg-white justify-between"
+                                className="input-field flex items-center justify-between bg-gray-50 focus:bg-white"
                               >
                                 <span className="text-gray-900">
                                   {Array.isArray(d.time) && d.time.length > 0 ? d.time.join(', ') : 'Select time'}
@@ -364,7 +384,10 @@ export default function ConsultEditModal({
                                     const current = Array.isArray(d.time) ? d.time : [];
                                     const checked = current.includes(opt);
                                     return (
-                                      <label key={opt} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer">
+                                      <label
+                                        key={opt}
+                                        className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
+                                      >
                                         <input
                                           type="checkbox"
                                           checked={checked}
@@ -388,7 +411,7 @@ export default function ConsultEditModal({
                               type="text"
                               value={d.instructions}
                               onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
-                              className="input-field"
+                              className="input-field bg-gray-50 focus:bg-white"
                               placeholder="e.g. AF"
                             />
                           </div>
@@ -401,45 +424,35 @@ export default function ConsultEditModal({
                     <p className="text-gray-500 text-center py-4">No medicines added yet</p>
                   )}
                 </div>
-              </div>
-            </div>
+              </Card>
 
-            {/* ✅ History FULL WIDTH */}
-            <div className="lg:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">History</h3>
-              </div>
-              <div className="px-4 py-4">
+              {/* ✅ History FULL WIDTH */}
+              <Card title="History" fullWidth>
                 <AutoResizeTextarea
                   value={(editedConsult?.history as string) || ''}
                   onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
-            </div>
+              </Card>
 
-            {/* Follow-up Recommendations (keep half-width like view) */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
-                <h3 className="font-semibold text-gray-900">Follow-up Recommendations</h3>
-              </div>
-              <div className="px-4 py-4">
+              {/* Follow-up (keep half width like view layout) */}
+              <Card title="Follow-up Recommendations">
                 <AutoResizeTextarea
                   value={(editedConsult?.followup_recommendations as string) || ''}
                   onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
-                  minRows={3}
-                  maxHeight={240}
+                  minRows={6}
+                  maxHeight={560}
+                  fillParent
                 />
-              </div>
+              </Card>
             </div>
-
-            {/* (Optional) If you later add Key Personal Insights in edit, keep it here as the second column */}
           </div>
         </div>
 
-        {/* ✅ Same sticky footer */}
-        <div className="sticky bottom-0 z-40 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+        {/* Footer (no gap below) */}
+        <div className="shrink-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
           <button onClick={onCancel} className="btn-secondary flex items-center space-x-2">
             <XCircle className="w-4 h-4" />
             <span>Cancel</span>

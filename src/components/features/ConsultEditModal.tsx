@@ -45,81 +45,20 @@ interface ConsultEditModalProps {
 function AutoResizeTextarea({
   value,
   onChange,
-  minRows = 3,
-  maxHeight = 520,
   className = '',
-  fillParent = false,
+  heightClass = 'h-56 md:h-64',
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  minRows?: number;
-  maxHeight?: number;
   className?: string;
-  fillParent?: boolean;
+  heightClass?: string;
 }) {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
-
-  const resize = () => {
-    const el = ref.current;
-    if (!el) return;
-
-    el.style.height = 'auto';
-
-    const cs = window.getComputedStyle(el);
-    const lineHeight = parseFloat(cs.lineHeight || '20') || 20;
-    const minHeight = Math.ceil(lineHeight * minRows + 16);
-
-    const nextHeight = Math.min(el.scrollHeight, maxHeight);
-
-    // If a sibling card is taller (grid row height), fill the available space so we don’t get “blank area”.
-    const parentH = fillParent ? el.parentElement?.clientHeight : undefined;
-    const target = Math.max(nextHeight, minHeight, parentH || 0);
-
-    el.style.minHeight = `${minHeight}px`;
-    el.style.height = `${Math.min(target, maxHeight)}px`;
-    el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
-  };
-
-  useLayoutEffect(() => {
-    resize();
-  }, [value, minRows, maxHeight, fillParent]);
-
   return (
     <textarea
-      ref={ref}
       value={value}
-      onChange={(e) => {
-        onChange(e);
-      }}
-      className={`input-field resize-none bg-gray-50 focus:bg-white ${className}`}
+      onChange={onChange}
+      className={`input-field resize-none bg-gray-50 focus:bg-white w-full ${heightClass} overflow-y-auto ${className}`}
     />
-  );
-}
-
-function Card({
-  title,
-  children,
-  right,
-  fullWidth = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  right?: React.ReactNode;
-  fullWidth?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col min-h-[220px]',
-        fullWidth ? 'lg:col-span-2' : '',
-      ].join(' ')}
-    >
-      <div className="px-4 py-3 border-b border-gray-200 bg-white/60 flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        {right}
-      </div>
-      <div className="px-4 py-4 flex-1">{children}</div>
-    </div>
   );
 }
 

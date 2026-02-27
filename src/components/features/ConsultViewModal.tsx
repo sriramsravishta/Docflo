@@ -319,7 +319,7 @@ function SyncedAutoBox({
             requestAnimationFrame(recompute);
           }}
           className="w-full px-3 py-2 rounded-lg text-[16px] whitespace-pre-line resize-none border border-gray-300 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#024CDB]"
-          style={{ maxHeight: TEXT_MAX_HEIGHT }}
+          style={{ height: h ? `${h}px` : undefined, maxHeight: TEXT_MAX_HEIGHT }}
         />
       )}
     </>

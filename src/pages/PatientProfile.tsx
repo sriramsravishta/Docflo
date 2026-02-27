@@ -921,7 +921,7 @@ export default function PatientProfile() {
               {currentMeds.map((med, idx) => medCard(med, idx, false))}
             </div>
           )
-        )}<div/>
+        )}</div>
         {renderCollapsible(
           `Past Medications (${pastMeds.length})`,
           pastOpen,

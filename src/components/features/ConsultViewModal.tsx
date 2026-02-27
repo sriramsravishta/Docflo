@@ -470,12 +470,12 @@ function MedicationsTable({
 
                 {/* Frequency */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-  <div className={isEditing ? 'min-w-[150px] max-w-[150px]' : 'max-w-[150px]'}>
+  <div className={isEditing ? 'min-w-[130px] max-w-[130px]' : 'max-w-[130px]'}>
     {!isEditing ? (
       <span className="text-sm text-gray-600 whitespace-normal break-words">{d.frequency || '-'}</span>
     ) : (
       <select
-        className="min-w-[150px] w-full max-w-[150px] px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+        className="min-w-[130px] w-full max-w-[130px] px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
         value={d.frequency}
         onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
       >

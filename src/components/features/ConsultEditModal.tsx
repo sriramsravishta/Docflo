@@ -109,13 +109,10 @@ export default function ConsultEditModal({
           <div className="px-6 pt-6 pb-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card title="Diagnosis">
-                <AutoResizeTextarea
-                  value={editedDiagnosisText}
-                  onChange={(e) => setEditedDiagnosisText(e.target.value)}
-                  minRows={6}
-                  maxHeight={560}
-                  fillParent
-                />
+               <AutoResizeTextarea
+  value={editedDiagnosisText}
+  onChange={(e) => setEditedDiagnosisText(e.target.value)}
+/>
               </Card>
 
               <Card title="Chief Complaints">

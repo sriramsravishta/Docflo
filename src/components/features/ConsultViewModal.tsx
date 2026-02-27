@@ -293,7 +293,7 @@ export default function ConsultViewModal({
 
   // UI-only acknowledgement state (not persisted)
   const [ackFlags, setAckFlags] = useState<Record<number, boolean>>({});
-
+const [flagsOpen, setFlagsOpen] = useState(true);
   const flags = useMemo(() => {
     const arr = summary && Array.isArray(summary.flags_for_review) ? summary.flags_for_review : [];
     return arr.filter((f) => typeof f === 'string' && f.trim().length > 0);
@@ -338,49 +338,61 @@ export default function ConsultViewModal({
           <>
             {/* ✅ Removed the “chips count” bar completely (2 complaints, 3 flags, etc.) */}
 
-            {/* ✅ Flags always visible at top (no chevron/accordion) */}
-            {flags.length > 0 && (
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Flags for Review</h3>
-                <div className="space-y-2">
-                  {flags.map((flag, idx) => {
-                    const acknowledged = !!ackFlags[idx];
-                    return (
-                      <div
-                        key={idx}
-                        className={`flex items-start justify-between gap-3 rounded-lg border p-3 ${
-                          acknowledged
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-red-50 border-red-200'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <p className={`text-sm font-medium ${acknowledged ? 'text-green-800' : 'text-red-800'}`}>
-                            ⚠ {flag}
-                          </p>
-                        </div>
+            {/* ✅ Flags (collapsible with chevron, open by default) */}
+{flags.length > 0 && (
+  <div className="border-b border-gray-200">
+    <button
+      type="button"
+      onClick={() => setFlagsOpen((v) => !v)}
+      className="w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+    >
+      {flagsOpen ? (
+        <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
+      ) : (
+        <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
+      )}
+      <h3 className="text-sm font-semibold text-gray-900 flex-1">Flags for Review</h3>
+    </button>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setAckFlags((prev) => ({ ...prev, [idx]: !prev[idx] }))
-                          }
-                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                            acknowledged
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          }`}
-                          title={acknowledged ? 'Acknowledged' : 'Acknowledge'}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          <span>{acknowledged ? 'Acknowledged' : 'Acknowledge'}</span>
-                        </button>
-                      </div>
-                    );
-                  })}
+    {flagsOpen && (
+      <div className="px-6 pb-4">
+        <div className="space-y-2">
+          {flags.map((flag, idx) => {
+            const acknowledged = !!ackFlags[idx];
+            return (
+              <div
+                key={idx}
+                className={`flex items-start justify-between gap-3 rounded-lg border p-3 ${
+                  acknowledged ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className={`text-sm font-medium ${acknowledged ? 'text-green-800' : 'text-red-800'}`}>
+                    ⚠ {flag}
+                  </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAckFlags((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    acknowledged
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                  }`}
+                  title={acknowledged ? 'Acknowledged' : 'Acknowledge'}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{acknowledged ? 'Acknowledged' : 'Acknowledge'}</span>
+                </button>
               </div>
-            )}
+            );
+          })}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
             <div className="divide-y divide-gray-200">
               {/* Best UX: keep a consistent structure with clear empty states */}

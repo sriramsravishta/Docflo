@@ -47,7 +47,8 @@ function SectionCard({
       <div className="px-4 py-3 border-b border-gray-200 bg-white/60">
         <h3 className="font-semibold text-gray-900">{title}</h3>
       </div>
-      <div className="px-4 py-4">{children}</div>
+      {/* Content text softened for differentiation */}
+      <div className="px-4 py-4 text-gray-600">{children}</div>
     </div>
   );
 }
@@ -60,16 +61,16 @@ function renderDiagnosis(diagnosis: unknown) {
   const parsed = safeJsonParse(diagnosis);
   const d = parsed ?? diagnosis;
 
-  if (d == null || isBlankString(d)) return <p className="text-gray-800">No diagnosis recorded</p>;
+  if (d == null || isBlankString(d)) return <p className="whitespace-pre-line">No diagnosis recorded</p>;
 
-  if (typeof d === 'string') return <p className="text-gray-800 whitespace-pre-line">{d}</p>;
+  if (typeof d === 'string') return <p className="whitespace-pre-line">{d}</p>;
 
   if (typeof d === 'object' && d !== null) {
     const dd = d as DiagnosisSummary;
     const hasProvisional = Array.isArray(dd.provisional) && dd.provisional.length > 0;
     const hasKeyFindings = Array.isArray(dd.key_findings) && dd.key_findings.length > 0;
 
-    if (!hasProvisional && !hasKeyFindings) return <p className="text-gray-800">No detailed diagnosis available</p>;
+    if (!hasProvisional && !hasKeyFindings) return <p>No detailed diagnosis available</p>;
 
     return (
       <div className="space-y-3">
@@ -78,9 +79,7 @@ function renderDiagnosis(diagnosis: unknown) {
             <h4 className="font-medium text-gray-700 mb-2">Provisional Diagnosis</h4>
             <ul className="list-disc list-inside space-y-1">
               {dd.provisional!.map((item, idx) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
+                <li key={idx}>{item}</li>
               ))}
             </ul>
           </div>
@@ -90,9 +89,7 @@ function renderDiagnosis(diagnosis: unknown) {
             <h4 className="font-medium text-gray-700 mb-2">Key Findings</h4>
             <ul className="list-disc list-inside space-y-1">
               {dd.key_findings!.map((item, idx) => (
-                <li key={idx} className="text-gray-800">
-                  {item}
-                </li>
+                <li key={idx}>{item}</li>
               ))}
             </ul>
           </div>
@@ -101,25 +98,23 @@ function renderDiagnosis(diagnosis: unknown) {
     );
   }
 
-  return <p className="text-gray-800">No diagnosis recorded</p>;
+  return <p>No diagnosis recorded</p>;
 }
 
 function renderArrayContent(content: unknown, emptyText: string) {
   const parsed = safeJsonParse(content);
   const c = parsed ?? content;
 
-  if (c == null || isBlankString(c)) return <p className="text-gray-800">{emptyText}</p>;
+  if (c == null || isBlankString(c)) return <p>{emptyText}</p>;
 
-  if (typeof c === 'string') return <p className="text-gray-800 whitespace-pre-line">{c}</p>;
+  if (typeof c === 'string') return <p className="whitespace-pre-line">{c}</p>;
 
   if (Array.isArray(c)) {
-    if (c.length === 0) return <p className="text-gray-800">{emptyText}</p>;
+    if (c.length === 0) return <p>{emptyText}</p>;
     return (
       <ul className="list-disc list-inside space-y-1">
         {c.map((item, idx) => (
-          <li key={idx} className="text-gray-800">
-            {String(item)}
-          </li>
+          <li key={idx}>{String(item)}</li>
         ))}
       </ul>
     );
@@ -127,10 +122,10 @@ function renderArrayContent(content: unknown, emptyText: string) {
 
   try {
     const s = JSON.stringify(c, null, 2);
-    if (!s) return <p className="text-gray-800">{emptyText}</p>;
-    return <p className="text-gray-800 whitespace-pre-line">{s}</p>;
+    if (!s) return <p>{emptyText}</p>;
+    return <p className="whitespace-pre-line">{s}</p>;
   } catch {
-    return <p className="text-gray-800">{String(c)}</p>;
+    return <p>{String(c)}</p>;
   }
 }
 
@@ -138,17 +133,17 @@ function renderTreatmentSuggested(treatment: unknown) {
   const parsed = safeJsonParse(treatment);
   const t = parsed ?? treatment;
 
-  if (t == null || isBlankString(t)) return <p className="text-gray-800">No treatment recorded</p>;
+  if (t == null || isBlankString(t)) return <p>No treatment recorded</p>;
 
-  if (typeof t === 'string') return <p className="text-gray-800 whitespace-pre-line">{t}</p>;
+  if (typeof t === 'string') return <p className="whitespace-pre-line">{t}</p>;
 
-  if (!t || typeof t !== 'object') return <p className="text-gray-800">No treatment recorded</p>;
+  if (!t || typeof t !== 'object') return <p>No treatment recorded</p>;
 
   const tt = t as TreatmentSummary;
   const immediate = Array.isArray(tt.immediate_plan) ? tt.immediate_plan : [];
   const contingent = Array.isArray(tt.contingent_plan) ? tt.contingent_plan : [];
 
-  if (!immediate.length && !contingent.length) return <p className="text-gray-800">No treatment recorded</p>;
+  if (!immediate.length && !contingent.length) return <p>No treatment recorded</p>;
 
   return (
     <div className="space-y-3">
@@ -157,9 +152,7 @@ function renderTreatmentSuggested(treatment: unknown) {
           <h4 className="font-medium text-gray-700 mb-2">Immediate Plan</h4>
           <ul className="list-disc list-inside space-y-1">
             {immediate.map((item, idx) => (
-              <li key={idx} className="text-gray-800">
-                {item}
-              </li>
+              <li key={idx}>{item}</li>
             ))}
           </ul>
         </div>
@@ -169,9 +162,7 @@ function renderTreatmentSuggested(treatment: unknown) {
           <h4 className="font-medium text-gray-700 mb-2">Contingent Plan</h4>
           <ul className="list-disc list-inside space-y-1">
             {contingent.map((item, idx) => (
-              <li key={idx} className="text-gray-800">
-                {item}
-              </li>
+              <li key={idx}>{item}</li>
             ))}
           </ul>
         </div>
@@ -182,12 +173,13 @@ function renderTreatmentSuggested(treatment: unknown) {
 
 function renderMedications(medications: ReturnType<typeof getViewModeMedicines>) {
   if (!Array.isArray(medications) || medications.length === 0) {
-    return <p className="text-gray-800">No medications recorded</p>;
+    return <p>No medications recorded</p>;
   }
 
+  // Keep table text readable while still lighter than titles
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-gray-300">
+      <table className="w-full border-collapse border border-gray-300 text-gray-600">
         <thead>
           <tr className="bg-gray-50">
             {['Name', 'Dosage', 'Quantity', 'Type', 'Frequency', 'Time', 'AF/BF', 'Duration', 'Instructions', 'Flags'].map((h) => (
@@ -200,18 +192,18 @@ function renderMedications(medications: ReturnType<typeof getViewModeMedicines>)
         <tbody>
           {medications.map((med, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.name || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.dosage || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.quantity || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.type || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.frequency || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">
+              <td className="border border-gray-300 px-3 py-2">{med.name || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.dosage || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.quantity || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.type || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.frequency || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">
                 {Array.isArray(med.time) && med.time.length ? med.time.join(', ') : '-'}
               </td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.food || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.duration || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.instructions || '-'}</td>
-              <td className="border border-gray-300 px-3 py-2 text-gray-800">{med.flags || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.food || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.duration || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.instructions || '-'}</td>
+              <td className="border border-gray-300 px-3 py-2">{med.flags || '-'}</td>
             </tr>
           ))}
         </tbody>
@@ -224,17 +216,17 @@ function renderInvestigations(investigations: unknown) {
   const parsed = safeJsonParse(investigations);
   const inv = parsed ?? investigations;
 
-  if (inv == null || isBlankString(inv)) return <p className="text-gray-800">No investigations recorded</p>;
+  if (inv == null || isBlankString(inv)) return <p>No investigations recorded</p>;
 
-  if (typeof inv === 'string') return <p className="text-gray-800 whitespace-pre-line">{inv}</p>;
+  if (typeof inv === 'string') return <p className="whitespace-pre-line">{inv}</p>;
 
-  if (!inv || typeof inv !== 'object') return <p className="text-gray-800">No investigations recorded</p>;
+  if (!inv || typeof inv !== 'object') return <p>No investigations recorded</p>;
 
   const ii = inv as InvestigationsSummary;
   const ordered = Array.isArray(ii.ordered) ? ii.ordered : [];
   const notes = ii.notes;
 
-  if (!ordered.length && !notes) return <p className="text-gray-800">No investigations recorded</p>;
+  if (!ordered.length && !notes) return <p>No investigations recorded</p>;
 
   return (
     <div className="space-y-3">
@@ -243,7 +235,7 @@ function renderInvestigations(investigations: unknown) {
           <h4 className="font-medium text-gray-700 mb-2">Ordered Investigations</h4>
           <div className="space-y-2">
             {ordered.map((o, idx) => (
-              <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3">
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3 text-gray-600">
                 <div className="flex justify-between items-start">
                   <div>
                     <h5 className="font-medium text-gray-900">{o.name}</h5>
@@ -261,7 +253,7 @@ function renderInvestigations(investigations: unknown) {
       {notes && (
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Notes</h4>
-          <p className="text-gray-800 whitespace-pre-line">{String(notes)}</p>
+          <p className="whitespace-pre-line">{String(notes)}</p>
         </div>
       )}
     </div>
@@ -279,19 +271,9 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     return arr.filter((f) => typeof f === 'string' && f.trim().length > 0);
   }, [summary]);
 
-  // content presence helpers (UI-only)
-  const hasComplaints =
-    !!summary?.chief_complaints &&
-    !isBlankString(summary.chief_complaints) &&
-    (!Array.isArray(summary.chief_complaints) || summary.chief_complaints.length > 0);
-
-  const hasHistory = !!summary?.history && !isBlankString(summary.history);
-  const hasFollowup = !!summary?.followup_recommendations && !isBlankString(summary.followup_recommendations);
-  const hasInsights = !!summary?.key_personal_insights && !isBlankString(summary.key_personal_insights);
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      {/* same container sizing as Edit modal -> smoother perceived transition */}
+      {/* same sizing/padding as edit modal -> smoother perceived transition */}
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto pb-8">
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -326,7 +308,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
         {summary ? (
           <div className="px-6 pt-6 space-y-6">
-            {/* Flags (no acknowledge button for now) */}
+            {/* Flags (no acknowledge button) */}
             {flags.length > 0 && (
               <SectionCard title="Flags for Review" tone="danger">
                 <div className="space-y-2">
@@ -339,66 +321,37 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
               </SectionCard>
             )}
 
-            {/* Two-column layout on desktop for readability */}
+            {/* Two-column layout on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SectionCard title="Diagnosis">
-                {renderDiagnosis(summary.diagnosis)}
-              </SectionCard>
+              <SectionCard title="Diagnosis">{renderDiagnosis(summary.diagnosis)}</SectionCard>
 
-              {/* Only show these cards if they have content (reduces clutter) */}
-              {hasComplaints ? (
-                <SectionCard title="Chief Complaints">
-                  {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
-                </SectionCard>
-              ) : (
-                <SectionCard title="Chief Complaints">
-                  {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
-                </SectionCard>
-              )}
+              <SectionCard title="Chief Complaints">
+                {renderArrayContent(summary.chief_complaints, 'No chief complaints recorded')}
+              </SectionCard>
 
               <SectionCard title="Treatment Suggested">
                 {renderTreatmentSuggested(summary.treatment_suggested)}
               </SectionCard>
 
-              <SectionCard title="Investigations">
-                {renderInvestigations(summary.investigations)}
+              {/* Medications right below Treatment Suggested, full width */}
+              <div className="lg:col-span-2">
+                <SectionCard title="Medications">{renderMedications(meds)}</SectionCard>
+              </div>
+
+              <SectionCard title="Investigations">{renderInvestigations(summary.investigations)}</SectionCard>
+
+              <SectionCard title="History">
+                {renderArrayContent(summary.history, 'No history recorded')}
               </SectionCard>
 
-              {hasHistory ? (
-                <SectionCard title="History">
-                  {renderArrayContent(summary.history, 'No history recorded')}
-                </SectionCard>
-              ) : (
-                <SectionCard title="History">
-                  {renderArrayContent(summary.history, 'No history recorded')}
-                </SectionCard>
-              )}
+              <SectionCard title="Follow-up Recommendations">
+                {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
+              </SectionCard>
 
-              {hasFollowup ? (
-                <SectionCard title="Follow-up Recommendations">
-                  {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
-                </SectionCard>
-              ) : (
-                <SectionCard title="Follow-up Recommendations">
-                  {renderArrayContent(summary.followup_recommendations, 'No follow-up recommendations recorded')}
-                </SectionCard>
-              )}
-
-              {hasInsights ? (
-                <SectionCard title="Key Personal Insights">
-                  {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
-                </SectionCard>
-              ) : (
-                <SectionCard title="Key Personal Insights">
-                  {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
-                </SectionCard>
-              )}
+              <SectionCard title="Key Personal Insights">
+                {renderArrayContent(summary.key_personal_insights, 'No personal insights recorded')}
+              </SectionCard>
             </div>
-
-            {/* Medications full-width for table */}
-            <SectionCard title="Medications">
-              {renderMedications(meds)}
-            </SectionCard>
           </div>
         ) : (
           <div className="p-6">
@@ -424,10 +377,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         </p>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div
-          className="h-3 rounded-full bg-[#024CDB] transition-all"
-          style={{ width: `${isError ? 100 : pct}%` }}
-        />
+        <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
       </div>
       <div className="mt-3 text-center">
         {isError ? (

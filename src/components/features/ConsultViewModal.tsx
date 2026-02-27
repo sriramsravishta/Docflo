@@ -833,7 +833,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         <p className="text-sm font-semibold text-gray-900">
           {isError ? 'Consultation summary failed' : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
         </p>
-      </div>
+      </div> 
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
         <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
       </div>

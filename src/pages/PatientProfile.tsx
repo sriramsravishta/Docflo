@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CreditCard as Edit, Link as LinkIcon, MessageSquare, ExternalLink, X, Send, Upload, CheckCircle } from 'lucide-react';
+import { Edit, Link as LinkIcon, MessageSquare } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -12,14 +12,9 @@ import {
   getFollowUps,
   createPreConsult,
   createFollowUp,
-  getQueries,
-  getMessages,
-  createMessage,
-  updateQuery,
-  updatePreConsult
+  getQueries
 } from '../lib/database';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export default function PatientProfile() {
   const { patientId } = useParams();
@@ -36,16 +31,7 @@ export default function PatientProfile() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showQueryModal, setShowQueryModal] = useState(false);
-  const [selectedQuery, setSelectedQuery] = useState<any>(null);
-  const [queryMessages, setQueryMessages] = useState<any[]>([]);
-  const [replyText, setReplyText] = useState('');
   const [confirmAction, setConfirmAction] = useState<string>('');
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-  const [uploadDocuments, setUploadDocuments] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [showUploadConfirmation, setShowUploadConfirmation] = useState(false);
-  const [uploadError, setUploadError] = useState<string>('');
   const [editForm, setEditForm] = useState({
     name: '',
     case: '',
@@ -58,110 +44,6 @@ export default function PatientProfile() {
       loadPatientData();
     }
   }, [patientId]);
-
-  // -----------------------
-  // Quick-win helpers (NEW)
-  // -----------------------
-  const normalizeAiSummary = (ai: any) => {
-    if (!ai) return null;
-    if (typeof ai === 'object') return ai;
-
-    // If stored as string, try parsing JSON string; else return as plain string
-    if (typeof ai === 'string') {
-      const s = ai.trim();
-      if (!s) return null;
-      try {
-        const parsed = JSON.parse(s);
-        return parsed;
-      } catch {
-        return s;
-      }
-    }
-    return ai;
-  };
-
-  const getSummaryPreviewText = (aiRaw: any) => {
-    const ai = normalizeAiSummary(aiRaw);
-    if (!ai) return 'Processing...';
-
-    if (typeof ai === 'string') {
-      return ai.length > 140 ? ai.slice(0, 140) + '…' : ai;
-    }
-
-    // Prefer overall_summary_markdown if present
-    const best =
-      ai.overall_summary_markdown ||
-      ai.summary ||
-      ai.analysis ||
-      '';
-
-    if (typeof best === 'string' && best.trim()) {
-      const clean = best.replace(/\s+/g, ' ').trim();
-      return clean.length > 140 ? clean.slice(0, 140) + '…' : clean;
-    }
-
-    // If object but no obvious summary fields, still show something
-    const keys = Object.keys(ai || {});
-    return keys.length ? `AI summary available (${keys.length} fields)` : 'AI summary available';
-  };
-
-  // lightweight markdown-ish rendering without adding new deps
-  const renderMarkdownLite = (text: string) => {
-    const lines = (text || '').split('\n');
-    return (
-      <div className="space-y-3">
-        {lines.map((line, idx) => {
-          const l = line.trimEnd();
-
-          // Headings
-          if (l.startsWith('### ')) {
-            return <h4 key={idx} className="text-base font-semibold text-gray-900">{l.replace(/^###\s*/, '')}</h4>;
-          }
-          if (l.startsWith('## ')) {
-            return <h3 key={idx} className="text-lg font-semibold text-gray-900">{l.replace(/^##\s*/, '')}</h3>;
-          }
-          if (l.startsWith('# ')) {
-            return <h2 key={idx} className="text-xl font-semibold text-gray-900">{l.replace(/^#\s*/, '')}</h2>;
-          }
-
-          // Bullets
-          if (l.startsWith('- ')) {
-            const content = l.replace(/^-+\s*/, '');
-            return (
-              <div key={idx} className="flex gap-2">
-                <div className="pt-2">•</div>
-                <p className="text-sm text-gray-900 leading-relaxed break-words">{content}</p>
-              </div>
-            );
-          }
-
-          // Empty
-          if (!l.trim()) return <div key={idx} />;
-
-          // Bold segments **text**
-          const parts: any[] = [];
-          let rest = l;
-          while (rest.includes('**')) {
-            const start = rest.indexOf('**');
-            const end = rest.indexOf('**', start + 2);
-            if (end === -1) break;
-            const before = rest.slice(0, start);
-            const bold = rest.slice(start + 2, end);
-            if (before) parts.push(<span key={`${idx}-b-${parts.length}`}>{before}</span>);
-            parts.push(<strong key={`${idx}-b-${parts.length}`} className="font-semibold">{bold}</strong>);
-            rest = rest.slice(end + 2);
-          }
-          if (rest) parts.push(<span key={`${idx}-b-${parts.length}`}>{rest}</span>);
-
-          return (
-            <p key={idx} className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
-              {parts.length ? parts : l}
-            </p>
-          );
-        })}
-      </div>
-    );
-  };
 
   const loadPatientData = async () => {
     try {
@@ -182,14 +64,7 @@ export default function PatientProfile() {
         getQueries(user?.id).then(queries => queries.filter(q => q.patient_id === patientId))
       ]);
 
-      // Only show pre-consults that are submitted AND have AI summary populated
-      setPreConsults(preConsultData.filter(pc =>
-        pc.status === 'Submitted' &&
-        pc.ai_summary && (
-          (typeof pc.ai_summary === 'string' && pc.ai_summary.trim() !== '') ||
-          (typeof pc.ai_summary === 'object' && Object.keys(pc.ai_summary).length > 0)
-        )
-      ));
+      setPreConsults(preConsultData.filter(pc => pc.status === 'Submitted'));
       setConsultations(consultData);
       setFollowUps(followUpData.filter(fu => fu.status === 'Submitted'));
       setQueries(queryData);
@@ -243,161 +118,8 @@ export default function PatientProfile() {
     }
   };
 
-  const loadQueryMessages = async (queryId: string) => {
-    try {
-      const data = await getMessages(queryId);
-      setQueryMessages(data);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
-
-  const handleQueryClick = (query: any) => {
-    setSelectedQuery(query);
-    setShowQueryModal(true);
-    loadQueryMessages(query.id);
-  };
-
-  const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedQuery) return;
-
-    try {
-      await createMessage(selectedQuery.id, 'Doctor', replyText, []);
-      setReplyText('');
-      await loadQueryMessages(selectedQuery.id);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message');
-    }
-  };
-
-  const handleMarkResolved = async () => {
-    if (!selectedQuery) return;
-
-    try {
-      await updateQuery(selectedQuery.id, { status: 'Closed' });
-      setShowQueryModal(false);
-      setSelectedQuery(null);
-      await loadPatientData();
-    } catch (error) {
-      console.error('Error updating query:', error);
-      alert('Failed to update query');
-    }
-  };
-
-  const openPreConsultForm = () => {
-    const createAndOpenForm = async () => {
-      try {
-        const preConsult = await createPreConsult(user!.id, patientId!);
-        window.open(`/pre-consult/${preConsult.id}`, '_blank');
-      } catch (error) {
-        console.error('Error creating pre-consult form:', error);
-        alert('Failed to create pre-consult form');
-      }
-    };
-    createAndOpenForm();
-  };
-
-  const handleCloseDocumentUpload = () => {
-    setShowDocumentUpload(false);
-    setUploadDocuments([]);
-    setUploadError('');
-  };
-
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setUploadDocuments(Array.from(e.target.files));
-      setUploadError('');
-    }
-  };
-
-  const handleSubmitDocuments = () => {
-    if (uploadDocuments.length === 0) {
-      alert('Please upload at least one document before submitting.');
-      return;
-    }
-    setShowUploadConfirmation(true);
-  };
-
-  const confirmDocumentSubmit = async () => {
-    if (!patientId || !user) return;
-
-    try {
-      setIsUploading(true);
-      setShowUploadConfirmation(false);
-      setUploadError('');
-
-      // Create new pre-consult record
-      const preConsult = await createPreConsult(user.id, patientId);
-
-      // Upload each file to Supabase Storage
-      const uploadedUrls: string[] = [];
-
-      for (const file of uploadDocuments) {
-        const fileName = `${preConsult.id}-${Date.now()}-${file.name}`;
-
-        console.log('Uploading file:', fileName, 'Size:', file.size);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('pre-consultation-documents')
-          .upload(fileName, file, {
-            contentType: file.type || 'application/octet-stream',
-            upsert: false,
-            duplex: 'half'
-          });
-
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          setUploadError(`Failed to upload ${file.name}: ${uploadError.message}`);
-          return;
-        }
-
-        console.log('Upload successful:', uploadData);
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('pre-consultation-documents')
-          .getPublicUrl(uploadData.path);
-
-        const publicUrl = urlData.publicUrl;
-        console.log('Public URL:', publicUrl);
-
-        uploadedUrls.push(publicUrl);
-      }
-
-      // Update pre-consult record with uploaded document URLs
-      await updatePreConsult(preConsult.id, {
-        status: 'Submitted',
-        documents_uploaded: uploadedUrls,
-        ai_summary: null // Will be filled by n8n workflow
-      });
-
-      console.log('Pre-consult submitted with documents:', uploadedUrls);
-
-      // Reset form and close modal
-      await loadPatientData();
-      handleCloseDocumentUpload();
-
-      alert('Documents uploaded successfully!');
-    } catch (error) {
-      console.error('Error submitting documents:', error);
-      setUploadError('Failed to upload documents. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }) + ' at ' + date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    return new Date(dateString).toLocaleString();
   };
 
   if (loading) {
@@ -428,43 +150,29 @@ export default function PatientProfile() {
       <Navbar showBack />
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-6 px-4 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900 mb-2">{patient.name}</h1>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
               {patient.case && (
-                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB] mb-6">
-                  {patient.case}
-                </div>
+                <p className="text-lg text-[#024CDB] mt-1">{patient.case}</p>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 font-medium">Age & Gender</span>
-                  <p className="text-gray-900 font-semibold">{patient.age} years, {patient.gender}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">Phone</span>
-                  <p className="text-gray-900 font-semibold">{patient.phone}</p>
-                </div>
-                {patient.last_visit_at && (
-                  <div>
-                    <span className="text-gray-500 font-medium">Last Visit</span>
-                    <p className="text-gray-900 font-semibold">{formatDate(patient.last_visit_at)}</p>
-                  </div>
-                )}
-              </div>
+              <p className="text-gray-600 mt-2">
+                {patient.age} yrs, {patient.gender}
+              </p>
+              <p className="text-gray-600">{patient.phone}</p>
             </div>
             <button
               onClick={() => setShowEditModal(true)}
-              className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <Edit className="w-6 h-6 text-gray-600" />
+              <Edit className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
           <button
             onClick={() => navigate(`/consult/${patientId}`)}
-            className="w-full btn-primary text-lg py-4 rounded-xl font-semibold"
+            className="w-full btn-primary text-lg py-3"
           >
             Start Consultation
           </button>
@@ -475,7 +183,7 @@ export default function PatientProfile() {
             <div className="flex overflow-x-auto">
               <button
                 onClick={() => setActiveTab('pre-consult')}
-                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'pre-consult'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -485,7 +193,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('consultations')}
-                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'consultations'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -495,7 +203,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('monitoring')}
-                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'monitoring'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -505,7 +213,7 @@ export default function PatientProfile() {
               </button>
               <button
                 onClick={() => setActiveTab('queries')}
-                className={`px-4 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'queries'
                     ? 'border-[#024CDB] text-[#024CDB]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -516,24 +224,10 @@ export default function PatientProfile() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-6">
             {activeTab === 'pre-consult' && (
               <div>
                 <div className="flex gap-3 mb-6">
-                  <button
-                    onClick={() => setShowDocumentUpload(true)}
-                    className="btn-primary flex items-center space-x-2"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Documents</span>
-                  </button>
-                  <button
-                    onClick={openPreConsultForm}
-                    className="btn-secondary flex items-center space-x-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Open Form</span>
-                  </button>
                   <button
                     onClick={() => handleSendLink('pre-consult')}
                     className="btn-secondary flex items-center space-x-2"
@@ -551,26 +245,12 @@ export default function PatientProfile() {
                         setSelectedItem(item);
                         setShowDetailModal(true);
                       }}
-                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                      className="card"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {formatDate(item.created_at)}
-                        </span>
-                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                          Submitted
-                        </span>
-                      </div>
-
-                      {/* QUICK-WIN: Better preview without forcing a schema */}
-                      <p className="text-gray-900 text-sm line-clamp-2 mb-2">
-                        {getSummaryPreviewText(item.ai_summary)}
-                      </p>
-
+                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
                       {item.documents_uploaded && item.documents_uploaded.length > 0 && (
-                        <div className="flex items-center text-xs text-[#024CDB] bg-blue-50 px-2 py-1 rounded w-fit">
-                          📎 {item.documents_uploaded.length} document{item.documents_uploaded.length !== 1 ? 's' : ''}
-                        </div>
+                        <p className="text-sm text-[#024CDB] mt-2">{item.documents_uploaded.length} documents</p>
                       )}
                     </div>
                   ))}
@@ -593,17 +273,10 @@ export default function PatientProfile() {
                       setSelectedItem(item);
                       setShowDetailModal(true);
                     }}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                    className="card"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {formatDate(item.created_at)}
-                      </span>
-                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                        Completed
-                      </span>
-                    </div>
-                    <p className="text-gray-900 text-sm line-clamp-2">
+                    <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                    <p className="text-gray-900 line-clamp-2">
                       {item.consult_summary_final?.diagnosis || item.consult_summary_ai?.diagnosis || 'Processing...'}
                     </p>
                   </div>
@@ -637,17 +310,10 @@ export default function PatientProfile() {
                         setSelectedItem(item);
                         setShowDetailModal(true);
                       }}
-                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
+                      className="card"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {formatDate(item.created_at)}
-                        </span>
-                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                          Submitted
-                        </span>
-                      </div>
-                      <p className="text-gray-900 text-sm line-clamp-2">{item.ai_summary || 'Processing...'}</p>
+                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
+                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
                     </div>
                   ))}
 
@@ -674,30 +340,21 @@ export default function PatientProfile() {
 
                 <div className="space-y-3">
                   {queries.map((query) => (
-                    <div
-                      key={query.id}
-                      onClick={() => handleQueryClick(query)}
-                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#024CDB]"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {formatDate(query.created_at)}
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            query.priority === 'High'
-                              ? 'bg-red-100 text-red-700'
-                              : query.priority === 'Medium'
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}
-                        >
-                          {query.priority}
-                        </span>
-                      </div>
-                      <p className="text-gray-900 text-sm line-clamp-2">{query.initial_query}</p>
+                  <div
+                    key={query.id}
+                    className="card"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        query.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {query.status}
+                      </span>
                     </div>
-                  ))}
+                    <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
+                  </div>
+                ))}
 
                   {queries.length === 0 && (
                     <div className="text-center py-12">
@@ -772,87 +429,6 @@ export default function PatientProfile() {
         </form>
       </Modal>
 
-      {showQueryModal && selectedQuery && (
-        <div className="modal-overlay" onClick={() => setShowQueryModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Query Thread</h2>
-                <p className="text-sm text-gray-600">{patient?.name || 'Unknown Patient'}</p>
-                {patient?.case && (
-                  <p className="text-sm text-[#024CDB]">{patient.case}</p>
-                )}
-                <p className="text-sm text-gray-500">{patient?.phone || 'No phone'}</p>
-              </div>
-              <button
-                onClick={() => setShowQueryModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-4 max-h-96">
-              <div className="space-y-3">
-                <div className="flex justify-start pr-12">
-                  <div className="bg-gray-50 rounded-lg p-3 max-w-md">
-                    <p className="text-xs text-gray-500 mb-1">{formatDate(selectedQuery.created_at)}</p>
-                    <p className="text-gray-900">{selectedQuery.initial_query}</p>
-                  </div>
-                </div>
-                {queryMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      msg.sender_type === 'Doctor' ? 'justify-end pl-12' : 'justify-start pr-12'
-                    }`}
-                  >
-                    <div
-                      className={`rounded-lg p-3 max-w-md ${
-                        msg.sender_type === 'Doctor' ? 'bg-blue-50' : 'bg-gray-50'
-                      }`}
-                    >
-                      <p className="text-xs text-gray-500 mb-1">{formatDate(msg.created_at)}</p>
-                      <p className="text-gray-900">{msg.message}</p>
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {msg.attachments.map((attachment: any, idx: number) => (
-                            <div key={idx} className="text-xs text-[#024CDB] bg-white rounded px-2 py-1">
-                              📎 {attachment.name}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Type your reply..."
-                  className="flex-1 input-field"
-                />
-                <button onClick={handleSendReply} className="btn-primary flex items-center space-x-2">
-                  <Send className="w-4 h-4" />
-                  <span>Send</span>
-                </button>
-              </div>
-              <div className="flex gap-3">
-                <button onClick={handleMarkResolved} className="btn-primary flex-1" disabled={selectedQuery.status === 'Closed'}>
-                  {selectedQuery.status === 'Closed' ? 'Resolved' : 'Mark Resolved'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showDetailModal && selectedItem && (
         <Modal
           isOpen={showDetailModal}
@@ -860,192 +436,27 @@ export default function PatientProfile() {
           title={activeTab === 'pre-consult' ? 'Pre-Consult Details' :
                  activeTab === 'consultations' ? 'Consultation Details' : 'Follow-Up Details'}
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
-              <p className="text-gray-900 font-semibold">{formatDate(selectedItem.created_at)}</p>
+              <p className="text-sm text-gray-600 mb-1">Date</p>
+              <p className="text-gray-900">{formatDate(selectedItem.created_at)}</p>
             </div>
 
             {activeTab === 'pre-consult' && (
               <>
                 {selectedItem.ai_summary && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">AI Summary</p>
-
-                    {/* QUICK-WIN: Show more of what's in DB, without schema enforcement */}
-                    {(() => {
-                      const ai = normalizeAiSummary(selectedItem.ai_summary);
-
-                      // If it's plain text, show it as-is
-                      if (typeof ai === 'string') {
-                        return (
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{ai}</p>
-                          </div>
-                        );
-                      }
-
-                      // If it's an object, show overall summary + additional sections + raw fallback
-                      if (typeof ai === 'object' && ai) {
-                        const overall =
-                          (typeof ai.overall_summary_markdown === 'string' && ai.overall_summary_markdown.trim())
-                            ? ai.overall_summary_markdown
-                            : (typeof ai.summary === 'string' && ai.summary.trim())
-                              ? ai.summary
-                              : (typeof ai.analysis === 'string' && ai.analysis.trim())
-                                ? ai.analysis
-                                : '';
-
-                        const diagnosticTrends = Array.isArray(ai.diagnostic_trends) ? ai.diagnostic_trends : [];
-                        const meds = Array.isArray(ai.medication_summary) ? ai.medication_summary : [];
-                        const timeline = Array.isArray(ai.timeline_of_medical_events) ? ai.timeline_of_medical_events : [];
-
-                        return (
-                          <div className="space-y-4">
-                            {/* Overall Summary */}
-                            <div className="bg-gray-50 rounded-lg p-4">
-                              <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                                Overall Summary
-                              </p>
-                              <div className="text-gray-900">
-                                {overall
-                                  ? renderMarkdownLite(overall)
-                                  : <p className="text-sm text-gray-500">AI summary not available</p>
-                                }
-                              </div>
-                            </div>
-
-                            {/* Diagnostic Trends */}
-                            {diagnosticTrends.length > 0 && (
-                              <div className="bg-gray-50 rounded-lg p-4">
-                                <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                                  Diagnostic Trends
-                                </p>
-                                <div className="space-y-3">
-                                  {diagnosticTrends.map((t: any, idx: number) => {
-                                    const name = t.parameter_name || `Trend ${idx + 1}`;
-                                    const comment = t.overall_trend_comment || '';
-                                    const first = Array.isArray(t.measurements) && t.measurements.length > 0 ? t.measurements[0] : null;
-                                    const value = first?.value_raw ?? first?.value_numeric ?? '';
-                                    const dt = first?.measurement_datetime ?? '';
-                                    const unit = t.unit ?? '';
-                                    return (
-                                      <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div>
-                                            <p className="text-sm font-semibold text-gray-900">{name}</p>
-                                            {comment && <p className="text-xs text-gray-600 mt-1">{comment}</p>}
-                                          </div>
-                                          {(value || dt) && (
-                                            <div className="text-right">
-                                              {value !== '' && (
-                                                <p className="text-sm font-semibold text-gray-900">
-                                                  {value}{unit ? ` ${unit}` : ''}
-                                                </p>
-                                              )}
-                                              {dt && <p className="text-xs text-gray-500 mt-1">{dt}</p>}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Medication Summary */}
-                            {meds.length > 0 && (
-                              <div className="bg-gray-50 rounded-lg p-4">
-                                <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                                  Medication Summary
-                                </p>
-                                <div className="space-y-2">
-                                  {meds.map((m: any, idx: number) => (
-                                    <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                                      <p className="text-sm font-semibold text-gray-900">
-                                        {m.drug_name || m.name || `Medication ${idx + 1}`}
-                                      </p>
-                                      <p className="text-xs text-gray-600 mt-1">
-                                        {[
-                                          m.dose && `Dose: ${m.dose}`,
-                                          m.route && `Route: ${m.route}`,
-                                          m.frequency && `Freq: ${m.frequency}`,
-                                          m.duration_or_quantity && `Duration/Qty: ${m.duration_or_quantity}`
-                                        ].filter(Boolean).join(' • ')}
-                                      </p>
-                                      {m.indication && <p className="text-xs text-gray-600 mt-2">{m.indication}</p>}
-                                      {m.additional_notes && <p className="text-xs text-gray-500 mt-2">{m.additional_notes}</p>}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Timeline */}
-                            {timeline.length > 0 && (
-                              <div className="bg-gray-50 rounded-lg p-4">
-                                <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                                  Timeline of Medical Events
-                                </p>
-                                <div className="space-y-3">
-                                  {timeline.map((e: any, idx: number) => (
-                                    <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                          <p className="text-sm font-semibold text-gray-900">
-                                            {e.event_type || `Event ${idx + 1}`}
-                                          </p>
-                                          {e.cardiac_focus && <p className="text-xs text-gray-600 mt-1">{e.cardiac_focus}</p>}
-                                        </div>
-                                        {e.event_datetime && (
-                                          <p className="text-xs text-gray-500 whitespace-nowrap">{e.event_datetime}</p>
-                                        )}
-                                      </div>
-                                      {e.summary && (
-                                        <p className="text-xs text-gray-700 mt-2 whitespace-pre-wrap">{e.summary}</p>
-                                      )}
-                                      {e.important_findings && (
-                                        <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{e.important_findings}</p>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Raw fallback */}
-                            <details className="bg-gray-50 rounded-lg p-4">
-                              <summary className="cursor-pointer text-sm font-medium text-gray-700">
-                                View full JSON
-                              </summary>
-                              <pre className="mt-3 text-xs text-gray-700 overflow-auto whitespace-pre-wrap">
-                                {JSON.stringify(ai, null, 2)}
-                              </pre>
-                            </details>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-sm text-gray-500">AI summary not available</p>
-                        </div>
-                      );
-                    })()}
+                    <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
                   </div>
                 )}
-
                 {selectedItem.documents_uploaded && selectedItem.documents_uploaded.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">Uploaded Documents</p>
-                    <div className="space-y-2 bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Documents</p>
+                    <div className="space-y-2">
                       {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
-                        <div key={idx} className="flex items-center text-sm text-[#024CDB] bg-white rounded px-3 py-2">
-                          <span className="mr-2">📎</span>
-                          <a href={doc} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                            Document {idx + 1}
-                          </a>
+                        <div key={idx} className="text-sm text-[#024CDB]">
+                          {doc.name || `Document ${idx + 1}`}
                         </div>
                       ))}
                     </div>
@@ -1054,77 +465,39 @@ export default function PatientProfile() {
               </>
             )}
 
-            {activeTab === 'consultations' && (selectedItem.consult_summary_final || selectedItem.consult_summary_ai) && (
-              <div className="space-y-4">
-                {(() => {
-                  const summary = selectedItem.consult_summary_final || selectedItem.consult_summary_ai;
-                  return (
-                    <>
-                      {selectedItem.consult_summary_final?.diagnosis && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">Diagnosis</p>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 text-sm">{summary.diagnosis}</p>
-                          </div>
+            {activeTab === 'consultations' && selectedItem.consult_summary_final && (
+              <div className="space-y-3">
+                {selectedItem.consult_summary_final.diagnosis && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Diagnosis</p>
+                    <p className="text-gray-900">{selectedItem.consult_summary_final.diagnosis}</p>
+                  </div>
+                )}
+                {selectedItem.consult_summary_final.treatment_suggested && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Treatment</p>
+                    <p className="text-gray-900">{selectedItem.consult_summary_final.treatment_suggested}</p>
+                  </div>
+                )}
+                {selectedItem.consult_summary_final.medications && selectedItem.consult_summary_final.medications.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
+                    <div className="space-y-2">
+                      {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
+                        <div key={idx} className="text-sm">
+                          <span className="font-medium">{med.name}</span> - {med.frequency}, {med.duration}
                         </div>
-                      )}
-                      {summary.history && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">History</p>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 text-sm">{summary.history}</p>
-                          </div>
-                        </div>
-                      )}
-                      {summary.chief_complaints && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">Chief Complaints</p>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 text-sm">{summary.chief_complaints}</p>
-                          </div>
-                        </div>
-                      )}
-                      {selectedItem.consult_summary_final?.treatment_suggested && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">Treatment Plan</p>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 text-sm">{summary.treatment_suggested}</p>
-                          </div>
-                        </div>
-                      )}
-                      {selectedItem.consult_summary_final?.medications && selectedItem.consult_summary_final.medications.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">Medications</p>
-                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                            {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
-                              <div key={idx} className="bg-white rounded p-3 border-l-4 border-[#024CDB]">
-                                <p className="font-medium text-gray-900 text-sm">{med.name}</p>
-                                <p className="text-gray-600 text-xs mt-1">{med.frequency} • {med.duration} • {med.timing}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {summary.followup_recommendations && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Recommendations</p>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <p className="text-gray-900 text-sm">{summary.followup_recommendations}</p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'monitoring' && selectedItem.ai_summary && (
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-2">Follow-up Summary</p>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed">{selectedItem.ai_summary}</p>
-                </div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
               </div>
             )}
           </div>
@@ -1138,107 +511,6 @@ export default function PatientProfile() {
         title="Send Form Link"
         message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${patient.name}?`}
       />
-
-      {showDocumentUpload && (
-        <div className="modal-overlay" onClick={handleCloseDocumentUpload}>
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Upload Documents</h3>
-              <button
-                onClick={handleCloseDocumentUpload}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
-            <p className="text-gray-600 mb-6">
-              Upload medical documents, prescriptions, or reports for this patient.
-            </p>
-
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <Upload className="w-16 h-16 text-gray-400 mb-4" />
-              <span className="text-lg text-gray-600 mb-2">Click to upload files</span>
-              <span className="text-sm text-gray-500">Images (JPG, PNG, GIF, WebP) or PDF files</span>
-              <input
-                type="file"
-                multiple
-                onChange={handleDocumentUpload}
-                className="hidden"
-              />
-            </label>
-
-            {uploadError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{uploadError}</p>
-              </div>
-            )}
-
-            {uploadDocuments.length > 0 && (
-              <div className="mt-6">
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  {uploadDocuments.length} file{uploadDocuments.length !== 1 ? 's' : ''} selected:
-                </p>
-                <div className="space-y-2">
-                  {uploadDocuments.map((file, idx) => (
-                    <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
-                      <span className="mr-2">📎</span>
-                      <span className="flex-1">{file.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {(file.size / 1024 / 1024).toFixed(1)} MB
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-end mt-8">
-              <button
-                onClick={handleCloseDocumentUpload}
-                className="btn-secondary"
-                disabled={isUploading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitDocuments}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isUploading || uploadDocuments.length === 0}
-              >
-                {isUploading ? 'Uploading...' : 'Submit Documents'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showUploadConfirmation && (
-        <div className="modal-overlay" onClick={() => setShowUploadConfirmation(false)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Submit Documents</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to submit these {uploadDocuments.length} document{uploadDocuments.length !== 1 ? 's' : ''}? They will be processed and added to the patient's pre-consult records.
-            </p>
-            <div className="flex space-x-3 justify-end">
-              <button
-                onClick={() => setShowUploadConfirmation(false)}
-                className="btn-secondary"
-                disabled={isUploading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDocumentSubmit}
-                className="btn-primary"
-                disabled={isUploading}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

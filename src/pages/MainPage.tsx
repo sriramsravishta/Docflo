@@ -60,15 +60,6 @@ export default function MainPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
   const handleAddPatient = async () => {
     try {
       await createPatient({
@@ -125,7 +116,7 @@ export default function MainPage() {
 
         <div className="space-y-8">
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Today's Pre-consult Completed
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
@@ -135,29 +126,14 @@ export default function MainPage() {
                 </div>
               ) : (
                 filteredListA.slice(0, 5).map((patient) => (
-                  <div
-                    key={patient.id}
-                    onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
-                      {patient.case && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                        {patient.case}
-                      </div>
-                    )}
-                    
-                    </div>
-                    <div className="text-sm text-gray-500">
-                        {patient.age}yrs · {patient.gender}
-                      </div>
-                    <div className="mt-5 pt-3 border-t border-gray-100">
-                      {patient.last_visit_at && (
-                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
-                    )}
-                    </div>
-                  </div>
+                  <PatientCard key={patient.id} patient={{
+                    id: patient.id,
+                    name: patient.name,
+                    case: patient.case,
+                    age: patient.age,
+                    gender: patient.gender,
+                    lastVisit: patient.last_visit_at ? new Date(patient.last_visit_at).toLocaleDateString() : undefined
+                  }} />
                 ))
               )}
             </div>
@@ -174,7 +150,7 @@ export default function MainPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
               All Patients
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
@@ -184,30 +160,14 @@ export default function MainPage() {
                 </div>
               ) : (
                 filteredListB.slice(0, 5).map((patient) => (
-                  <div
-                    key={patient.id}
-                    onClick={() => navigate(`/patient/${patient.id}`)}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer] group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
-                      {patient.case && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
-                        {patient.case}
-                      </div>
-                    )}
-                      
-                    </div>
-                    <div className="text-sm text-gray-500">
-                        {patient.age}yrs · {patient.gender}
-                      </div>
-                    
-                    <div className="mt-4 pt-3 border-t border-gray-100">
-                      {patient.last_visit_at && (
-                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
-                    )}
-                    </div>
-                  </div>
+                  <PatientCard key={patient.id} patient={{
+                    id: patient.id,
+                    name: patient.name,
+                    case: patient.case,
+                    age: patient.age,
+                    gender: patient.gender,
+                    lastVisit: patient.last_visit_at ? new Date(patient.last_visit_at).toLocaleDateString() : undefined
+                  }} />
                 ))
               )}
             </div>

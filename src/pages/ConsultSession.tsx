@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Mic, Square, Play, Pause } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { createConsult, updateConsult } from '../lib/database';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ConsultSession() {
@@ -17,12 +16,7 @@ export default function ConsultSession() {
   const [showDraft, setShowDraft] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isWaitingForAI, setIsWaitingForAI] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const [showDelayMessage, setShowDelayMessage] = useState(false);
   const [consultId, setConsultId] = useState<string | null>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const [draftData, setDraftData] = useState({
     diagnosis: '',
@@ -34,240 +28,73 @@ export default function ConsultSession() {
     followupRecommendations: '',
   });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }) + ' at ' + date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const handleStartRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        setAudioChunks(chunks);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      setMediaRecorder(recorder);
-      setAudioChunks([]);
-      recorder.start();
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('Failed to start recording. Please check microphone permissions.');
-      return;
-    }
-
+  const handleStartRecording = () => {
     setIsRecording(true);
     setIsPaused(false);
     const interval = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
+      setRecordingTime(prev => {
+        if (!isPaused) return prev + 1;
+        return prev;
+      });
     }, 1000);
     (window as any).recordingInterval = interval;
   };
 
   const handlePause = () => {
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
-    
-    if (mediaRecorder) {
-      if (newPausedState) {
-        mediaRecorder.pause();
-      } else {
-        mediaRecorder.resume();
-      }
-    }
-
-    if (newPausedState) {
-      // Pausing - stop the interval
-      clearInterval((window as any).recordingInterval);
-    } else {
-      // Resuming - restart the interval
-      const interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-      (window as any).recordingInterval = interval;
-    }
+    setIsPaused(!isPaused);
   };
 
   const handleEndRecording = async () => {
     setIsRecording(false);
+    setIsAnalyzing(true);
     clearInterval((window as any).recordingInterval);
 
-    if (mediaRecorder) {
-      // Create a promise that resolves when recording stops
-      const recordingPromise = new Promise<Blob[]>((resolve) => {
-        const chunks: Blob[] = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
-          }
+    try {
+      const consult = await createConsult(
+        user!.id,
+        patientId!,
+        `dummy-recording-url/recording-${Date.now()}.webm`
+      );
+
+      setConsultId(consult.id);
+
+      setTimeout(async () => {
+        const dummyAISummary = {
+          diagnosis: 'General fatigue and mild symptoms',
+          history: 'Reported mild symptoms over the past week',
+          chief_complaints: 'Weakness, headache, and general discomfort',
+          treatment_suggested: 'Hydration, rest, and over-the-counter pain relief',
+          medications: [
+            { name: 'Paracetamol', frequency: 'Twice daily', duration: '5 days', timing: 'After meals' }
+          ],
+          key_personal_insights: 'Patient seems stressed due to work. Consider follow-up for stress management.',
+          followup_recommendations: 'Review after 7 days to assess progress'
         };
-        
-        mediaRecorder.onstop = () => {
-          resolve(chunks);
-        };
-      });
-      
-      // Stop recording
-      if (mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
-      
-      setIsAnalyzing(true);
-      
-      try {
-        // Wait for recording to complete
-        const finalChunks = await recordingPromise;
-        let recordingFileUrl = '';
 
-        if (finalChunks.length > 0) {
-          // Create audio blob from chunks
-          const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
-          const fileName = `consultation-${patientId}-${Date.now()}.webm`;
-
-          console.log('Uploading audio file:', fileName, 'Size:', audioBlob.size);
-
-          // Upload to Supabase Storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('consultation-recordings')
-            .upload(fileName, audioBlob, {
-              contentType: 'audio/webm',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error('Failed to upload recording');
-          }
-
-          console.log('Upload successful:', uploadData);
-
-          // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('consultation-recordings')
-            .getPublicUrl(uploadData.path);
-
-          recordingFileUrl = urlData.publicUrl;
-          console.log('Public URL:', recordingFileUrl);
-        } else {
-          console.warn('No audio chunks recorded');
-        }
-
-        // Create consultation record with the public URL
-        const consult = await createConsult(
-          user!.id,
-          patientId!,
-          recordingFileUrl
-        );
-
-        console.log('Consultation created with recording URL:', recordingFileUrl);
-        setConsultId(consult.id);
-
-        // Set empty AI summary initially - will be filled by n8n workflow
         await updateConsult(consult.id, {
           recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
-          consult_summary_ai: ''
+          consult_summary_ai: dummyAISummary
+        });
+
+        setDraftData({
+          diagnosis: dummyAISummary.diagnosis,
+          history: dummyAISummary.history,
+          chiefComplaints: dummyAISummary.chief_complaints,
+          treatmentSuggested: dummyAISummary.treatment_suggested,
+          medications: dummyAISummary.medications,
+          keyPersonalInsights: dummyAISummary.key_personal_insights,
+          followupRecommendations: dummyAISummary.followup_recommendations
         });
 
         setIsAnalyzing(false);
-        setIsWaitingForAI(true);
-        setCountdown(60);
-        setShowDelayMessage(false);
-        
-        // Start countdown timer
-        const countdownInterval = setInterval(() => {
-          setCountdown(prev => {
-            if (prev <= 1) {
-              setShowDelayMessage(true);
-              clearInterval(countdownInterval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        
-        // Poll database for AI summary
-        const pollForAISummary = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('consult')
-              .select('consult_summary_ai')
-              .eq('id', consult.id)
-              .single();
-            
-            if (error) {
-              console.error('Error polling for AI summary:', error);
-              return;
-            }
-            
-            if (data.consult_summary_ai && typeof data.consult_summary_ai === 'object' && Object.keys(data.consult_summary_ai).length > 0) {
-              // AI summary is ready
-              clearInterval(countdownInterval);
-              clearInterval(pollInterval);
-              
-              const aiSummary = data.consult_summary_ai;
-              setDraftData({
-                diagnosis: aiSummary.diagnosis || '',
-                history: aiSummary.history || '',
-                chiefComplaints: aiSummary.chief_complaints || '',
-                treatmentSuggested: aiSummary.treatment_suggested || '',
-                medications: aiSummary.medications || [{ name: '', frequency: '', duration: '', timing: '' }],
-                keyPersonalInsights: aiSummary.key_personal_insights || '',
-                followupRecommendations: aiSummary.followup_recommendations || ''
-              });
-              
-              setIsWaitingForAI(false);
-              setShowDraft(true);
-            }
-          } catch (error) {
-            console.error('Error polling for AI summary:', error);
-          }
-        };
-        
-        // Poll every 2 seconds
-        const pollInterval = setInterval(pollForAISummary, 2000);
-        
-        // Cleanup function
-        (window as any).cleanupPolling = () => {
-          clearInterval(countdownInterval);
-          clearInterval(pollInterval);
-        };
-      } catch (error) {
-        console.error('Error creating consultation:', error);
-        setIsAnalyzing(false);
-        alert('Failed to save consultation');
-      }
-    } else {
-      console.error('No media recorder available');
+        setShowDraft(true);
+      }, 3000);
+    } catch (error) {
+      console.error('Error creating consultation:', error);
       setIsAnalyzing(false);
+      alert('Failed to save consultation');
     }
   };
-
-  // Cleanup polling on component unmount
-  useEffect(() => {
-    return () => {
-      if ((window as any).cleanupPolling) {
-        (window as any).cleanupPolling();
-      }
-    };
-  }, []);
 
   const handleApprove = () => {
     setShowConfirmation(true);
@@ -322,40 +149,6 @@ export default function ConsultSession() {
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#024CDB] mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Analyzing audio and preparing draft...</h2>
             <p className="text-gray-600">This will take just a moment</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isWaitingForAI) {
-    const progressPercentage = ((60 - countdown) / 60) * 100;
-    
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar showBack />
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <div className="text-center max-w-md mx-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Processing Consultation</h2>
-            
-            <div className="mb-4">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-[#024CDB] h-3 rounded-full transition-all duration-1000 ease-linear"
-                  style={{ width: `${progressPercentage}%` }}
-                ></div>
-              </div>
-            </div>
-            
-            <p className="text-gray-600 mb-2">
-              The transcript will be ready in {countdown} seconds
-            </p>
-            
-            {showDelayMessage && (
-              <p className="text-orange-600 text-sm">
-                Taking longer than expected…
-              </p>
-            )}
           </div>
         </div>
       </div>

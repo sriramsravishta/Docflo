@@ -215,7 +215,7 @@ export const getQueries = async (docId?: string) => {
     .from('queries')
     .select(`
       *,
-      patients (name, phone, case)
+      patients (name, phone)
     `)
     .order('created_at', { ascending: false });
 
@@ -289,7 +289,7 @@ export const getPreConsultById = async (id: string) => {
     .from('pre_consult')
     .select('*')
     .eq('id', id)
-    .maybeSingle();
+    .single();
 
   if (error) throw error;
   return data;
@@ -300,7 +300,7 @@ export const getFollowUpById = async (id: string) => {
     .from('follow_up')
     .select('*')
     .eq('id', id)
-    .maybeSingle();
+    .single();
 
   if (error) throw error;
   return data;

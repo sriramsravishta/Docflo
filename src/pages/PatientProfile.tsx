@@ -686,7 +686,18 @@ const diagnosticGraphsScrollRef = useRef<HTMLDivElement | null>(null);
             const paramName = e.target.value;
             if (paramName) {
               const el = document.getElementById(`inline-graph-${paramName}`);
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+const container = diagnosticGraphsScrollRef.current;
+
+if (el && container) {
+  const containerRect = container.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const delta = elRect.top - containerRect.top;
+
+  container.scrollTo({
+    top: container.scrollTop + delta - 12, // 12px padding offset
+    behavior: 'smooth',
+  });
+}
             }
           }}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"

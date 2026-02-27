@@ -379,21 +379,35 @@ function MedicationsTable({
     return <p className="text-sm text-gray-600">No medications recorded</p>;
   }
 
+  const TH = 'border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700';
+  const TD = 'border border-gray-300 px-3 py-2 align-top';
+
+  const COL = {
+    name: 'w-[170px] min-w-[170px]',
+    small: 'w-[100px] min-w-[100px]',
+    big: 'w-[300px] min-w-[300px]',
+    action: 'w-[70px] min-w-[70px]',
+  };
+
+  const WRAP = 'whitespace-normal break-words';
+  const NOWRAP = 'whitespace-nowrap';
+
   return (
     <div className="max-h-[520px] overflow-auto">
-      <table className="w-full border-collapse border border-gray-300">
+      <table className="w-full table-fixed border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-50">
-            {['Name','Dosage','Quantity','Type','Frequency','Time','AF/BF','Duration','Instructions','Flags'].map((h) => (
-              <th key={h} className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700">
-                {h}
-              </th>
-            ))}
-            {isEditing && (
-              <th className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold text-gray-700 w-[70px]">
-                Action
-              </th>
-            )}
+            <th className={`${TH} ${COL.name}`}>Name</th>
+            <th className={`${TH} ${COL.small}`}>Dosage</th>
+            <th className={`${TH} ${COL.small}`}>Quantity</th>
+            <th className={`${TH} ${COL.small}`}>Type</th>
+            <th className={`${TH} ${COL.small}`}>Frequency</th>
+            <th className={`${TH} ${COL.small}`}>Time</th>
+            <th className={`${TH} ${COL.small}`}>AF/BF</th>
+            <th className={`${TH} ${COL.small}`}>Duration</th>
+            <th className={`${TH} ${COL.big}`}>Instructions</th>
+            <th className={`${TH} ${COL.big}`}>Flags</th>
+            {isEditing && <th className={`${TH} ${COL.action}`}>Action</th>}
           </tr>
         </thead>
 
@@ -412,9 +426,11 @@ function MedicationsTable({
               flags: m.flags || '',
             };
 
-            const cellInput = (val: string, onVal: (v: string) => void) => (
+            const cellInput = (val: string, onVal: (v: string) => void, wrap = false) => (
               <input
-                className="w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm"
+                className={`w-full px-2 py-1 rounded-md border border-gray-300 bg-gray-50 focus:bg-white text-sm ${
+                  wrap ? WRAP : NOWRAP
+                }`}
                 value={val}
                 onChange={(e) => onVal(e.target.value)}
               />
@@ -422,8 +438,8 @@ function MedicationsTable({
 
             return (
               <tr key={m.id} className="hover:bg-gray-50">
-                {/* Name */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                {/* Name (170px, wrap) */}
+                <td className={`${TD} ${COL.name} ${WRAP}`}>
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">{d.name || '-'}</span>
                   ) : (
@@ -431,7 +447,7 @@ function MedicationsTable({
                       {cellInput(d.name, (v) => {
                         updateMedicineDraft(m.id, { name: v });
                         onMedicineSearch(v);
-                      })}
+                      }, true)}
                       {medicineSearchResults.length > 0 && (
                         <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                           {medicineSearchResults.map((r, i) => (
@@ -453,23 +469,35 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* Dosage */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.dosage || '-'}</span> : cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))}
+                {/* Dosage (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.dosage || '-'}</span>
+                  ) : (
+                    cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))
+                  )}
                 </td>
 
-                {/* Quantity */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.quantity || '-'}</span> : cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))}
+                {/* Quantity (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.quantity || '-'}</span>
+                  ) : (
+                    cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))
+                  )}
                 </td>
 
-                {/* Type */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.type || '-'}</span> : cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))}
+                {/* Type (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.type || '-'}</span>
+                  ) : (
+                    cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))
+                  )}
                 </td>
 
-                {/* Frequency */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                {/* Frequency (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">{d.frequency || '-'}</span>
                   ) : (
@@ -479,13 +507,17 @@ function MedicationsTable({
                       onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
                     >
                       <option value="">Select</option>
-                      {FREQUENCY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      {FREQUENCY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
                     </select>
                   )}
                 </td>
 
-                {/* Time */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                {/* Time (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">
                       {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}
@@ -506,7 +538,10 @@ function MedicationsTable({
                             const current = Array.isArray(d.time) ? d.time : [];
                             const checked = current.includes(opt);
                             return (
-                              <label key={opt} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer">
+                              <label
+                                key={opt}
+                                className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"
+                              >
                                 <input
                                   type="checkbox"
                                   checked={checked}
@@ -525,8 +560,8 @@ function MedicationsTable({
                   )}
                 </td>
 
-                {/* AF/BF */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                {/* AF/BF (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">{d.food || '-'}</span>
                   ) : (
@@ -536,28 +571,45 @@ function MedicationsTable({
                       onChange={(e) => updateMedicineDraft(m.id, { food: e.target.value })}
                     >
                       <option value="">Select</option>
-                      {FOOD_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      {FOOD_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
                     </select>
                   )}
                 </td>
 
-                {/* Duration */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.duration || '-'}</span> : cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))}
+                {/* Duration (100px) */}
+                <td className={`${TD} ${COL.small} ${NOWRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.duration || '-'}</span>
+                  ) : (
+                    cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))
+                  )}
                 </td>
 
-                {/* Instructions */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.instructions || '-'}</span> : cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))}
+                {/* Instructions (300px, wrap) */}
+                <td className={`${TD} ${COL.big} ${WRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.instructions || '-'}</span>
+                  ) : (
+                    cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }), true)
+                  )}
                 </td>
 
-                {/* Flags */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? <span className="text-sm text-gray-600">{d.flags || '-'}</span> : cellInput(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))}
+                {/* Flags (300px, wrap) */}
+                <td className={`${TD} ${COL.big} ${WRAP}`}>
+                  {!isEditing ? (
+                    <span className="text-sm text-gray-600">{d.flags || '-'}</span>
+                  ) : (
+                    cellInput(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }), true)
+                  )}
                 </td>
 
+                {/* Action */}
                 {isEditing && (
-                  <td className="border border-gray-300 px-3 py-2 align-top">
+                  <td className={`${TD} ${COL.action}`}>
                     <button
                       type="button"
                       onClick={() => onDeleteMedicine(m.id)}

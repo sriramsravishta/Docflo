@@ -15,7 +15,7 @@ import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientProfileHeader from '../components/features/PatientProfileHeader';
 import ConsultViewModal from '../components/features/ConsultViewModal';
-import ConsultEditModal from '../components/features/ConsultEditModal';
+
 import { DocumentUploadModal, DocumentUploadStatusModal } from '../components/features/DocumentUploadModal';
 import Spinner from '../components/ui/Spinner';
 import { usePatientData } from '../hooks/usePatientData';
@@ -1199,33 +1199,7 @@ export default function PatientProfile() {
         onRetry={() => { setShowDocumentConfirm(false); setDocumentUploadState('confirming'); }}
       />
 
-      {selectedConsult && isEditingConsult && (
-        <ConsultEditModal
-          consult={selectedConsult}
-          editedConsult={editedConsult}
-          setEditedConsult={setEditedConsult}
-          editedDiagnosisText={editedDiagnosisText}
-          setEditedDiagnosisText={setEditedDiagnosisText}
-          editedTreatmentText={editedTreatmentText}
-          setEditedTreatmentText={setEditedTreatmentText}
-          editedInvestigationsText={editedInvestigationsText}
-          setEditedInvestigationsText={setEditedInvestigationsText}
-          consultMedicines={consultMedicines}
-          medicineDrafts={medicineDrafts}
-          updateMedicineDraft={updateMedicineDraft}
-          medicineSearchResults={medicineSearchResults}
-          openTimeDropdownId={openTimeDropdownId}
-          setOpenTimeDropdownId={setOpenTimeDropdownId}
-          timeDropdownRef={timeDropdownRef}
-          onAddMedicine={handleAddMedicine}
-          onDeleteMedicine={handleDeleteMedicine}
-          onMedicineSearch={handleMedicineSearch}
-          setMedicineSearchResults={setMedicineSearchResults}
-          onCancel={handleCancelEdit}
-          onSave={handleSaveConsult}
-          formatDate={formatDate}
-        />
-      )}
+    
 
       {selectedConsult && !isEditingConsult && (
         <ConsultViewModal

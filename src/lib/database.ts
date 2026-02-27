@@ -1,5 +1,55 @@
 import { supabase } from './supabase';
 
+// ✅ Helper: get "today" start/end based on your local time (IST)
+function getTodayBoundsISO() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  return {
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+  };
+}
+
+
+export async function completeTodaysAppointmentByPatientAndDoctor(
+  patientId: string,
+  doctorId: string
+): Promise<boolean> {
+  const { startISO, endISO } = getTodayBoundsISO();
+
+  // ✅ Fetch ONLY today's appointment for this patient + doctor
+  const { data: row, error: fetchError } = await supabase
+    .from('appointments')
+    .select('id, completed')
+    .eq('patient_id', patientId)
+    .eq('doc_id', doctorId)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+
+  if (!row?.id) return false;     // no appointment today
+  if (row.completed) return true; // already completed
+
+  const { error: updateError } = await supabase
+    .from('appointments')
+    .update({ completed: true })
+    .eq('id', row.id);
+
+  if (updateError) throw updateError;
+
+  return true;
+}
+
+
+
 export const createPatient = async (patientData: {
   name: string;
   age: number;
@@ -14,6 +64,7 @@ export const createPatient = async (patientData: {
     .from('users')
     .select('org_id')
     .eq('auth_id', user.id)
+    .limit(1)
     .single();
 
   if (!userData) throw new Error('User not found');
@@ -40,6 +91,7 @@ export const getPatients = async () => {
     .from('users')
     .select('org_id')
     .eq('auth_id', user.id)
+    .limit(1)
     .single();
 
   if (!userData) throw new Error('User not found');
@@ -88,6 +140,26 @@ export const createPreConsult = async (docId: string, patientId: string) => {
   return data;
 };
 
+export const createPreConsultWithDocuments = async (
+  docId: string, 
+  patientId: string, 
+  documentsUploaded: string[]
+) => {
+  const { data, error } = await supabase
+    .from('pre_consult')
+    .insert({
+      doc_id: docId,
+      patient_id: patientId,
+      status: 'Submitted',
+      documents_uploaded: documentsUploaded,
+      ai_summary: null // Will be filled by n8n workflow
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
 export const getPreConsults = async (patientId: string) => {
   const { data, error } = await supabase
     .from('pre_consult')
@@ -215,7 +287,7 @@ export const getQueries = async (docId?: string) => {
     .from('queries')
     .select(`
       *,
-      patients (name, phone)
+      patients (name, phone, case)
     `)
     .order('created_at', { ascending: false });
 
@@ -289,7 +361,7 @@ export const getPreConsultById = async (id: string) => {
     .from('pre_consult')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -300,8 +372,257 @@ export const getFollowUpById = async (id: string) => {
     .from('follow_up')
     .select('*')
     .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+export const createSummary = async (patientId: string, summaryData: any) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('summaries')
+    .insert({
+      patient_id: patientId,
+      doctor_id: user.id,
+      summary: summaryData,
+    })
+    .select()
     .single();
 
   if (error) throw error;
   return data;
 };
+
+export const getSummaries = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('summaries')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const getLatestSummary = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('summaries')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+// Consult Medicine functions
+export const getConsultMedicines = async (consultId: string) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .select('*')
+    .eq('consult_id', consultId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const createConsultMedicine = async (medicineData: {
+  consult_id: string;
+  name: string;
+  quantity?: string;
+  frequency?: string;
+  time?: string[];        // ✅ array
+  food?: string;
+  duration?: string;
+  instructions?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .insert({
+      consult_id: medicineData.consult_id,
+      name: medicineData.name ?? '',
+      quantity: medicineData.quantity ?? '',
+      frequency: medicineData.frequency ?? '',
+      time: Array.isArray(medicineData.time) ? medicineData.time : [],  // ✅ force array
+      food: medicineData.food ?? '',
+      duration: medicineData.duration ?? '',
+      instructions: medicineData.instructions ?? '',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+
+export const updateConsultMedicine = async (id: string, updates: {
+  name?: string;
+  dosage?: string;
+  frequency?: string;
+  duration?: string;
+  route?: string;
+  instructions?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteConsultMedicine = async (id: string) => {
+  const { error } = await supabase
+    .from('consult_medicine')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+export const searchMedicines = async (query: string, limit: number = 10) => {
+  const q = (query || '').trim();
+  if (!q) return [];
+
+  const { data, error } = await supabase
+    .from('medicine_master_list')
+    .select('name')
+    .ilike('name', `${q}%`) // ✅ prefix match: starts with
+    .order('name', { ascending: true }) // ✅ alphabetical A→Z
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const updateConsultSummary = async (consultId: string, summaryUpdates: any) => {
+  const { data, error } = await supabase
+    .from('consult')
+    .update({
+      consult_summary_final: summaryUpdates
+    })
+    .eq('id', consultId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Appointments functions
+export const createAppointment = async (patientId: string, docId: string) => {
+  // Get next queue number for today
+  const { startISO, endISO } = getTodayBoundsISO();
+
+  
+  const { data: existingAppointments } = await supabase
+    .from('appointments')
+    .select('queue')
+    .eq('doc_id', docId)
+    .gte('created_at', startISO)
+.lte('created_at', endISO)
+    .order('queue', { ascending: false })
+    .limit(1);
+
+  const nextQueue = existingAppointments && existingAppointments.length > 0 
+    ? existingAppointments[0].queue + 1 
+    : 1;
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .insert({
+      patient_id: patientId,
+      doc_id: docId,
+      queue: nextQueue,
+     pre_consult_filled: false,
+completed: false
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getTodaysAppointments = async (docId: string) => {
+  const { startISO, endISO } = getTodayBoundsISO();
+
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(`
+      *,
+      patients (id, name, age, gender, phone, last_visit_at)
+    `)
+    .eq('doc_id', docId)
+    // ✅ IMPORTANT: DO NOT filter completed here
+    .gte('created_at', startISO)
+.lte('created_at', endISO)
+    // ✅ pending first, then completed
+    .order('completed', { ascending: true })
+    .order('queue', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
+
+export const updateAppointmentQueue = async (appointmentId: string, newQueue: number) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ queue: newQueue })
+    .eq('id', appointmentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const completeAppointment = async (appointmentId: string) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ completed: true })
+    .eq('id', appointmentId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getPatientByPhone = async (phone: string, docId: string) => {
+  const { data: userData } = await supabase
+    .from('users')
+    .select('org_id')
+    .eq('auth_id', docId)
+    .limit(1)
+    .single();
+
+  if (!userData) return null;
+
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .eq('phone', phone)
+    .eq('org_id', userData.org_id)
+    .limit(1);
+
+  if (error) {
+    console.error('Error fetching patient by phone:', error);
+    return null;
+  }
+  
+  return data && data.length > 0 ? data[0] : null;
+};
+

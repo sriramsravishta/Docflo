@@ -1,114 +1,259 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Edit, Link as LinkIcon, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  CreditCard as Edit,
+  X,
+  ChevronDown,
+  ChevronRight,
+  Thermometer,
+  Activity,
+  HeartPulse,
+  Droplets,
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PatientProfileHeader from '../components/features/PatientProfileHeader';
+import ConsultViewModal from '../components/features/ConsultViewModal';
+import ConsultEditModal from '../components/features/ConsultEditModal';
+import { DocumentUploadModal, DocumentUploadStatusModal } from '../components/features/DocumentUploadModal';
+import Spinner from '../components/ui/Spinner';
+import { usePatientData } from '../hooks/usePatientData';
+import { useRecording } from '../hooks/useRecording';
 import {
-  getPatientById,
   updatePatient,
-  getPreConsults,
-  getConsults,
-  getFollowUps,
   createPreConsult,
-  createFollowUp,
-  getQueries
+  updatePreConsult,
+  getConsultMedicines,
+  createConsultMedicine,
+  updateConsultMedicine,
+  deleteConsultMedicine,
+  searchMedicines,
+  updateConsultSummary,
 } from '../lib/database';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  formatDate,
+  formatDateShort,
+  getConsultSummary,
+  isConsultProcessed,
+  isConsultError,
+  getElapsedSeconds,
+  getProgressPercent,
+  getViewModeMedicines,
+  getConsultPreviewText,
+  normalizeTime,
+  diagnosisToEditableText,
+  diagnosisTextToJson,
+  treatmentToEditableText,
+  treatmentTextToJson,
+  investigationsToEditableText,
+  investigationsTextToJson,
+  escapeHtml,
+  toHtmlList,
+  ESTIMATED_PROCESS_SECONDS,
+  MAX_PROCESS_SECONDS,
+  PRE_CONSULT_ESTIMATED_SECONDS,
+} from '../lib/utils';
+import type { ConsultRow, ConsultMedicineRow, VitalRow } from '../types/db';
+import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary, DiagnosticTrend } from '../types/db';
+
+type UploadState = 'confirming' | 'uploading' | 'success' | 'error';
+
+interface MedicineDraft {
+  name: string;
+  dosage: string;
+  quantity: string;
+  type: string;
+  frequency: string;
+  food: string;
+  time: string[];
+  duration: string;
+  instructions: string;
+  flags?: string;
+}
 
 export default function PatientProfile() {
-  const { patientId } = useParams();
-  const navigate = useNavigate();
+  const { patientId } = useParams<{ patientId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'pre-consult' | 'consultations' | 'monitoring' | 'queries'>('pre-consult');
-  const [loading, setLoading] = useState(true);
-  const [patient, setPatient] = useState<any>(null);
-  const [preConsults, setPreConsults] = useState<any[]>([]);
-  const [consultations, setConsultations] = useState<any[]>([]);
-  const [followUps, setFollowUps] = useState<any[]>([]);
-  const [queries, setQueries] = useState<any[]>([]);
+
+  const {
+    patient,
+    loading,
+    consultations,
+    setConsultations,
+    latestSummary,
+    setLatestSummary,
+    processingPreConsults,
+    todaysVitals,
+    loadPatientData,
+    loadTodaysVitals,
+    addProcessingPreConsultOptimistic,
+    preConsultSectionRef,
+  } = usePatientData(patientId, user?.id);
+
+  const { isRecording, isPaused, recordingTime, handleStartRecording, handlePauseRecording, handleEndRecording } =
+    useRecording(patientId, user?.id, async () => { await loadPatientData(); });
+
+  const [uiNow, setUiNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setUiNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<string>('');
-  const [editForm, setEditForm] = useState({
-    name: '',
-    case: '',
-    age: '',
-    gender: '',
-  });
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+ 
+  const [showGraphView, setShowGraphView] = useState(false);
+  const [selectedGraphParam, setSelectedGraphParam] = useState<string>('');
+  const [editingVital, setEditingVital] = useState<VitalRow | null>(null);
+  const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
+
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male' });
 
   useEffect(() => {
-    if (patientId) {
-      loadPatientData();
-    }
-  }, [patientId]);
-
-  const loadPatientData = async () => {
-    try {
-      setLoading(true);
-      const patientData = await getPatientById(patientId!);
-      setPatient(patientData);
+    if (patient) {
       setEditForm({
-        name: patientData.name,
-        case: patientData.case || '',
-        age: patientData.age.toString(),
-        gender: patientData.gender,
+        name: patient.name,
+        age: patient.age.toString(),
+        phone: patient.phone,
+        case: patient.case || '',
+        gender: patient.gender,
       });
-
-      const [preConsultData, consultData, followUpData, queryData] = await Promise.all([
-        getPreConsults(patientId!),
-        getConsults(patientId!),
-        getFollowUps(patientId!),
-        getQueries(user?.id).then(queries => queries.filter(q => q.patient_id === patientId))
-      ]);
-
-      setPreConsults(preConsultData.filter(pc => pc.status === 'Submitted'));
-      setConsultations(consultData);
-      setFollowUps(followUpData.filter(fu => fu.status === 'Submitted'));
-      setQueries(queryData);
-    } catch (error) {
-      console.error('Error loading patient data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [patient]);
 
-  const handleSendLink = (type: 'pre-consult' | 'follow-up') => {
-    setConfirmAction(type);
-    setShowConfirmation(true);
-  };
+  const [selectedConsult, setSelectedConsult] = useState<ConsultRow | null>(null);
+  const [isEditingConsult, setIsEditingConsult] = useState(false);
+  const [editedConsult, setEditedConsult] = useState<Record<string, unknown>>({});
+  const [editedDiagnosisText, setEditedDiagnosisText] = useState('');
+  const [editedTreatmentText, setEditedTreatmentText] = useState('');
+  const [editedInvestigationsText, setEditedInvestigationsText] = useState('');
 
-  const handleConfirmSend = async () => {
+  const [consultMedicines, setConsultMedicines] = useState<ConsultMedicineRow[]>([]);
+  const [medicineDrafts, setMedicineDrafts] = useState<Record<string, MedicineDraft>>({});
+  const [medicineSearchResults, setMedicineSearchResults] = useState<{ name: string }[]>([]);
+  const [openTimeDropdownId, setOpenTimeDropdownId] = useState<string | null>(null);
+  const timeDropdownRef = useRef<HTMLDivElement | null>(null);
+ 
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    diagnosis: true,
+    chiefComplaints: true,
+    treatmentSuggested: true,
+    medications: false,
+    investigations: false,
+    history: false,
+    followupRecommendations: false,
+    keyPersonalInsights: false,
+    flagsForReview: false,
+    currentMeds: false,
+    pastMeds: false,
+  });
+
+  const [documentsToUpload, setDocumentsToUpload] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [documentUploadState, setDocumentUploadState] = useState<UploadState>('confirming');
+  const [showDocumentConfirm, setShowDocumentConfirm] = useState(false);
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  useEffect(() => {
+    if (selectedConsult?.id) {
+      loadConsultMedicines(selectedConsult.id);
+    }
+    setMedicineSearchResults([]);
+  }, [selectedConsult]);
+
+  useEffect(() => {
+    if (!selectedConsult?.id) return;
+    const channel = supabase
+      .channel(`consult-watch-${selectedConsult.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
+        (payload) => {
+          const updated = payload.new as ConsultRow;
+          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
+          setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedConsult?.id]);
+
+  useEffect(() => {
+    if (!selectedConsult?.id) return;
+    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
+
+    const createdAt = selectedConsult?.created_at ? new Date(selectedConsult.created_at).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - createdAt) / 1000);
+    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (Math.floor((Date.now() - createdAt) / 1000) >= 180) return;
+      interval = setInterval(async () => {
+        if (Math.floor((Date.now() - createdAt) / 1000) >= 180) { if (interval) clearInterval(interval); return; }
+        try {
+          const { data, error } = await supabase.from('consult').select('id, consult_summary_final, created_at').eq('id', selectedConsult.id).single();
+          if (error || !data) return;
+          setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
+          setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
+          if (getConsultSummary(data as ConsultRow) && interval) clearInterval(interval);
+        } catch (e) { console.error('Error polling consult popup (fallback catch):', e); }
+      }, 3000);
+    };
+
+    const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
+    return () => { clearTimeout(timeout); if (interval) clearInterval(interval); };
+  }, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
+
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (!openTimeDropdownId) return;
+      const el = timeDropdownRef.current;
+      if (!el) return;
+      if (!el.contains(e.target as Node)) setOpenTimeDropdownId(null);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [openTimeDropdownId]);
+
+  const loadConsultMedicines = async (consultId: string) => {
     try {
-      if (confirmAction === 'pre-consult') {
-        const preConsult = await createPreConsult(user!.id, patientId!);
-        const link = `${window.location.origin}/pre-consult/${preConsult.id}`;
-        console.log('Pre-consult link:', link);
-        alert(`Pre-consult form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
-      } else {
-        const followUp = await createFollowUp(user!.id, patientId!);
-        const link = `${window.location.origin}/follow-up/${followUp.id}`;
-        console.log('Follow-up link:', link);
-        alert(`Follow-up form created! Link: ${link}\n\n(In production, this would be sent via WhatsApp)`);
-      }
-      setShowConfirmation(false);
-      await loadPatientData();
-    } catch (error) {
-      console.error('Error creating form:', error);
-      alert('Failed to create form');
-    }
+      const medicines = await getConsultMedicines(consultId);
+      const normalized = (medicines || []).map((m: ConsultMedicineRow) => ({ ...m, time: normalizeTime(m?.time) }));
+      setConsultMedicines(normalized);
+      const drafts: Record<string, MedicineDraft> = {};
+      medicines.forEach((m: ConsultMedicineRow) => {
+        drafts[m.id] = {
+          name: m.name || '',
+          dosage: m.dosage || '',
+          quantity: m.quantity || '',
+          type: m.type || '',
+          frequency: m.frequency || '',
+          food: m.food || '',
+          time: normalizeTime(m.time),
+          duration: m.duration || '',
+          instructions: m.instructions || '',
+          flags: m.flags || '',
+        };
+      });
+      setMedicineDrafts(drafts);
+    } catch (error) { console.error('Error loading consult medicines:', error); }
   };
 
-  const handleUpdatePatient = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditPatient = async () => {
     try {
       await updatePatient(patientId!, {
         name: editForm.name,
-        case: editForm.case || undefined,
         age: parseInt(editForm.age),
-        gender: editForm.gender,
+        phone: editForm.phone,
+        case: editForm.case || undefined,
+        gender: editForm.gender as 'Male' | 'Female' | 'Other',
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -118,8 +263,731 @@ export default function PatientProfile() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const handleAddVital = async () => {
+    try {
+      const { error } = await supabase.from('vitals').insert([{
+        patient_id: patientId,
+        doctor_id: user!.id,
+        temperature: vitalForm.temperature || null,
+        blood_pressure: vitalForm.blood_pressure || null,
+        heart_rate: vitalForm.heart_rate || null,
+        spo2: vitalForm.spo2 || null,
+      }]).select();
+      if (error) throw error;
+      await loadTodaysVitals();
+      handleCloseVitalsModal();
+    } catch (error) { console.error('Error adding vital:', error); alert('Failed to add vitals'); }
+  };
+
+  const handleUpdateVital = async () => {
+    if (!editingVital) return;
+    try {
+      const { error } = await supabase.from('vitals').update({
+        temperature: vitalForm.temperature || null,
+        blood_pressure: vitalForm.blood_pressure || null,
+        heart_rate: vitalForm.heart_rate || null,
+        spo2: vitalForm.spo2 || null,
+      }).eq('id', editingVital.id);
+      if (error) throw error;
+      await loadTodaysVitals();
+      handleCloseVitalsModal();
+    } catch (error) { console.error('Error updating vital:', error); alert('Failed to update vitals'); }
+  };
+
+  const handleEditVital = (vital: VitalRow) => {
+    setEditingVital(vital);
+    setVitalForm({
+      temperature: vital.temperature || '',
+      blood_pressure: vital.blood_pressure || '',
+      heart_rate: vital.heart_rate || '',
+      spo2: vital.spo2 || '',
+    });
+    setShowVitalsModal(true);
+  };
+
+  const handleCloseVitalsModal = () => {
+    setShowVitalsModal(false);
+    setEditingVital(null);
+    setVitalForm({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
+  };
+
+  const handleEditConsult = () => {
+    if (!selectedConsult) return;
+    const summary = getConsultSummary(selectedConsult) as ConsultSummary || {};
+    setIsEditingConsult(true);
+    setEditedConsult({ ...summary, id: selectedConsult.id });
+    setEditedDiagnosisText(diagnosisToEditableText(summary.diagnosis));
+    setEditedTreatmentText(treatmentToEditableText(summary.treatment_suggested));
+    setEditedInvestigationsText(investigationsToEditableText(summary.investigations));
+    setMedicineSearchResults([]);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingConsult(false);
+    setEditedConsult({});
+    setEditedDiagnosisText('');
+    setEditedTreatmentText('');
+    setEditedInvestigationsText('');
+    setMedicineSearchResults([]);
+  };
+
+  const saveMedicineDraftsToDB = async () => {
+    for (const m of consultMedicines) {
+      const d = medicineDrafts[m.id];
+      if (!d) continue;
+      await updateConsultMedicine(m.id, {
+        name: d.name || '',
+        dosage: d.dosage || '',
+        quantity: d.quantity || '',
+        type: d.type || '',
+        frequency: d.frequency || '',
+        food: d.food || '',
+        time: normalizeTime(d.time),
+        duration: d.duration || '',
+        instructions: d.instructions || '',
+        flags: d.flags || '',
+      });
+    }
+    if (selectedConsult?.id) await loadConsultMedicines(selectedConsult.id);
+  };
+
+  const handleSaveConsult = async () => {
+    try {
+      if (!selectedConsult) return;
+      const originalSummary = (getConsultSummary(selectedConsult) as ConsultSummary) || {};
+      const toSave = {
+        ...editedConsult,
+        diagnosis: diagnosisTextToJson(editedDiagnosisText, originalSummary.diagnosis),
+        treatment_suggested: treatmentTextToJson(editedTreatmentText, originalSummary.treatment_suggested),
+        investigations: investigationsTextToJson(editedInvestigationsText, originalSummary.investigations),
+      };
+      const { id: _id, ...payload } = toSave;
+      await updateConsultSummary(selectedConsult.id, payload);
+      await saveMedicineDraftsToDB();
+      const { consultsData } = await loadPatientData();
+      const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);
+      if (updated) setSelectedConsult(updated);
+      setIsEditingConsult(false);
+      setEditedConsult({});
+      setEditedDiagnosisText('');
+      setEditedTreatmentText('');
+      setEditedInvestigationsText('');
+      setMedicineSearchResults([]);
+    } catch (error) {
+      console.error('Error saving consultation:', error);
+      alert('Failed to save changes');
+    }
+  };
+
+  const handleAddMedicine = async () => {
+    try {
+      const newMedicine = await createConsultMedicine({
+        consult_id: selectedConsult!.id,
+        name: '', dosage: '', quantity: '', type: '',
+        frequency: '', time: [], food: '', duration: '', instructions: '', flags: '',
+      });
+      setConsultMedicines((prev) => [newMedicine, ...prev]);
+    } catch (error) { console.error('Error adding medicine:', error); }
+  };
+
+  const handleDeleteMedicine = async (medicineId: string) => {
+    try {
+      await deleteConsultMedicine(medicineId);
+      setConsultMedicines((prev) => prev.filter((m) => m.id !== medicineId));
+      setMedicineDrafts((prev) => { const next = { ...prev }; delete next[medicineId]; return next; });
+      setMedicineSearchResults([]);
+    } catch (error) { console.error('Error deleting medicine:', error); }
+  };
+
+  const updateMedicineDraft = (medicineId: string, patch: Partial<MedicineDraft>) => {
+    setMedicineDrafts((prev) => ({ ...prev, [medicineId]: { ...(prev[medicineId] || {}), ...patch } as MedicineDraft }));
+  };
+
+  const handleMedicineSearch = async (query: string) => {
+    if (query.trim().length < 1) { setMedicineSearchResults([]); return; }
+    try {
+      const results = await searchMedicines(query.trim(), 10);
+      setMedicineSearchResults(results);
+    } catch (error) { console.error('Error searching medicines:', error); }
+  };
+
+  const handleSendPreConsultLink = () => {
+    if (!patient || !patient.phone || !user) return;
+    const preConsultUrl = `${window.location.origin}/pre-consult/new?docId=${user.id}&patientId=${patientId}`;
+    const message = `Hi ${patient.name},\n\nBefore your visit, please upload all your past medical reports/prescriptions here: ${preConsultUrl}\n\nIt helps the doctor see a quick summary of your medical history and treat you better \n\nThank You! \n— Dr Ranga Reddy's Clinic`;
+    let phoneNumber = String(patient.phone).replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = `91${phoneNumber}`;
+    window.location.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+  };
+
+  const confirmDocumentSubmit = async () => {
+    if (documentsToUpload.length === 0) return;
+    try {
+      setDocumentUploadState('uploading');
+      setUploadError('');
+      const uploadedUrls: string[] = [];
+      for (const file of documentsToUpload) {
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `${patientId}-${Date.now()}-${sanitizedFileName}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('pre-consultation-documents')
+          .upload(fileName, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+        if (uploadError) throw new Error('Failed to upload document: ' + file.name);
+        const { data: urlData } = supabase.storage.from('pre-consultation-documents').getPublicUrl(uploadData.path);
+        uploadedUrls.push(urlData.publicUrl);
+      }
+      const preConsult = await createPreConsult(user!.id, patientId!);
+      await updatePreConsult(preConsult.id, { documents_uploaded: uploadedUrls, status: 'Draft' });
+      addProcessingPreConsultOptimistic({ id: preConsult.id, documents_uploaded: uploadedUrls, ai_summary: null, created_at: new Date().toISOString(), doc_id: user!.id, patient_id: patientId!, status: 'Draft' });
+      setDocumentUploadState('success');
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      setDocumentUploadState('error');
+    }
+  };
+
+  const handleDocumentUploadOkay = () => {
+    setShowDocumentConfirm(false);
+    setShowDocumentUpload(false);
+    setDocumentsToUpload([]);
+    setUploadError('');
+    setDocumentUploadState('confirming');
+    requestAnimationFrame(() => {
+      if (preConsultSectionRef.current) {
+        const el = preConsultSectionRef.current;
+        const offsetPosition = el.getBoundingClientRect().top + window.pageYOffset - 32;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    });
+  };
+
+  const generatePDFHTMLContent = (consult: ConsultRow): string => {
+    const summary = getConsultSummary(consult) as ConsultSummary | null;
+    if (!summary) return '<p>No consultation summary available.</p>';
+
+    const meds = getViewModeMedicines(summary, consultMedicines);
+
+    let content = `
+      <div class="header">
+        <p><strong>Patient:</strong> ${escapeHtml(patient?.name)}</p>
+        <p><strong>Date:</strong> ${escapeHtml(formatDate(consult.created_at))}</p>
+        <p><strong>Doctor:</strong> ${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</p>
+      </div>
+    `;
+
+    if (summary.diagnosis) {
+      if (typeof summary.diagnosis === 'string') {
+        content += `<div class="section"><h2>DIAGNOSIS</h2><p>${escapeHtml(summary.diagnosis)}</p></div>`;
+      } else {
+        const d = summary.diagnosis as DiagnosisSummary;
+        const prov = Array.isArray(d.provisional) ? d.provisional : [];
+        const keyf = Array.isArray(d.key_findings) ? d.key_findings : [];
+        content += `<div class="section"><h2>DIAGNOSIS</h2>${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}</div>`;
+      }
+    }
+    if (summary.history) content += `<div class="section"><h2>HISTORY</h2><p>${escapeHtml(summary.history)}</p></div>`;
+    if (summary.chief_complaints) {
+      content += `<div class="section"><h2>CHIEF COMPLAINTS</h2>${Array.isArray(summary.chief_complaints) ? toHtmlList(summary.chief_complaints) : `<p>${escapeHtml(summary.chief_complaints)}</p>`}</div>`;
+    }
+    if (summary.treatment_suggested) {
+      if (typeof summary.treatment_suggested === 'string') {
+        content += `<div class="section"><h2>TREATMENT SUGGESTED</h2><p>${escapeHtml(summary.treatment_suggested)}</p></div>`;
+      } else {
+        const t = summary.treatment_suggested as TreatmentSummary;
+        const immediate = Array.isArray(t.immediate_plan) ? t.immediate_plan : [];
+        const contingent = Array.isArray(t.contingent_plan) ? t.contingent_plan : [];
+        content += `<div class="section"><h2>TREATMENT SUGGESTED</h2>${immediate.length ? `<h3>Immediate Plan</h3>${toHtmlList(immediate)}` : ''}${contingent.length ? `<h3>Contingent Plan</h3>${toHtmlList(contingent)}` : ''}</div>`;
+      }
+    }
+    if (meds.length > 0) {
+      content += `<div class="section"><h2>MEDICATIONS</h2><table class="table"><thead><tr><th>Name</th><th>Dosage</th><th>Quantity</th><th>Type</th><th>Frequency</th><th>Time</th><th>AF/BF</th><th>Duration</th><th>Instructions</th></tr></thead><tbody>${
+        meds.map((m) => `<tr><td>${escapeHtml(m?.name||'-')}</td><td>${escapeHtml(m?.dosage||'-')}</td><td>${escapeHtml(m?.quantity||'-')}</td><td>${escapeHtml(m?.type||'-')}</td><td>${escapeHtml(m?.frequency||'-')}</td><td>${escapeHtml(Array.isArray(m?.time)&&m.time.length?m.time.join(', '):'-')}</td><td>${escapeHtml(m?.food||'-')}</td><td>${escapeHtml(m?.duration||'-')}</td><td>${escapeHtml(m?.instructions||'-')}</td></tr>`).join('')
+      }</tbody></table></div>`;
+    }
+    if (summary.investigations && typeof summary.investigations === 'object') {
+      const inv = summary.investigations as InvestigationsSummary;
+      const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
+      if (ordered.length || inv.notes) {
+        content += `<div class="section"><h2>INVESTIGATIONS</h2>${ordered.length ? `<h3>Ordered</h3><ul>${ordered.map((o) => `<li><strong>${escapeHtml(o?.name||'-')}</strong>${o?.body_part_or_type?` — ${escapeHtml(o.body_part_or_type)}`:''}${o?.priority?` (Priority: ${escapeHtml(o.priority)})`:''}</li>`).join('')}</ul>` : ''}${inv.notes ? `<h3>Notes</h3><p>${escapeHtml(inv.notes)}</p>` : ''}</div>`;
+      }
+    }
+    if (summary.followup_recommendations) {
+      content += `<div class="section"><h2>FOLLOW-UP RECOMMENDATIONS</h2>${Array.isArray(summary.followup_recommendations) ? toHtmlList(summary.followup_recommendations) : `<p>${escapeHtml(summary.followup_recommendations)}</p>`}</div>`;
+    }
+    return content;
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedConsult) return;
+    const htmlContent = generatePDFHTMLContent(selectedConsult);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
+    printWindow.document.open();
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body{font-family:Arial,sans-serif;margin:24px;line-height:1.6;color:#111}h1{font-size:20px;margin:0 0 8px 0;border-bottom:2px solid #111;padding-bottom:8px}h2{font-size:14px;margin:18px 0 8px 0;color:#333}h3{font-size:12px;margin:12px 0 6px 0;color:#444}p{margin:6px 0}ul{margin:6px 0 6px 18px;padding:0}.header{margin-bottom:18px}.section{margin-bottom:14px}.table{width:100%;border-collapse:collapse;margin-top:8px}.table th,.table td{border:1px solid #ddd;padding:8px;vertical-align:top;font-size:12px}.table th{background:#f3f4f6;text-align:left}@page{margin-top:160px;margin-bottom:120px;margin-left:12mm;margin-right:12mm}@media print{body{margin:0}}</style></head><body>${htmlContent}<script>setTimeout(function(){window.focus();window.print()},300);window.onafterprint=function(){window.close()};</script></body></html>`);
+    printWindow.document.close();
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!selectedConsult || !patient) return;
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${formatDate(selectedConsult.created_at)}.`;
+    let phoneNumber = patient.phone.replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const renderBulletSummary = (text: unknown) => {
+    if (typeof text !== 'string') return <p className="text-gray-800">{String(text)}</p>;
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+    const bulletLines = lines.filter((l) => l.startsWith('-') || l.startsWith('•')).map((l) => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+    if (bulletLines.length >= 1 && bulletLines.length === lines.length) {
+      return <ul className="list-disc list-inside space-y-1 text-gray-800">{bulletLines.map((b, i) => <li key={i}>{b}</li>)}</ul>;
+    }
+    return <p className="text-gray-800 whitespace-pre-line">{text}</p>;
+  };
+
+  const renderTimelineTab = () => {
+    const timeline = Array.isArray(latestSummary?.summary?.timeline_of_medical_events) ? latestSummary!.summary.timeline_of_medical_events! : [];
+    if (timeline.length === 0) {
+      return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No timeline events available</p></div>;
+    }
+    return (
+      <div className="space-y-4">
+        {timeline.map((event, index) => (
+          <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="flex justify-between items-start mb-0.5">
+              <h4 className="font-semibold text-gray-900">{event.event_type}</h4>
+              <button type="button" className="hidden" onClick={() => {}} />
+            </div>
+            {(event.location || event.event_datetime) && (
+              <p className="text-sm text-gray-600 mb-4">
+                {event.event_datetime ? formatDate(event.event_datetime) : '—'}
+                {event.location && event.event_datetime ? ' • ' : ''}
+                {event.location || ''}
+              </p>
+            )}
+            {renderBulletSummary(event.summary)}
+            {event.important_findings && (
+              <div className="mt-3 p-3 rounded border border-[#024CDB]/60 bg-[#024CDB]/5">
+                {(() => {
+                  const txt = String(event.important_findings || '').trim();
+                  const bullets = txt.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+                  if (bullets.length >= 2) {
+                    return <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">{bullets.map((b, i) => <li key={i}>{b}</li>)}</ul>;
+                  }
+                  return <p className="text-sm text-gray-800 whitespace-pre-line">{txt}</p>;
+                })()}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderDiagnosticTrendsTab = () => {
+    const trends: DiagnosticTrend[] = Array.isArray(latestSummary?.summary?.diagnostic_trends) ? latestSummary!.summary.diagnostic_trends! : [];
+    if (!trends.length) {
+      return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No diagnostic trends available</p></div>;
+    }
+
+    const toDayKey = (iso: string) => { const d = new Date(iso); return isNaN(d.getTime()) ? iso : d.toISOString().slice(0, 10); };
+    const formatColHeader = (dayKey: string) => {
+      const d = new Date(dayKey + 'T00:00:00');
+      return isNaN(d.getTime()) ? dayKey : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase();
+    };
+    const badgeClass = (label: string) => {
+      const t = (label || '').toLowerCase();
+      if (t.includes('critical')) return 'bg-red-100 text-red-700';
+      if (t.includes('high')) return 'bg-orange-100 text-orange-700';
+      if (t.includes('elevat')) return 'bg-amber-100 text-amber-700';
+      if (t.includes('uncontrol')) return 'bg-orange-100 text-orange-700';
+      if (t.includes('normal')) return 'bg-green-100 text-green-700';
+      if (t.includes('low')) return 'bg-blue-100 text-blue-700';
+      return 'bg-gray-100 text-gray-700';
+    };
+
+    const allDays: string[] = [];
+    trends.forEach((p) => { (p?.measurements || []).forEach((m) => { if (m?.measurement_datetime) allDays.push(toDayKey(m.measurement_datetime)); }); });
+    const uniqueDays = Array.from(new Set(allDays)).sort();
+
+    const valueMap: Record<string, Record<string, typeof trends[0]['measurements'] extends (infer T)[] | undefined ? T : never>> = {};
+    trends.forEach((p) => {
+      const key = String(p?.parameter_name || '').trim();
+      if (!key) return;
+      valueMap[key] = valueMap[key] || {};
+      (p?.measurements || []).forEach((m) => {
+        const day = m?.measurement_datetime ? toDayKey(m.measurement_datetime) : null;
+        if (!day) return;
+        const existing = valueMap[key][day];
+        if (!existing) { valueMap[key][day] = m; }
+        else {
+          const a = new Date((existing as typeof m).measurement_datetime).getTime();
+          const b = new Date(m.measurement_datetime).getTime();
+          if (!isNaN(a) && !isNaN(b) && b > a) valueMap[key][day] = m;
+        }
+      });
+    });
+
+    const getInterpretation = (p: DiagnosticTrend) => {
+      const ms = Array.isArray(p?.measurements) ? p.measurements : [];
+      const latest = ms.filter((m) => m?.measurement_datetime).sort((a, b) => new Date(b.measurement_datetime).getTime() - new Date(a.measurement_datetime).getTime())[0];
+      return latest?.clinical_interpretation || p?.overall_trend_comment || '';
+    };
+
+    const renderTable = () => (
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">PARAMETER</th>
+              {uniqueDays.map((dayKey) => (
+                <th key={dayKey} className="text-left text-xs font-semibold tracking-wider text-blue-700 px-4 py-3">{formatColHeader(dayKey)}</th>
+              ))}
+              <th className="text-left text-xs font-semibold tracking-wider text-gray-600 px-4 py-3">INTERPRETATION</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trends.map((p, idx) => {
+              const paramName = String(p?.parameter_name || '').trim();
+              if (!paramName) return null;
+              const interp = String(getInterpretation(p) || '').trim();
+              const unit = p?.unit ? String(p.unit) : '';
+              return (
+                <tr key={paramName + idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{paramName}</td>
+                  {uniqueDays.map((dayKey) => {
+                    const m = valueMap?.[paramName]?.[dayKey] as { value_raw?: string | number } | undefined;
+                    const val = m?.value_raw ?? '';
+                    const display = val === '' || val === null || val === undefined ? '—' : unit && typeof val === 'number' ? `${val} ${unit}` : unit && typeof val === 'string' && !val.includes(unit) ? `${val} ${unit}` : String(val);
+                    return <td key={dayKey} className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{display}</td>;
+                  })}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {interp ? (
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClass(interp)}`}>{interp}</span>
+                    ) : (
+                      <span className="text-sm text-gray-400">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+
+    const renderGraphsInline = () => {
+  const firstParam = trends.map((t) => String(t?.parameter_name || '').trim()).find(Boolean) || '';
+  const currentParam = selectedGraphParam || firstParam;
+
+  const selected =
+    trends.find((t) => String(t?.parameter_name || '').trim() === currentParam) || trends[0];
+
+  if (!selected) return null;
+
+  const selectedName = String(selected?.parameter_name || '').trim();
+
+  const measurements = (selected.measurements || [])
+    .map((m) => ({ ...m, timestamp: new Date((m.measurement_datetime || '').replace('~', '').trim()).getTime() }))
+    .filter((m) => !isNaN(m.timestamp))
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Dropdown */}
+      <div className="relative">
+        <select
+          value={currentParam}
+          onChange={(e) => setSelectedGraphParam(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
+        >
+          {trends.map((t, idx) => {
+            const name = String(t?.parameter_name || '').trim();
+            if (!name) return null;
+            return (
+              <option key={idx} value={name}>
+                {name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {/* If no data */}
+      {measurements.length === 0 ? (
+        <div className="border border-gray-200 rounded-lg p-6 bg-white">
+          <p className="text-sm text-gray-500">No graph data available for this parameter.</p>
+        </div>
+      ) : (
+        (() => {
+          const graphWidth = Math.max(700, measurements.length * 120);
+          const graphHeight = 450;
+          const padding = { top: 60, right: 80, bottom: 80, left: 80 };
+          const chartWidth = graphWidth - padding.left - padding.right;
+          const chartHeight = graphHeight - padding.top - padding.bottom;
+
+          const values = measurements.map((m) => m.value_numeric ?? 0).filter((v) => v !== undefined);
+          const minValue = Math.min(...values);
+          const maxValue = Math.max(...values);
+          const valueRange = maxValue - minValue || 1;
+
+          const yMin = Math.floor((minValue - valueRange * 0.2) / 10) * 10;
+          const yMax = Math.ceil((maxValue + valueRange * 0.15) / 10) * 10;
+
+          const normalRangeMatch = selected.normal_range?.match(/[<>]?\s*(\d+)/);
+          const normalThreshold = normalRangeMatch ? parseFloat(normalRangeMatch[1]) : null;
+
+          const points = measurements.map((m, i) => ({
+            x: padding.left + (i / (measurements.length - 1 || 1)) * chartWidth,
+            y: padding.top + chartHeight - ((((m.value_numeric ?? 0) - yMin) / (yMax - yMin)) * chartHeight),
+            ...m,
+          }));
+
+          const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+          const yTicks = 6;
+          const yTickValues = Array.from({ length: yTicks }, (_, i) => yMin + ((yMax - yMin) / (yTicks - 1)) * i);
+
+          const normalZoneY =
+            normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax
+              ? padding.top + chartHeight - ((normalThreshold - yMin) / (yMax - yMin)) * chartHeight
+              : null;
+
+          const normalZoneHeight =
+            normalZoneY !== null
+              ? chartHeight - (chartHeight - ((normalThreshold! - yMin) / (yMax - yMin)) * chartHeight)
+              : null;
+
+          return (
+            <div className="border border-gray-200 rounded-lg p-6 bg-white">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">{selectedName}</h3>
+                <p className="text-sm text-gray-600">
+                  {selected.unit && `Unit: ${selected.unit}`}
+                  {selected.normal_range && ` • Normal Range: ${selected.normal_range}`}
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <svg width={graphWidth} height={graphHeight} className="bg-white" style={{ minWidth: '700px' }}>
+                  {normalZoneY !== null && normalZoneHeight !== null && (
+                    <rect x={padding.left} y={normalZoneY} width={chartWidth} height={normalZoneHeight} fill="rgba(16, 185, 129, 0.08)" />
+                  )}
+
+                  {yTickValues.map((val, i) => {
+                    const y = padding.top + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
+                    return (
+                      <g key={i}>
+                        <line x1={padding.left} y1={y} x2={padding.left + chartWidth} y2={y} stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4,4" />
+                        <text x={padding.left - 12} y={y + 4} textAnchor="end" fontSize="12" fill="#6b7280" fontWeight="500">
+                          {Math.round(val)}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {normalThreshold && normalThreshold >= yMin && normalThreshold <= yMax && (
+                    <g>
+                      <line x1={padding.left} y1={normalZoneY!} x2={padding.left + chartWidth} y2={normalZoneY!} stroke="#10b981" strokeWidth="2" strokeDasharray="6,3" />
+                      <text x={padding.left + chartWidth + 10} y={normalZoneY! + 4} fontSize="11" fill="#10b981" fontWeight="600">
+                        Normal
+                      </text>
+                    </g>
+                  )}
+
+                  <line x1={padding.left} y1={padding.top + chartHeight} x2={padding.left + chartWidth} y2={padding.top + chartHeight} stroke="#9ca3af" strokeWidth="2" />
+                  <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#9ca3af" strokeWidth="2" />
+
+                  <path d={linePath} fill="none" stroke="#024CDB" strokeWidth="2.5" strokeLinejoin="round" />
+
+                  {points.map((p, i) => {
+                    const val = p.value_numeric ?? 0;
+                    const isAbove = normalThreshold && val > normalThreshold;
+                    const color = isAbove ? '#ef4444' : '#024CDB';
+                    return (
+                      <g key={i}>
+                        <circle cx={p.x} cy={p.y} r="5" fill={color} stroke="white" strokeWidth="2" />
+                        <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="12" fill={color} fontWeight="600">
+                          {val}
+                        </text>
+                        <text x={p.x} y={padding.top + chartHeight + 20} textAnchor="middle" fontSize="11" fill="#6b7280">
+                          {new Date((p.measurement_datetime || '').replace('~', '').trim())
+                            .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })
+                            .toUpperCase()}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+          );
+        })()
+      )}
+    </div>
+  );
+};
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+  <h3 className="text-sm font-semibold text-gray-900">DIAGNOSTIC TRENDS</h3>
+
+  <div className="flex items-center gap-2">
+    <span className="text-sm text-gray-600">Graph view</span>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={showGraphView}
+      onClick={() => {
+        // when turning ON, default to first parameter (avoid empty dropdown)
+        if (!showGraphView) {
+          const firstParam =
+            trends.map((t) => String(t?.parameter_name || '').trim()).find(Boolean) || '';
+          setSelectedGraphParam((prev) => prev || firstParam);
+        }
+        setShowGraphView((v) => !v);
+      }}
+      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#024CDB] ${
+        showGraphView ? 'bg-[#024CDB]' : 'bg-gray-200'
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+          showGraphView ? 'translate-x-4' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  </div>
+</div>
+        {showGraphView ? renderGraphsInline() : renderTable()}
+      </div>
+    );
+  };
+
+  const renderHistoryTab = () => {
+    const medications = latestSummary?.summary?.medications || {};
+    const currentMeds = medications.current || [];
+    const pastMeds = medications.past || [];
+    const currentOpen = !!expandedSections.currentMeds;
+    const pastOpen = !!expandedSections.pastMeds;
+
+    const renderCollapsible = (title: React.ReactNode, open: boolean, onToggle: () => void, body: React.ReactNode) => (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <button
+  onClick={onToggle}
+  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+>
+  {open ? (
+    <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
+  ) : (
+    <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
+  )}
+
+  <h3 className="text-lg font-semibold text-gray-900 flex-1">{title}</h3>
+</button>
+        {open && <div className="px-4 pb-4">{body}</div>}
+      </div>
+    );
+
+    const medCard = (med: { drug_name?: string; dose?: string; frequency?: string; indication?: string; duration_or_quantity?: string; notes?: string }, idx: number, past = false) => (
+      <div key={idx} className={`${past ? 'bg-gray-50' : 'bg-white'} border border-gray-200 rounded-lg p-4`}>
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className={`${past ? 'font-medium text-gray-700' : 'font-semibold text-gray-900'}`}>{med.drug_name}</h4>
+            <p className="text-gray-600">{med.dose} • {med.frequency}</p>
+            {med.indication && <p className="text-sm text-gray-500 mt-1">{med.indication}</p>}
+          </div>
+          <span className="text-sm text-gray-500">{med.duration_or_quantity}</span>
+        </div>
+        {med.notes && <p className="text-sm text-gray-600 mt-2">{med.notes}</p>}
+      </div>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Diagnostic Trends</h3>
+          {renderDiagnosticTrendsTab()}
+        </div>
+        {renderCollapsible(
+          `Current Medications (${currentMeds.length})`,
+          currentOpen,
+          () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
+          currentMeds.length === 0 ? <p className="text-gray-500">No current medications</p> : (
+            <div className="mt-2 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
+              {currentMeds.map((med, idx) => medCard(med, idx, false))}
+            </div>
+          )
+        )}
+        {renderCollapsible(
+          `Past Medications (${pastMeds.length})`,
+          pastOpen,
+          () => setExpandedSections((prev) => ({ ...prev, pastMeds: !pastOpen })),
+          pastMeds.length === 0 ? <p className="text-gray-500">No past medications</p> : (
+            <div className="mt-2 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(400px,1fr))]">
+              {pastMeds.map((med, idx) => medCard(med, idx, true))}
+            </div>
+          )
+        )}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Timeline</h3>
+          {renderTimelineTab()}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPastSummariesTab = () => {
+    if (consultations.length === 0) {
+      return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No past consultations available</p></div>;
+    }
+    return (
+      <div className="flex flex-wrap gap-3">
+        {consultations.map((consult) => (
+          <div
+            key={consult.id}
+            onClick={() => setSelectedConsult(consult)}
+            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow min-w-[350px] max-w-[500px] flex-1"
+          >
+            <div className="flex justify-between items-start gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>
+                <p className="text-sm text-gray-600 mt-1">{getConsultPreviewText(consult)}</p>
+              </div>
+              <div className="flex flex-col items-end shrink-0">
+                {isConsultProcessed(consult) ? (
+                  <div className="flex items-center gap-2 text-sm text-[#024CDB]">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50">✓</span>
+                    <span className="font-medium">Processed</span>
+                  </div>
+                ) : isConsultError(consult, uiNow) ? (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-50">!</span>
+                    <span className="font-medium">Error</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-9 h-9">
+                      <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                        <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                        <path className="text-[#024CDB]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${getProgressPercent(consult, uiNow)}, 100`} strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{getProgressPercent(consult, uiNow)}%</div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-gray-700">Processing</p>
+                      <p className="text-[11px] text-gray-500">{getProgressPercent(consult, uiNow)}% completed</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -127,7 +995,7 @@ export default function PatientProfile() {
       <div className="min-h-screen bg-gray-50">
         <Navbar showBack />
         <div className="max-w-5xl mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#024CDB] mx-auto"></div>
+          <Spinner size="lg" className="mx-auto" />
           <p className="mt-4 text-gray-600">Loading patient data...</p>
         </div>
       </div>
@@ -149,368 +1017,285 @@ export default function PatientProfile() {
     <div className="min-h-screen bg-gray-50">
       <Navbar showBack />
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-              {patient.case && (
-                <p className="text-lg text-[#024CDB] mt-1">{patient.case}</p>
-              )}
-              <p className="text-gray-600 mt-2">
-                {patient.age} yrs, {patient.gender}
-              </p>
-              <p className="text-gray-600">{patient.phone}</p>
-            </div>
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Edit className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-
-          <button
-            onClick={() => navigate(`/consult/${patientId}`)}
-            className="w-full btn-primary text-lg py-3"
-          >
-            Start Consultation
-          </button>
-        </div>
+      <div className="w-full px-4 py-6 xl:px-[160px]">
+        <PatientProfileHeader
+          patient={patient}
+          isRecording={isRecording}
+          isPaused={isPaused}
+          recordingTime={recordingTime}
+          onStartRecording={handleStartRecording}
+          onEndRecording={handleEndRecording}
+          onPauseRecording={handlePauseRecording}
+          onEditPatient={() => setShowEditModal(true)}
+          onAddVitals={() => setShowVitalsModal(true)}
+          onUploadDocuments={() => setShowDocumentUpload(true)}
+          formatDate={formatDateShort}
+        />
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="border-b border-gray-200">
-            <div className="flex overflow-x-auto">
-              <button
-                onClick={() => setActiveTab('pre-consult')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'pre-consult'
-                    ? 'border-[#024CDB] text-[#024CDB]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Pre-consult
-              </button>
-              <button
-                onClick={() => setActiveTab('consultations')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'consultations'
-                    ? 'border-[#024CDB] text-[#024CDB]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Consultations
-              </button>
-              <button
-                onClick={() => setActiveTab('monitoring')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'monitoring'
-                    ? 'border-[#024CDB] text-[#024CDB]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Monitoring
-              </button>
-              <button
-                onClick={() => setActiveTab('queries')}
-                className={`px-6 py-4 font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'queries'
-                    ? 'border-[#024CDB] text-[#024CDB]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Queries
-              </button>
+          {todaysVitals.length > 0 && (
+            <div className="mb-0">
+              <div className="p-6">
+                <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2></div>
+                <div className="space-y-4">
+                  {todaysVitals.map((vital, index) => (
+                    <div key={vital.id}>
+                      
+                    <div className="flex items-center justify-between mb-3">
+  <div className="min-w-0">
+    <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at: {vital.created_at ? formatDate(vital.created_at) : '—'}</div>
+    
+      
+
+  </div>
+
+  <button
+    onClick={() => handleEditVital(vital)}
+    className="inline-flex items-center gap-2 text-sm font-medium text-[#024CDB] hover:bg-blue-50 px-2 py-1 rounded-md transition-colors shrink-0"
+  >
+    <Edit className="w-4 h-4" />
+    <span>Edit</span>
+  </button>
+</div>
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+  {[
+    { label: 'Temperature', value: vital.temperature, unit: '°C', Icon: Thermometer },
+    { label: 'Blood Pressure', value: vital.blood_pressure, unit: 'mmHg', Icon: Activity },
+    { label: 'Heart Rate', value: vital.heart_rate, unit: 'bpm', Icon: HeartPulse },
+    { label: 'SpO2', value: vital.spo2, unit: '%', Icon: Droplets },
+  ].map(({ label, value, unit, Icon }) => (
+    <div
+      key={label}
+      className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3"
+    >
+      <Icon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{label}</div>
+        <div className="text-sm text-gray-900 truncate">
+          {value || '—'}{value ? ` ${unit}` : ''}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="p-6">
-            {activeTab === 'pre-consult' && (
-              <div>
-                <div className="flex gap-3 mb-6">
-                  <button
-                    onClick={() => handleSendLink('pre-consult')}
-                    className="btn-secondary flex items-center space-x-2"
-                  >
-                    <LinkIcon className="w-4 h-4" />
-                    <span>Send Link</span>
-                  </button>
-                </div>
-
+          <div className="p-6 space-y-8">
+            {processingPreConsults.length > 0 && (
+              <section ref={preConsultSectionRef}>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Pre-Consultation Processing</h2>
                 <div className="space-y-3">
-                  {preConsults.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setShowDetailModal(true);
-                      }}
-                      className="card"
-                    >
-                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
-                      {item.documents_uploaded && item.documents_uploaded.length > 0 && (
-                        <p className="text-sm text-[#024CDB] mt-2">{item.documents_uploaded.length} documents</p>
-                      )}
-                    </div>
-                  ))}
-
-                  {preConsults.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-gray-500">No pre-consult forms submitted</p>
-                    </div>
-                  )}
+                  {processingPreConsults.map((preConsult) => {
+                    const hasAiSummary = preConsult.ai_summary && (typeof preConsult.ai_summary !== 'object' || Object.keys(preConsult.ai_summary).length > 0);
+                    const isComplete = !!hasAiSummary;
+                    const createdAt = preConsult.created_at ? new Date(preConsult.created_at).getTime() : Date.now();
+                    const elapsed = Math.floor((uiNow - createdAt) / 1000);
+                    const pct = isComplete ? 100 : Math.min(99, Math.floor((elapsed / PRE_CONSULT_ESTIMATED_SECONDS) * 100));
+                    const docCount = Array.isArray(preConsult.documents_uploaded) ? preConsult.documents_uploaded.length : 0;
+                    return (
+                      <div key={preConsult.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900">{isComplete ? 'Pre-consultation processed' : 'Processing pre-consultation documents...'}</p>
+                            <p className="text-sm text-gray-600 mt-1">{docCount} {docCount === 1 ? 'file' : 'files'} uploaded</p>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0">
+                            {isComplete ? (
+                              <div className="flex items-center gap-2 text-sm text-green-600">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-50">✓</span>
+                                <span className="font-medium">Complete</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-9 h-9">
+                                  <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                                    <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                                    <path className="text-[#024CDB]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{pct}%</div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-medium text-gray-700">Processing</p>
+                                  <p className="text-[11px] text-gray-500">{pct}% completed</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              </section>
             )}
 
-            {activeTab === 'consultations' && (
-              <div className="space-y-3">
-                {consultations.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      setSelectedItem(item);
-                      setShowDetailModal(true);
-                    }}
-                    className="card"
-                  >
-                    <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                    <p className="text-gray-900 line-clamp-2">
-                      {item.consult_summary_final?.diagnosis || item.consult_summary_ai?.diagnosis || 'Processing...'}
-                    </p>
-                  </div>
-                ))}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Consultations</h2>
+              {renderPastSummariesTab()}
+            </section>
 
-                {consultations.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">No consultations recorded</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'monitoring' && (
-              <div>
-                <div className="flex justify-end mb-6">
-                  <button
-                    onClick={() => handleSendLink('follow-up')}
-                    className="btn-primary flex items-center space-x-2"
-                  >
-                    <LinkIcon className="w-4 h-4" />
-                    <span>Send Follow-up Form</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {followUps.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setShowDetailModal(true);
-                      }}
-                      className="card"
-                    >
-                      <p className="text-sm text-gray-500 mb-2">{formatDate(item.created_at)}</p>
-                      <p className="text-gray-900 line-clamp-2">{item.ai_summary || 'Processing...'}</p>
-                    </div>
-                  ))}
-
-                  {followUps.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-gray-500">No follow-up forms submitted</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'queries' && (
-              <div>
-                <div className="flex justify-end mb-6">
-                  <button
-                    onClick={() => window.open(`/patient-queries/${patientId}/${user?.id}`, '_blank')}
-                    className="btn-primary flex items-center space-x-2"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Open Query Page</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {queries.map((query) => (
-                  <div
-                    key={query.id}
-                    className="card"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="text-sm text-gray-500">{formatDate(query.created_at)}</p>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        query.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {query.status}
-                      </span>
-                    </div>
-                    <p className="text-gray-900 line-clamp-2">{query.initial_query}</p>
-                  </div>
-                ))}
-
-                  {queries.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-gray-500">No queries from this patient</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <section>{renderHistoryTab()}</section>
           </div>
         </div>
       </div>
 
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Patient"
-      >
-        <form onSubmit={handleUpdatePatient} className="space-y-4">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
+        <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="input-field"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
-            <input
-              type="text"
-              value={editForm.case}
-              onChange={(e) => setEditForm({ ...editForm, case: e.target.value })}
-              className="input-field"
-            />
+            <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="input-field" required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-              <input
-                type="number"
-                value={editForm.age}
-                onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
-                className="input-field"
-                required
-              />
+              <input type="number" value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: e.target.value })} className="input-field" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select
-                value={editForm.gender}
-                onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
-                className="input-field"
-                required
-              >
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
+              <select value={editForm.gender} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="input-field">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="input-field" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
+            <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
+          </div>
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary">
-              Save
-            </button>
+            <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
+            <button type="submit" className="btn-primary">Save Changes</button>
           </div>
         </form>
       </Modal>
 
-      {showDetailModal && selectedItem && (
-        <Modal
-          isOpen={showDetailModal}
-          onClose={() => setShowDetailModal(false)}
-          title={activeTab === 'pre-consult' ? 'Pre-Consult Details' :
-                 activeTab === 'consultations' ? 'Consultation Details' : 'Follow-Up Details'}
-        >
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Date</p>
-              <p className="text-gray-900">{formatDate(selectedItem.created_at)}</p>
-            </div>
+      <DocumentUploadModal
+        isOpen={showDocumentUpload}
+        documentsToUpload={documentsToUpload}
+        uploadError={uploadError}
+        isUploading={isUploading}
+        onClose={() => { setShowDocumentUpload(false); setDocumentsToUpload([]); setUploadError(''); }}
+        onFileChange={setDocumentsToUpload}
+        onUploadClick={() => { setDocumentUploadState('confirming'); setShowDocumentConfirm(true); }}
+      />
 
-            {activeTab === 'pre-consult' && (
-              <>
-                {selectedItem.ai_summary && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
-                    <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
-                  </div>
-                )}
-                {selectedItem.documents_uploaded && selectedItem.documents_uploaded.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Documents</p>
-                    <div className="space-y-2">
-                      {selectedItem.documents_uploaded.map((doc: any, idx: number) => (
-                        <div key={idx} className="text-sm text-[#024CDB]">
-                          {doc.name || `Document ${idx + 1}`}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+      <DocumentUploadStatusModal
+        isOpen={showDocumentConfirm}
+        uploadState={documentUploadState}
+        onConfirm={confirmDocumentSubmit}
+        onCancel={() => setShowDocumentConfirm(false)}
+        onOkay={handleDocumentUploadOkay}
+        onRetry={() => { setShowDocumentConfirm(false); setDocumentUploadState('confirming'); }}
+      />
 
-            {activeTab === 'consultations' && selectedItem.consult_summary_final && (
-              <div className="space-y-3">
-                {selectedItem.consult_summary_final.diagnosis && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Diagnosis</p>
-                    <p className="text-gray-900">{selectedItem.consult_summary_final.diagnosis}</p>
-                  </div>
-                )}
-                {selectedItem.consult_summary_final.treatment_suggested && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Treatment</p>
-                    <p className="text-gray-900">{selectedItem.consult_summary_final.treatment_suggested}</p>
-                  </div>
-                )}
-                {selectedItem.consult_summary_final.medications && selectedItem.consult_summary_final.medications.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
-                    <div className="space-y-2">
-                      {selectedItem.consult_summary_final.medications.map((med: any, idx: number) => (
-                        <div key={idx} className="text-sm">
-                          <span className="font-medium">{med.name}</span> - {med.frequency}, {med.duration}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+      {selectedConsult && isEditingConsult && (
+        <ConsultEditModal
+          consult={selectedConsult}
+          editedConsult={editedConsult}
+          setEditedConsult={setEditedConsult}
+          editedDiagnosisText={editedDiagnosisText}
+          setEditedDiagnosisText={setEditedDiagnosisText}
+          editedTreatmentText={editedTreatmentText}
+          setEditedTreatmentText={setEditedTreatmentText}
+          editedInvestigationsText={editedInvestigationsText}
+          setEditedInvestigationsText={setEditedInvestigationsText}
+          consultMedicines={consultMedicines}
+          medicineDrafts={medicineDrafts}
+          updateMedicineDraft={updateMedicineDraft}
+          medicineSearchResults={medicineSearchResults}
+          openTimeDropdownId={openTimeDropdownId}
+          setOpenTimeDropdownId={setOpenTimeDropdownId}
+          timeDropdownRef={timeDropdownRef}
+          onAddMedicine={handleAddMedicine}
+          onDeleteMedicine={handleDeleteMedicine}
+          onMedicineSearch={handleMedicineSearch}
+          setMedicineSearchResults={setMedicineSearchResults}
+          onCancel={handleCancelEdit}
+          onSave={handleSaveConsult}
+          formatDate={formatDate}
+        />
+      )}
 
-            {activeTab === 'monitoring' && selectedItem.ai_summary && (
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Summary</p>
-                <p className="text-gray-900 whitespace-pre-wrap">{selectedItem.ai_summary}</p>
-              </div>
-            )}
-          </div>
-        </Modal>
+      {selectedConsult && !isEditingConsult && (
+        <ConsultViewModal
+          consult={selectedConsult}
+          consultMedicines={consultMedicines}
+          patient={patient}
+          userId={user?.id}
+          expandedSections={expandedSections}
+          onToggleSection={(key) => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
+          onClose={() => setSelectedConsult(null)}
+          onEdit={handleEditConsult}
+          onDownloadPDF={handleDownloadPDF}
+          onSendWhatsApp={handleSendWhatsApp}
+          formatDate={formatDate}
+          uiNow={uiNow}
+        />
       )}
 
       <ConfirmationModal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmSend}
-        title="Send Form Link"
-        message={`Send ${confirmAction === 'pre-consult' ? 'pre-consult' : 'follow-up'} form link to ${patient.name}?`}
+        onConfirm={() => setShowConfirmation(false)}
+        title="Send Pre-Consult Link"
+        message="Create and send pre-consultation form link to patient?"
       />
+
+      <Modal isOpen={showVitalsModal} onClose={handleCloseVitalsModal} title={editingVital ? 'Edit Vitals' : 'Add Vitals'}>
+        <form onSubmit={(e) => { e.preventDefault(); editingVital ? handleUpdateVital() : handleAddVital(); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Temperature (°C)</label>
+            <input
+              type="text"
+              value={vitalForm.temperature}
+              onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setVitalForm({ ...vitalForm, temperature: v }); }}
+              className="input-field"
+              placeholder="e.g., 98.6"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure (mmHg)</label>
+            <input type="text" value={vitalForm.blood_pressure} onChange={(e) => setVitalForm({ ...vitalForm, blood_pressure: e.target.value })} className="input-field" placeholder="e.g., 120/80" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Heart Rate (bpm)</label>
+            <input
+              type="text"
+              value={vitalForm.heart_rate}
+              onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*$/.test(v)) setVitalForm({ ...vitalForm, heart_rate: v }); }}
+              className="input-field"
+              placeholder="e.g., 72"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">SpO2 (%)</label>
+            <input
+              type="text"
+              value={vitalForm.spo2}
+              onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*$/.test(v)) setVitalForm({ ...vitalForm, spo2: v }); }}
+              className="input-field"
+              placeholder="e.g., 98"
+            />
+          </div>
+          <div className="flex space-x-3 justify-end pt-4">
+            <button type="button" onClick={handleCloseVitalsModal} className="btn-secondary">Cancel</button>
+            <button type="submit" className="btn-primary">{editingVital ? 'Update Vitals' : 'Add Vitals'}</button>
+          </div>
+        </form>
+      </Modal>
+
+      
     </div>
   );
 }

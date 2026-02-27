@@ -136,7 +136,7 @@ export default function PatientProfile() {
   const [medicineSearchResults, setMedicineSearchResults] = useState<{ name: string }[]>([]);
   const [openTimeDropdownId, setOpenTimeDropdownId] = useState<string | null>(null);
   const timeDropdownRef = useRef<HTMLDivElement | null>(null);
-
+const diagnosticGraphsScrollRef = useRef<HTMLDivElement | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     diagnosis: true,
     chiefComplaints: true,
@@ -706,7 +706,10 @@ export default function PatientProfile() {
     </div>
 
     {/* Scrollable graphs area (only this scrolls) */}
-    <div className="h-[70vh] max-h-[720px] overflow-y-auto p-4 space-y-8">
+    <div
+  ref={diagnosticGraphsScrollRef}
+  className="h-[70vh] max-h-[720px] overflow-y-auto overscroll-contain p-4 space-y-8"
+>
       {trends.map((trend, trendIdx) => {
         const paramName = String(trend?.parameter_name || '').trim();
         if (!paramName) return null;

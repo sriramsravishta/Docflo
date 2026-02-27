@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CreditCard as Edit,
@@ -131,62 +131,6 @@ const TIME_OPTIONS = [
   'Night',
   'Not applicable',
 ];
-
-  // ✅ Auto-resizing textarea with min (3 lines) + max (old fixed height ~ min-h-60)
-const AutoResizeTextarea = ({
-  value,
-  onChange,
-  minRows = 3,
-  maxHeight = 240, // same as Tailwind min-h-60 (15rem)
-  className = "",
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  minRows?: number;
-  maxHeight?: number;
-  className?: string;
-}) => {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
-
-  const resize = () => {
-    const el = ref.current;
-    if (!el) return;
-
-    // Reset to measure correct scrollHeight
-    el.style.height = "auto";
-
-    // Compute a "3 lines" minHeight using current line-height
-    const cs = window.getComputedStyle(el);
-    const lineHeight = parseFloat(cs.lineHeight || "20") || 20;
-
-    // Add a bit of padding buffer (works well with your input-field)
-    const minHeight = Math.ceil(lineHeight * minRows + 16);
-
-    const nextHeight = Math.min(el.scrollHeight, maxHeight);
-
-    el.style.minHeight = `${minHeight}px`;
-    el.style.height = `${Math.max(nextHeight, minHeight)}px`;
-    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
-  };
-
-  useLayoutEffect(() => {
-    resize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, minRows, maxHeight]);
-
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      onChange={(e) => {
-        onChange(e);
-        // resize immediately while typing
-        requestAnimationFrame(resize);
-      }}
-      className={`input-field resize-none ${className}`}
-    />
-  );
-};
 
   // ✅ NEW: UI tick for progress loaders (updates every second)
 const [uiNow, setUiNow] = useState(Date.now());
@@ -1161,7 +1105,7 @@ const saveMedicineDraftsToDB = async () => {
       instructions: '',
       flags: '',          // ✅ NEW
     });
-    setConsultMedicines(prev => [newMedicine, ...prev]);
+    setConsultMedicines([...consultMedicines, newMedicine]);
   } catch (error) {
     console.error('Error adding medicine:', error);
   }
@@ -3125,27 +3069,38 @@ const isComplete = !!hasAiSummary;
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Diagnosis</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
-                    <AutoResizeTextarea
-  value={editedDiagnosisText}
-  onChange={(e) => setEditedDiagnosisText(e.target.value)}
-  minRows={3}
-  maxHeight={240}
-/>
+                    <textarea
+                      value={editedDiagnosisText}
+                      onChange={(e) => setEditedDiagnosisText(e.target.value)}
+                      className="input-field min-h-60"
+                      rows={4}
+                    />
                   </div>
                 </div>
 
-          
+                {/* History */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">History</h3>
+                  <div className="rounded-lg py-4">
+                    <textarea
+                      value={editedConsult?.history || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
+                      className="input-field min-h-60"
+                      rows={3}
+                    />
+                  </div>
+                </div>
 
                 {/* Chief Complaints */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Chief Complaints</h3>
                   <div className="rounded-lg py-4">
-                    <AutoResizeTextarea
-  value={editedConsult?.chief_complaints || ''}
-  onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
-  minRows={3}
-  maxHeight={240}
-/>
+                    <textarea
+                      value={editedConsult?.chief_complaints || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, chief_complaints: e.target.value })}
+                      className="input-field min-h-60"
+                      rows={3}
+                    />
                   </div>
                 </div>
 
@@ -3154,12 +3109,12 @@ const isComplete = !!hasAiSummary;
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Treatment Suggested</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
-                    <AutoResizeTextarea
-  value={editedTreatmentText}
-  onChange={(e) => setEditedTreatmentText(e.target.value)}
-  minRows={3}
-  maxHeight={240}
-/>
+                    <textarea
+                      value={editedTreatmentText}
+                      onChange={(e) => setEditedTreatmentText(e.target.value)}
+                      className="input-field min-h-60"
+                      rows={5}
+                    />
                   </div>
                 </div>
 
@@ -3172,10 +3127,11 @@ const isComplete = !!hasAiSummary;
                       <span>Add Medicine</span>
                     </button>
                   </div>
-                  <div className="rounded-lg">
+
+                  <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-4">
                       {consultMedicines.map((medicine, index) => {
-  const d = medicineDrafts[medicine.id] || { 
+  const d = medicineDrafts[medicine.id] || {
     name: medicine.name || '',
     quantity: medicine.quantity || '',
     frequency: medicine.frequency || '',
@@ -3185,19 +3141,18 @@ const isComplete = !!hasAiSummary;
     instructions: medicine.instructions || '',
   };
 
-  return ( 
+  return (
 
-                        <div key={medicine.id} className="bg-[#FAFAFA] border border-gray-200 rounded-lg p-4">
+                        <div key={medicine.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="font-medium text-[#2563EB]">Medicine {index + 1}</span>
+                            <span className="font-medium text-gray-900">Medicine {index + 1}</span>
                             <button onClick={() => handleDeleteMedicine(medicine.id)} className="text-red-600 hover:text-red-800">
                               <Trash2 className="w-4 h-4" />
-                            </button> 
+                            </button>
                           </div>
-                          <div className="mt-2 mb-4 border-b border-gray-200" />
 
-                          <div className="flex flex-wrap gap-3 items-end">
-  <div className="relative min-w-[250px] flex-1">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+  <div className="relative">
     <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
     <input
       type="text"
@@ -3230,41 +3185,41 @@ const isComplete = !!hasAiSummary;
   </div>
 
   {/* ✅ NEW: Dosage field */}
-  <div className="min-w-[120px] flex-1">
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
     <input
       type="text"
       value={d.dosage}
       onChange={(e) => updateMedicineDraft(medicine.id, { dosage: e.target.value })}
       className="input-field"
-      placeholder="e.g.500 mg"
+      placeholder="e.g., 500 mg, 10 ml"
     />
   </div>
 
- <div className="min-w-[120px] flex-1">
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
     <input
       type="text"
       value={d.quantity}
       onChange={(e) => updateMedicineDraft(medicine.id, { quantity: e.target.value })}
       className="input-field"
-      placeholder="e.g.1 tab"
+      placeholder="e.g., 1 tab, 2 puffs"
     />
   </div>
 
   {/* ✅ NEW: Type field */}
-  <div className="min-w-[120px] flex-1">
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
     <input
       type="text"
       value={d.type}
       onChange={(e) => updateMedicineDraft(medicine.id, { type: e.target.value })}
       className="input-field"
-      placeholder="e.g.Tablet"
+      placeholder="e.g., Tablet, Syrup, Injection"
     />
   </div>
 
-  <div className="min-w-[120px] flex-1">
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
     <select
       value={d.frequency}
@@ -3278,7 +3233,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-  <div className="min-w-[120px] flex-1">
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">AF/BF</label>
     <select
       value={d.food}
@@ -3292,17 +3247,7 @@ const isComplete = !!hasAiSummary;
     </select>
   </div>
 
-                            <div className="min-w-[120px] flex-1">
-    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-    <input
-      type="text"
-      value={d.duration}
-      onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
-      className="input-field"
-      placeholder="e.g.7 days"
-    />
-  </div>
-  <div className="min-w-[250px] flex-1">
+  <div className="md:col-span-2">
     <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
     <div
       ref={openTimeDropdownId === medicine.id ? timeDropdownRef : null}
@@ -3313,7 +3258,7 @@ const isComplete = !!hasAiSummary;
         onClick={() =>
           setOpenTimeDropdownId(openTimeDropdownId === medicine.id ? null : medicine.id)
         }
-        className="input-field flex items-center bg-white justify-between"
+        className="input-field flex items-center justify-between"
       >
         <span className="text-gray-900">
           {Array.isArray(d.time) && d.time.length > 0
@@ -3351,19 +3296,37 @@ const isComplete = !!hasAiSummary;
     </div>
   </div>
 
-  
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+    <input
+      type="text"
+      value={d.duration}
+      onChange={(e) => updateMedicineDraft(medicine.id, { duration: e.target.value })}
+      className="input-field"
+      placeholder="e.g., 7 days"
+    />
+  </div>
 
-  <div className="min-w-[250px] flex-1">
+  <div className="md:col-span-2">
     <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
     <input
       type="text"
       value={d.instructions}
       onChange={(e) => updateMedicineDraft(medicine.id, { instructions: e.target.value })}
       className="input-field"
-      placeholder="e.g.AF"
+      placeholder="e.g., After meals"
     />
   </div>
-  
+                            <div className="md:col-span-2">
+  <label className="block text-sm font-medium text-gray-700 mb-1">Flags</label>
+  <input
+    type="text"
+    value={d.flags}
+    onChange={(e) => updateMedicineDraft(medicine.id, { flags: e.target.value })}
+    className="input-field"
+    placeholder="e.g., Check liver function, Monitor BP"
+  />
+</div>
 </div>
                         </div>
                         );
@@ -3380,25 +3343,12 @@ const isComplete = !!hasAiSummary;
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Investigations</h3>
                   <div className="rounded-lg py-4">
                     {/* ✅ CHANGE: text (not JSON) */}
-                    <AutoResizeTextarea
-  value={editedInvestigationsText}
-  onChange={(e) => setEditedInvestigationsText(e.target.value)}
-  minRows={3}
-  maxHeight={240}
-/>
-                  </div>
-                </div>
-
-                  {/* History */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">History</h3>
-                  <div className="rounded-lg py-4">
-                    <AutoResizeTextarea
-  value={editedConsult?.history || ''}
-  onChange={(e) => setEditedConsult({ ...editedConsult, history: e.target.value })}
-  minRows={3}
-  maxHeight={240}
-/>
+                    <textarea
+                      value={editedInvestigationsText}
+                      onChange={(e) => setEditedInvestigationsText(e.target.value)}
+                      className="input-field min-h-60"
+                      rows={5}
+                    />
                   </div>
                 </div>
 
@@ -3406,12 +3356,12 @@ const isComplete = !!hasAiSummary;
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Follow-up Recommendations</h3>
                   <div className="rounded-lg py-4">
-                    <AutoResizeTextarea
-  value={editedConsult?.followup_recommendations || ''}
-  onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
-  minRows={3}
-  maxHeight={240}
-/>
+                    <textarea
+                      value={editedConsult?.followup_recommendations || ''}
+                      onChange={(e) => setEditedConsult({ ...editedConsult, followup_recommendations: e.target.value })}
+                      className="input-field min-h-60"
+                      rows={3}
+                    />
                   </div>
                 </div>
               </div>

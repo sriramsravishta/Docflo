@@ -90,7 +90,6 @@ function AutoResizeTextarea({
       value={value}
       onChange={(e) => {
         onChange(e);
-        requestAnimationFrame(resize);
       }}
       className={`input-field resize-none bg-gray-50 focus:bg-white ${className}`}
     />

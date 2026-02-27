@@ -306,7 +306,7 @@ function SyncedAutoBox({
       {!isEditing ? (
         <div
           style={{ height: h ? `${h}px` : undefined, maxHeight: TEXT_MAX_HEIGHT }}
-          className="w-full overflow-y-auto px-3 py-2 rounded-lg border border-transparent bg-white text-lg whitespace-pre-line text-gray-700"
+          className="w-full overflow-y-auto px-3 py-2 rounded-lg border border-transparent bg-white text-[14px] whitespace-pre-line text-gray-700"
         >
           {bulletizeForView(effective)}
         </div>

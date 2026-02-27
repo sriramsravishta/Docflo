@@ -835,7 +835,7 @@ export default function PatientProfile() {
   <h3 className="text-sm font-semibold text-gray-900">DIAGNOSTIC TRENDS</h3>
 
   <div className="flex items-center gap-2">
-    <span className="text-sm text-primary">Graph view</span>
+    <span className="text-sm text-[#024CDB]">Graph view</span>
     <button
       type="button"
       role="switch"

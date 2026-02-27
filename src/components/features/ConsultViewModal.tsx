@@ -402,7 +402,7 @@ function MedicationsTable({
 
   // Column sizing rules (BOTH view + edit)
   const COL_NAME = 'min-w-[170px]';
-  const COL_STD = 'min-w-[120px]';
+  const COL_STD = 'w-[120px] min-w-[120px] max-w-[120px]';
 
   // ✅ Key change: DO NOT set fixed width (w-[300px]).
   // Let it auto-fit, but cap at 300px, then wrap.

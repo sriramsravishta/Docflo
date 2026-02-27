@@ -462,58 +462,207 @@ export default function PatientProfile() {
   };
 
   const generatePDFHTMLContent = (consult: ConsultRow): string => {
+    // CHANGED: Fully rewritten for Apollo247-inspired clean layout
     const summary = getConsultSummary(consult) as ConsultSummary | null;
     if (!summary) return '<p>No consultation summary available.</p>';
 
     const meds = getViewModeMedicines(summary, consultMedicines);
 
+    // CHANGED: Helper to compute M-A-N dosage grid from medicine time[] and quantity
+    const getMaNGrid = (time: string[], quantity: string): string => {
+      const qty = quantity || '0';
+      const normalizedTime = (time || []).map((t) => t.toLowerCase());
+      const morning = normalizedTime.some((t) => t.includes('morning')) ? qty : '0';
+      const afternoon = normalizedTime.some((t) => t.includes('afternoon') || t.includes('noon')) ? qty : '0';
+      const night = normalizedTime.some((t) => t.includes('night') || t.includes('evening')) ? qty : '0';
+      return `
+        <table class="man-grid">
+          <tr>
+            <td class="man-val">${escapeHtml(morning)}</td>
+            <td class="man-sep">-</td>
+            <td class="man-val">${escapeHtml(afternoon)}</td>
+            <td class="man-sep">-</td>
+            <td class="man-val">${escapeHtml(night)}</td>
+          </tr>
+          <tr>
+            <td class="man-label">M</td>
+            <td class="man-sep"> </td>
+            <td class="man-label">A</td>
+            <td class="man-sep"> </td>
+            <td class="man-label">N</td>
+          </tr>
+        </table>
+      `;
+    };
+
+    // CHANGED: Patient/date info block at the top
     let content = `
-      <div class="header">
-        <p><strong>Patient:</strong> ${escapeHtml(patient?.name)}</p>
-        <p><strong>Date:</strong> ${escapeHtml(formatDate(consult.created_at))}</p>
-        <p><strong>Doctor:</strong> ${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</p>
+      <div class="info-block">
+        <div class="info-row">
+          <span class="info-label">Patient</span>
+          <span class="info-value">${escapeHtml(patient?.name || '—')}, ${escapeHtml(patient?.gender || '')}, ${escapeHtml(String(patient?.age || '—'))} Yrs</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date</span>
+          <span class="info-value">${escapeHtml(formatDate(consult.created_at))}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Doctor</span>
+          <span class="info-value">${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</span>
+        </div>
       </div>
     `;
 
+    // CHANGED: Diagnosis section — only if data exists
     if (summary.diagnosis) {
+      let diagContent = '';
       if (typeof summary.diagnosis === 'string') {
-        content += `<div class="section"><h2>DIAGNOSIS</h2><p>${escapeHtml(summary.diagnosis)}</p></div>`;
+        diagContent = `<p class="section-text">${escapeHtml(summary.diagnosis)}</p>`;
       } else {
         const d = summary.diagnosis as DiagnosisSummary;
         const prov = Array.isArray(d.provisional) ? d.provisional : [];
         const keyf = Array.isArray(d.key_findings) ? d.key_findings : [];
-        content += `<div class="section"><h2>DIAGNOSIS</h2>${prov.length ? `<h3>Provisional</h3>${toHtmlList(prov)}` : ''}${keyf.length ? `<h3>Key Findings</h3>${toHtmlList(keyf)}` : ''}</div>`;
+        if (prov.length) diagContent += `<p class="sub-label">Provisional Diagnosis</p>${toHtmlList(prov)}`;
+        if (keyf.length) diagContent += `<p class="sub-label">Key Findings</p>${toHtmlList(keyf)}`;
+      }
+      if (diagContent) {
+        content += `
+          <div class="section">
+            <div class="section-header">Diagnosis / Provisional Diagnosis</div>
+            ${diagContent}
+          </div>
+        `;
       }
     }
-    if (summary.history) content += `<div class="section"><h2>HISTORY</h2><p>${escapeHtml(summary.history)}</p></div>`;
+
+    // CHANGED: Chief Complaints — only if data exists
     if (summary.chief_complaints) {
-      content += `<div class="section"><h2>CHIEF COMPLAINTS</h2>${Array.isArray(summary.chief_complaints) ? toHtmlList(summary.chief_complaints) : `<p>${escapeHtml(summary.chief_complaints)}</p>`}</div>`;
+      const cc = summary.chief_complaints;
+      const ccHtml = Array.isArray(cc)
+        ? toHtmlList(cc)
+        : `<p class="section-text">${escapeHtml(String(cc))}</p>`;
+      content += `
+        <div class="section">
+          <div class="section-header">Chief Complaints</div>
+          ${ccHtml}
+        </div>
+      `;
     }
+
+    // CHANGED: History — only if data exists
+    if (summary.history) {
+      content += `
+        <div class="section">
+          <div class="section-header">History</div>
+          <p class="section-text">${escapeHtml(summary.history)}</p>
+        </div>
+      `;
+    }
+
+    // CHANGED: Medications — Apollo-style numbered table, only if medicines exist
+    if (meds.length > 0) {
+      const medsRows = meds.map((m, idx) => {
+        const timeArr = Array.isArray(m?.time) ? m.time : [];
+        const manGrid = getMaNGrid(timeArr, m?.quantity || m?.dosage || '');
+        const detailParts = [
+          m?.type ? escapeHtml(m.type) : '',
+          m?.frequency ? escapeHtml(m.frequency) : '',
+          m?.food ? `${escapeHtml(m.food)} food` : '',
+        ].filter(Boolean);
+        const detailLine = detailParts.join(' | ');
+        const instructionLine = m?.instructions ? `<div class="med-instruction">${escapeHtml(m.instructions)}</div>` : '';
+        return `
+          <tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}">
+            <td class="td-num">${idx + 1}.</td>
+            <td class="td-name">
+              <strong>${escapeHtml(m?.name || '—')}</strong>
+              ${m?.dosage && m.dosage !== m.quantity ? `<div class="med-sub">${escapeHtml(m.dosage)}</div>` : ''}
+              ${instructionLine}
+            </td>
+            <td class="td-man">${manGrid}</td>
+            <td class="td-detail">${detailLine || '—'}</td>
+            <td class="td-dur">${escapeHtml(m?.duration || '—')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      content += `
+        <div class="section">
+          <div class="section-header">Medication Prescribed</div>
+          <table class="med-table">
+            <thead>
+              <tr>
+                <th class="th-num">#</th>
+                <th class="th-name">Medicine Name</th>
+                <th class="th-man">Dosage</th>
+                <th class="th-detail">Medicine Details</th>
+                <th class="th-dur">Duration</th>
+              </tr>
+            </thead>
+            <tbody>${medsRows}</tbody>
+          </table>
+          <p class="man-legend"><strong>M-A-N:</strong> Morning - Afternoon - Night</p>
+        </div>
+      `;
+    }
+
+    // CHANGED: Treatment Suggested — only if data exists
     if (summary.treatment_suggested) {
+      let treatHtml = '';
       if (typeof summary.treatment_suggested === 'string') {
-        content += `<div class="section"><h2>TREATMENT SUGGESTED</h2><p>${escapeHtml(summary.treatment_suggested)}</p></div>`;
+        treatHtml = `<p class="section-text">${escapeHtml(summary.treatment_suggested)}</p>`;
       } else {
         const t = summary.treatment_suggested as TreatmentSummary;
         const immediate = Array.isArray(t.immediate_plan) ? t.immediate_plan : [];
         const contingent = Array.isArray(t.contingent_plan) ? t.contingent_plan : [];
-        content += `<div class="section"><h2>TREATMENT SUGGESTED</h2>${immediate.length ? `<h3>Immediate Plan</h3>${toHtmlList(immediate)}` : ''}${contingent.length ? `<h3>Contingent Plan</h3>${toHtmlList(contingent)}` : ''}</div>`;
+        if (immediate.length) treatHtml += `<p class="sub-label">Immediate Plan</p>${toHtmlList(immediate)}`;
+        if (contingent.length) treatHtml += `<p class="sub-label">Contingent Plan</p>${toHtmlList(contingent)}`;
+      }
+      if (treatHtml) {
+        content += `
+          <div class="section">
+            <div class="section-header">Treatment Suggested</div>
+            ${treatHtml}
+          </div>
+        `;
       }
     }
-    if (meds.length > 0) {
-      content += `<div class="section"><h2>MEDICATIONS</h2><table class="table"><thead><tr><th>Name</th><th>Dosage</th><th>Quantity</th><th>Type</th><th>Frequency</th><th>Time</th><th>AF/BF</th><th>Duration</th><th>Instructions</th></tr></thead><tbody>${
-        meds.map((m) => `<tr><td>${escapeHtml(m?.name||'-')}</td><td>${escapeHtml(m?.dosage||'-')}</td><td>${escapeHtml(m?.quantity||'-')}</td><td>${escapeHtml(m?.type||'-')}</td><td>${escapeHtml(m?.frequency||'-')}</td><td>${escapeHtml(Array.isArray(m?.time)&&m.time.length?m.time.join(', '):'-')}</td><td>${escapeHtml(m?.food||'-')}</td><td>${escapeHtml(m?.duration||'-')}</td><td>${escapeHtml(m?.instructions||'-')}</td></tr>`).join('')
-      }</tbody></table></div>`;
-    }
+
+    // CHANGED: Investigations — only if ordered items or notes exist
     if (summary.investigations && typeof summary.investigations === 'object') {
       const inv = summary.investigations as InvestigationsSummary;
       const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
       if (ordered.length || inv.notes) {
-        content += `<div class="section"><h2>INVESTIGATIONS</h2>${ordered.length ? `<h3>Ordered</h3><ul>${ordered.map((o) => `<li><strong>${escapeHtml(o?.name||'-')}</strong>${o?.body_part_or_type?` — ${escapeHtml(o.body_part_or_type)}`:''}${o?.priority?` (Priority: ${escapeHtml(o.priority)})`:''}</li>`).join('')}</ul>` : ''}${inv.notes ? `<h3>Notes</h3><p>${escapeHtml(inv.notes)}</p>` : ''}</div>`;
+        let invHtml = '';
+        if (ordered.length) {
+          invHtml += `<ul class="section-list">${ordered.map((o) =>
+            `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
+          ).join('')}</ul>`;
+        }
+        if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
+        content += `
+          <div class="section">
+            <div class="section-header">Investigations</div>
+            ${invHtml}
+          </div>
+        `;
       }
     }
+
+    // CHANGED: Follow-up Recommendations — only if data exists
     if (summary.followup_recommendations) {
-      content += `<div class="section"><h2>FOLLOW-UP RECOMMENDATIONS</h2>${Array.isArray(summary.followup_recommendations) ? toHtmlList(summary.followup_recommendations) : `<p>${escapeHtml(summary.followup_recommendations)}</p>`}</div>`;
+      const fu = summary.followup_recommendations;
+      const fuHtml = Array.isArray(fu)
+        ? toHtmlList(fu)
+        : `<p class="section-text">${escapeHtml(String(fu))}</p>`;
+      content += `
+        <div class="section">
+          <div class="section-header">Advice & Instructions</div>
+          ${fuHtml}
+        </div>
+      `;
     }
+
     return content;
   };
 
@@ -523,7 +672,43 @@ export default function PatientProfile() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
     printWindow.document.open();
-    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body{font-family:Arial,sans-serif;margin:24px;line-height:1.6;color:#111}h1{font-size:20px;margin:0 0 8px 0;border-bottom:2px solid #111;padding-bottom:8px}h2{font-size:14px;margin:18px 0 8px 0;color:#333}h3{font-size:12px;margin:12px 0 6px 0;color:#444}p{margin:6px 0}ul{margin:6px 0 6px 18px;padding:0}.header{margin-bottom:18px}.section{margin-bottom:14px}.table{width:100%;border-collapse:collapse;margin-top:8px}.table th,.table td{border:1px solid #ddd;padding:8px;vertical-align:top;font-size:12px}.table th{background:#f3f4f6;text-align:left}@page{margin-top:160px;margin-bottom:120px;margin-left:12mm;margin-right:12mm}@media print{body{margin:0}}</style></head><body>${htmlContent}<script>setTimeout(function(){window.focus();window.print()},300);window.onafterprint=function(){window.close()};</script></body></html>`);
+    // CHANGED: Replaced with Apollo-inspired clean print styles
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;font-size:13px;background:#fff}
+.info-block{margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #111}
+.info-row{display:flex;gap:8px;margin-bottom:4px}
+.info-label{font-weight:700;min-width:70px;font-size:12px;color:#444}
+.info-value{font-size:12px;color:#111}
+.section{margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
+.section:last-child{border-bottom:none}
+.section-header{font-size:13px;font-weight:700;color:#111;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #111;text-transform:none;letter-spacing:0}
+.section-text{margin:4px 0;font-size:12px;color:#222}
+.sub-label{font-size:11px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}
+.section-list{margin:4px 0 4px 18px;padding:0}
+.section-list li{font-size:12px;margin-bottom:3px;color:#222}
+.inv-priority{font-size:11px;color:#666;font-style:italic}
+.med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.med-table thead tr{background:#f3f4f6}
+.med-table th{text-align:left;padding:7px 8px;font-size:11px;font-weight:700;border:1px solid #d1d5db;color:#333}
+.med-table td{padding:7px 8px;border:1px solid #d1d5db;vertical-align:top;color:#222}
+.th-num,.td-num{width:28px;text-align:center}
+.th-man,.td-man{width:90px;text-align:center}
+.th-dur,.td-dur{width:80px}
+.th-detail,.td-detail{width:140px}
+.td-name strong{font-size:12px;font-weight:700}
+.med-sub{font-size:11px;color:#555;margin-top:2px}
+.med-instruction{font-size:11px;color:#555;margin-top:3px;font-style:italic}
+.row-even{background:#fff}
+.row-odd{background:#f9fafb}
+.man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}
+.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}
+.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}
+.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}
+.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
+@page{margin-top:120px;margin-bottom:100px;margin-left:12mm;margin-right:12mm}
+@media print{body{margin:0}}
+</style></head><body>${htmlContent}<script>setTimeout(function(){window.focus();window.print()},300);window.onafterprint=function(){window.close()};</script></body></html>`);
     printWindow.document.close();
   };
 
@@ -948,7 +1133,10 @@ export default function PatientProfile() {
         {consultations.map((consult) => (
           <div
             key={consult.id}
-            onClick={() => setSelectedConsult(consult)}
+            onClick={() => {
+  handleCancelEdit();     // resets edit state + edited text (same behavior as earlier)
+  setSelectedConsult(consult);
+}}
             className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow min-w-[350px] max-w-[500px] flex-1"
           >
             <div className="flex justify-between items-start gap-3">
@@ -1199,24 +1387,52 @@ export default function PatientProfile() {
         onRetry={() => { setShowDocumentConfirm(false); setDocumentUploadState('confirming'); }}
       />
 
-    
+    {selectedConsult && (
+  <ConsultViewModal
+    // --- existing view props (same as before) ---
+    consult={selectedConsult}
+    consultMedicines={consultMedicines}
+    patient={patient}
+    userId={user?.id}
+    expandedSections={expandedSections}
+    onToggleSection={(key) => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
+    onClose={() => {
+      setSelectedConsult(null);
+      handleCancelEdit(); // ensures edit mode is reset when closing (same outcome as before)
+    }}
+    onDownloadPDF={handleDownloadPDF}
+    onSendWhatsApp={handleSendWhatsApp}
+    formatDate={formatDate}
+    uiNow={uiNow}
 
-      {selectedConsult && !isEditingConsult && (
-        <ConsultViewModal
-          consult={selectedConsult}
-          consultMedicines={consultMedicines}
-          patient={patient}
-          userId={user?.id}
-          expandedSections={expandedSections}
-          onToggleSection={(key) => setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))}
-          onClose={() => setSelectedConsult(null)}
-          onEdit={handleEditConsult}
-          onDownloadPDF={handleDownloadPDF}
-          onSendWhatsApp={handleSendWhatsApp}
-          formatDate={formatDate}
-          uiNow={uiNow}
-        />
-      )}
+    // --- NEW: edit-mode toggle + actions (UI only, logic already exists) ---
+    isEditing={isEditingConsult}
+    onStartEdit={handleEditConsult}
+    onCancelEdit={handleCancelEdit}
+    onSaveEdit={handleSaveConsult}
+
+    // --- NEW: pass the edit-state you already maintain in PatientProfile ---
+    editedConsult={editedConsult}
+    setEditedConsult={setEditedConsult}
+    editedDiagnosisText={editedDiagnosisText}
+    setEditedDiagnosisText={setEditedDiagnosisText}
+    editedTreatmentText={editedTreatmentText}
+    setEditedTreatmentText={setEditedTreatmentText}
+    editedInvestigationsText={editedInvestigationsText}
+    setEditedInvestigationsText={setEditedInvestigationsText}
+
+    medicineDrafts={medicineDrafts}
+    updateMedicineDraft={updateMedicineDraft}
+    medicineSearchResults={medicineSearchResults}
+    openTimeDropdownId={openTimeDropdownId}
+    setOpenTimeDropdownId={setOpenTimeDropdownId}
+    timeDropdownRef={timeDropdownRef}
+    onAddMedicine={handleAddMedicine}
+    onDeleteMedicine={handleDeleteMedicine}
+    onMedicineSearch={handleMedicineSearch}
+    setMedicineSearchResults={setMedicineSearchResults}
+  />
+)}
 
       <ConfirmationModal
         isOpen={showConfirmation}

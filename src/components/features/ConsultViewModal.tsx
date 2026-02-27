@@ -454,22 +454,22 @@ function MedicationsTable({
                 </td>
 
                 {/* Dosage */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? <span className="text-sm text-gray-600">{d.dosage || '-'}</span> : cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))}
                 </td>
 
                 {/* Quantity */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? <span className="text-sm text-gray-600">{d.quantity || '-'}</span> : cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))}
                 </td>
 
                 {/* Type */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? <span className="text-sm text-gray-600">{d.type || '-'}</span> : cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))}
                 </td>
 
                 {/* Frequency */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
   <div className="min-w-[110px] max-w-[110px]">
     {!isEditing ? (
       <span className="text-sm text-gray-600 whitespace-normal break-words">
@@ -493,7 +493,7 @@ function MedicationsTable({
 </td>
 
                 {/* Time */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">
                       {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}
@@ -534,7 +534,7 @@ function MedicationsTable({
                 </td>
 
                 {/* AF/BF */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? (
                     <span className="text-sm text-gray-600">{d.food || '-'}</span>
                   ) : (
@@ -550,12 +550,12 @@ function MedicationsTable({
                 </td>
 
                 {/* Duration */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? <span className="text-sm text-gray-600">{d.duration || '-'}</span> : cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))}
                 </td>
 
                 {/* Instructions */}
-                <td className="border border-gray-300 px-3 py-2 align-top">
+                <td className="border border-gray-300 px-1.5 py-1 align-top">
                   {!isEditing ? <span className="text-sm text-gray-600">{d.instructions || '-'}</span> : cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))}
                 </td>
 

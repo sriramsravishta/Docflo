@@ -913,7 +913,7 @@ export default function PatientProfile() {
         </div>
         <div className="text-lg font-semibold text-gray-900 mb-3">
         {renderCollapsible(
-          'Current Medications (${currentMeds.length})',
+          'Timeline (${currentMeds.length})',
           currentOpen,
           () => setExpandedSections((prev) => ({ ...prev, currentMeds: !currentOpen })),
           currentMeds.length === 0 ? <p className="text-gray-500">No current medications</p> : (

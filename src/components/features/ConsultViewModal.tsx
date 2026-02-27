@@ -159,7 +159,7 @@ function diagnosisToText(diagnosis: unknown) {
 
     const lines: string[] = [];
     if (prov.length) {
-      lines.push('Provisional Diagnosis:');
+      lines.push('Provisional:');
       prov.forEach((x) => lines.push(`- ${x}`));
       lines.push('');
     }

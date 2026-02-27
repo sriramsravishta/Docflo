@@ -1,125 +1,89 @@
-import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, MessageSquare, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import PatientCard from '../components/PatientCard';
 import Modal from '../components/Modal';
-import ConfirmationModal from '../components/ConfirmationModal';
-import PatientQueueTable from '../components/features/PatientQueueTable';
-import AllPatientsTable from '../components/features/AllPatientsTable';
-import Spinner from '../components/ui/Spinner';
-import EmptyState from '../components/ui/EmptyState';
-import { useMainPageData } from '../hooks/useMainPageData';
-import { useAuth } from '../contexts/AuthContext';
-import { getPatientByPhone } from '../lib/database';
+import { createPatient, getPatients, getPreConsults } from '../lib/database';
 
 export default function MainPage() {
-  const { user } = useAuth();
-  const {
-    loading,
-    todaysAppointments,
-    allPatients,
-    loadData,
-    handleMoveUp,
-    handleMoveDown,
-    handleConfirmRemove,
-    handleCreatePatient,
-    handleAddToQueue,
-    checkExistingAppointment,
-    formError,
-    setFormError,
-    isSubmitting,
-  } = useMainPageData(user?.id);
-
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
-  const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string } | null>(null);
-  const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
-  const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
-  const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male' });
-
-  const filteredTodaysAppointments = todaysAppointments.filter((appointment) => {
-    const name = (appointment.patients?.name ?? '').toLowerCase();
-    return name.includes(searchQuery.toLowerCase());
+  const [loading, setLoading] = useState(true);
+  const [patientsWithPreConsult, setPatientsWithPreConsult] = useState<any[]>([]);
+  const [allPatients, setAllPatients] = useState<any[]>([]);
+  const [newPatient, setNewPatient] = useState({
+    name: '',
+    case: '',
+    phone: '',
+    age: '',
+    gender: 'Male',
   });
 
-  const pendingTodaysAppointments = filteredTodaysAppointments.filter((a) => a.completed !== true);
+  useEffect(() => {
+    loadPatients();
+  }, []);
 
-  const filteredAllPatients = allPatients.filter((p) =>
+  const loadPatients = async () => {
+    try {
+      setLoading(true);
+      const patients = await getPatients();
+      const today = new Date().toISOString().split('T')[0];
+
+      const patientsWithTodayPreConsult = [];
+      for (const patient of patients) {
+        const preConsults = await getPreConsults(patient.id);
+        const todaySubmitted = preConsults.find(pc =>
+          pc.status === 'Submitted' &&
+          pc.created_at.startsWith(today)
+        );
+        if (todaySubmitted) {
+          patientsWithTodayPreConsult.push(patient);
+        }
+      }
+
+      setPatientsWithPreConsult(patientsWithTodayPreConsult);
+      setAllPatients(patients);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredListA = patientsWithPreConsult.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredListB = allPatients.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
-  const handlePhoneChange = async (phone: string) => {
-    setNewPatient({ ...newPatient, phone });
-    if (phone.length >= 10) {
-      try {
-        const patient = await getPatientByPhone(phone, user!.id);
-        if (patient) {
-          setExistingPatient(patient);
-          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender });
-        } else {
-          setExistingPatient(null);
-          setNewPatient({ phone, name: '', age: '', gender: 'Male' });
-        }
-      } catch (error) {
-        console.error('Error checking patient:', error);
-      }
-    } else {
-      setExistingPatient(null);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowAddPatient(false);
-    setNewPatient({ phone: '', name: '', age: '', gender: 'Male' });
-    setExistingPatient(null);
-    setFormError('');
-  };
-
-  const handleRemoveClick = (appointment: { id: string; patients?: { name?: string } }) => {
-    setAppointmentToRemove(appointment);
-    setShowRemoveConfirmation(true);
-    setShowKebabMenu(null);
-  };
-
-  const onMoveUp = async (appointment: Parameters<typeof handleMoveUp>[0]) => {
-    await handleMoveUp(appointment);
-    setShowKebabMenu(null);
-  };
-
-  const onMoveDown = async (appointment: Parameters<typeof handleMoveDown>[0]) => {
-    await handleMoveDown(appointment);
-    setShowKebabMenu(null);
-  };
-
-  const onConfirmRemove = async () => {
-    if (!appointmentToRemove) return;
-    await handleConfirmRemove(appointmentToRemove as Parameters<typeof handleConfirmRemove>[0]);
-    setShowRemoveConfirmation(false);
-    setAppointmentToRemove(null);
-  };
-
-  const onSubmitForm = async () => {
-    if (existingPatient) {
-      if (!checkExistingAppointment(existingPatient.id)) {
-        await handleAddToQueue(existingPatient, user!.id);
-        if (!formError) {
-          handleCloseModal();
-          await loadData();
-        }
-      } else {
-        setFormError('This patient already has an appointment today!');
-      }
-    } else {
-      await handleCreatePatient(newPatient, user!.id);
-      if (!formError) {
-        handleCloseModal();
-        await loadData();
-      }
+  const handleAddPatient = async () => {
+    try {
+      await createPatient({
+        name: newPatient.name,
+        age: parseInt(newPatient.age),
+        phone: newPatient.phone,
+        case: newPatient.case || undefined,
+        gender: newPatient.gender,
+      });
+      setShowAddPatient(false);
+      setNewPatient({ name: '', case: '', phone: '', age: '', gender: 'Male' });
+      await loadPatients();
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      alert('Failed to create patient');
     }
   };
 
@@ -127,81 +91,146 @@ export default function MainPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="mb-6 flex flex-row gap-3">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search patients by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
             />
           </div>
-          <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
-            <Plus className="w-5 h-5" />
-            <span>Patient</span>
-          </button>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/queries')}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span>Queries</span>
+            </button>
+
+            <button
+              onClick={() => setShowAddPatient(true)}
+              className="btn-primary flex items-center space-x-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Patient</span>
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-8">
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Patient Queue</h2>
-            {loading ? (
-              <div className="flex justify-center py-8"><Spinner size="md" /></div>
-            ) : filteredTodaysAppointments.length === 0 ? (
-              <EmptyState message="No appointments scheduled for today" />
-            ) : (
-              <PatientQueueTable
-                appointments={filteredTodaysAppointments}
-                pendingOnly={pendingTodaysAppointments}
-                onMoveUp={onMoveUp}
-                onMoveDown={onMoveDown}
-                onRemove={handleRemoveClick}
-                showKebabMenu={showKebabMenu}
-                setShowKebabMenu={setShowKebabMenu}
-                formatDate={formatDate}
-                showActions={true}
-              />
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-10">
+              Today's Pre-consult Completed
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
+                </div>
+              ) : (
+                filteredListA.slice(0, 5).map((patient) => (
+                  <div
+                    key={patient.id}
+                    onClick={() => navigate(`/patient/${patient.id}`)}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
+                      {patient.case && (
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+                        {patient.case}
+                      </div>
+                    )}
+                    
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {patient.age}yrs · {patient.gender}
+                      </div>
+                    <div className="mt-5 pt-3 border-t border-gray-100">
+                      {patient.last_visit_at && (
+                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
+                    )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {filteredListA.length > 5 && (
+              <button className="text-[#024CDB] hover:underline text-sm font-medium">
+                View all ({filteredListA.length})
+              </button>
+            )}
+            {filteredListA.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                <p className="text-gray-500">No patients with completed pre-consults today</p>
+              </div>
             )}
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">All Patients ({filteredAllPatients.length})</h2>
-            {loading ? (
-              <div className="flex justify-center py-8"><Spinner size="md" /></div>
-            ) : filteredAllPatients.length === 0 ? (
-              <EmptyState message="No patients found" />
-            ) : (
-              <AllPatientsTable patients={filteredAllPatients} formatDate={formatDate} />
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              All Patients
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#024CDB] mx-auto"></div>
+                </div>
+              ) : (
+                filteredListB.slice(0, 5).map((patient) => (
+                  <div
+                    key={patient.id}
+                    onClick={() => navigate(`/patient/${patient.id}`)}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer] group"
+                  >
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#024CDB] transition-colors">{patient.name}</h3>
+                      {patient.case && (
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-[#024CDB]">
+                        {patient.case}
+                      </div>
+                    )}
+                      
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {patient.age}yrs · {patient.gender}
+                      </div>
+                    
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      {patient.last_visit_at && (
+                      <p className="text-sm text-gray-500">Last visit: {formatDate(patient.last_visit_at)}</p>
+                    )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {filteredListB.length > 5 && (
+              <button className="text-[#024CDB] hover:underline text-sm font-medium">
+                View all ({filteredListB.length})
+              </button>
+            )}
+            {filteredListB.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                <p className="text-gray-500">No patients found</p>
+              </div>
             )}
           </section>
         </div>
       </div>
 
-      <Modal isOpen={showAddPatient} onClose={handleCloseModal} title="Add New Patient">
-        <form
-          onSubmit={(e) => { e.preventDefault(); onSubmitForm(); }}
-          className="space-y-4"
-        >
-          {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{formError}</div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              value={newPatient.phone}
-              onChange={(e) => { const v = e.target.value; if (v === '' || /^[0-9+]*$/.test(v)) handlePhoneChange(v); }}
-              className="input-field"
-              required
-            />
-            {existingPatient && <p className="text-sm text-green-600 mt-1">Patient found! Details auto-filled.</p>}
-          </div>
-
+      <Modal
+        isOpen={showAddPatient}
+        onClose={() => setShowAddPatient(false)}
+        title="Add New Patient"
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleAddPatient(); }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name <span className="text-red-500">*</span>
@@ -210,8 +239,33 @@ export default function MainPage() {
               type="text"
               value={newPatient.name}
               onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-              className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
-              readOnly={!!existingPatient}
+              className="input-field"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Case (optional)
+            </label>
+            <input
+              type="text"
+              value={newPatient.case}
+              onChange={(e) => setNewPatient({ ...newPatient, case: e.target.value })}
+              className="input-field"
+              placeholder="e.g., Hypertension, Diabetes"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={newPatient.phone}
+              onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+              className="input-field"
               required
             />
           </div>
@@ -225,11 +279,11 @@ export default function MainPage() {
                 type="number"
                 value={newPatient.age}
                 onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
-                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
-                readOnly={!!existingPatient}
+                className="input-field"
                 required
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Gender <span className="text-red-500">*</span>
@@ -237,8 +291,7 @@ export default function MainPage() {
               <select
                 value={newPatient.gender}
                 onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
-                disabled={!!existingPatient}
+                className="input-field"
                 required
               >
                 <option value="Male">Male</option>
@@ -249,36 +302,15 @@ export default function MainPage() {
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
+            <button type="button" onClick={() => setShowAddPatient(false)} className="btn-secondary">
               Cancel
             </button>
-            {existingPatient ? (
-              <button type="submit" className="btn-primary flex items-center justify-center" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><Spinner size="sm" className="mr-2" />Adding...</>
-                ) : 'Add to Queue'}
-              </button>
-            ) : (
-              <button type="submit" className="btn-primary flex items-center justify-center" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><Spinner size="sm" className="mr-2" />Creating...</>
-                ) : 'Create'}
-              </button>
-            )}
+            <button type="submit" className="btn-primary">
+              Create
+            </button>
           </div>
         </form>
       </Modal>
-
-      <ConfirmationModal
-        isOpen={showRemoveConfirmation}
-        onClose={() => setShowRemoveConfirmation(false)}
-        onConfirm={onConfirmRemove}
-        title="Remove Patient from Queue"
-        message={`Are you sure you want to remove ${appointmentToRemove?.patients?.name} from today's queue? This action cannot be undone.`}
-        confirmText="Remove"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
 }

@@ -29,11 +29,8 @@ body {
   }
 
   .btn-secondary {
-  @apply bg-white border border-[#024CDB] text-[#024CDB]
-    hover:bg-blue-50
-    font-medium py-2 px-4 rounded-lg
-    transition-colors duration-200;
-}
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
 
   .card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer;

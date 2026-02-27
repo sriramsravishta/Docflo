@@ -17,26 +17,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('Session retrieval error:', error.message);
-          // If refresh token is invalid, clear the session
-          if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
-            await supabase.auth.signOut();
-          }
-          setUser(null);
-        } else {
-          setUser(session?.user ?? null);
-        }
-      } catch (error) {
-        console.warn('Unexpected session error:', error);
-        // Clear any invalid session state
-        await supabase.auth.signOut();
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
     })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -86,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('organizations')
         .select('id')
         .eq('auth_id', authData.user.id)
-        .limit(1)
         .single();
 
       if (orgData) {
@@ -106,8 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-  await supabase.auth.signOut({ scope: 'local' });
-};
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>

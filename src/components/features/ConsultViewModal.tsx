@@ -341,7 +341,7 @@ function SectionCard({
 
   return (
     <div className={`border rounded-lg ${toneClass} overflow-hidden`}>
-      <div className="px-4 py-3 border-b border-gray-200 bg-gray-100 flex items-center justify-between gap-3">
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
         <h3 className="font-semibold text-gray-900">{title}</h3>
         {right}
       </div>

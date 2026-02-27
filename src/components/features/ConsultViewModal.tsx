@@ -345,7 +345,7 @@ function SectionCard({
         <h3 className="font-semibold text-gray-900">{title}</h3>
         {right}
       </div>
-      <div className="px-4 py-4">{children}</div>
+      <div className="px-2 py-2">{children}</div>
     </div>
   );
 }

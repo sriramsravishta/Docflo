@@ -48,7 +48,7 @@ interface ConsultViewModalProps {
   patient: PatientRow;
   userId: string | undefined;
 
-  // NEW: unified edit mode props (same ones you used for ConsultEditModal)
+  // unified edit mode props
   isEditing: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
@@ -89,9 +89,15 @@ function isBlankString(v: unknown) {
   return typeof v === 'string' && v.trim().length === 0;
 }
 
+// View-mode rendering: turn "- item" into "• item" (only display)
+function bulletizeForView(s: string) {
+  if (!s) return s;
+  return s.replace(/(^|\n)(\s*)-\s+/g, '$1$2• ');
+}
+
 /**
- * Converts summary fields to the SAME editable-looking plain text you want in view mode,
- * so view + edit have identical content and therefore identical measured height.
+ * View text: returns a consistent string representation (includes emptyText),
+ * used ONLY for viewing (never for saving).
  */
 function toPlainText(value: unknown, emptyText: string) {
   const parsed = safeJsonParse(value);
@@ -109,6 +115,30 @@ function toPlainText(value: unknown, emptyText: string) {
   try {
     const s = JSON.stringify(v, null, 2);
     return s || emptyText;
+  } catch {
+    return String(v);
+  }
+}
+
+/**
+ * Edit text: returns a consistent editable string representation,
+ * BUT does NOT inject emptyText (so you don’t accidentally save placeholders).
+ */
+function toEditText(value: unknown) {
+  const parsed = safeJsonParse(value);
+  const v = parsed ?? value;
+
+  if (v == null || isBlankString(v)) return '';
+
+  if (typeof v === 'string') return v;
+
+  if (Array.isArray(v)) {
+    if (v.length === 0) return '';
+    return v.map((x) => `- ${String(x)}`).join('\n');
+  }
+
+  try {
+    return JSON.stringify(v, null, 2);
   } catch {
     return String(v);
   }
@@ -209,9 +239,9 @@ function investigationsToText(investigations: unknown) {
 
 /**
  * Synced auto-height box:
- * - Measures height from the SAME text in both view/edit
- * - Auto grows up to maxHeight, then internal scroll
- * - Avoids view/edit height mismatch (smooth toggle)
+ * - Same measured height in view/edit
+ * - View displays bullets nicely (•) but keeps the SAME height
+ *   by measuring max(hyphenText, bulletText)
  */
 function SyncedAutoBox({
   isEditing,
@@ -234,14 +264,21 @@ function SyncedAutoBox({
     const m = measureRef.current;
     if (!m) return;
 
-    m.value = effective;
-    m.style.height = '0px';
-
     const cs = window.getComputedStyle(m);
     const lineHeight = parseFloat(cs.lineHeight || '20') || 20;
     const minHeight = Math.ceil(lineHeight * TEXT_MIN_ROWS + 16);
 
-    const next = Math.min(m.scrollHeight, TEXT_MAX_HEIGHT);
+    // measure both, take max to avoid wrapping mismatch
+    const measureOnce = (val: string) => {
+      m.value = val;
+      m.style.height = '0px';
+      return m.scrollHeight;
+    };
+
+    const h1 = measureOnce(effective);
+    const h2 = measureOnce(bulletizeForView(effective));
+    const next = Math.min(Math.max(h1, h2), TEXT_MAX_HEIGHT);
+
     setH(Math.max(minHeight, next));
   };
 
@@ -261,7 +298,6 @@ function SyncedAutoBox({
 
   return (
     <>
-      {/* hidden measurer */}
       <textarea
         ref={measureRef}
         className="input-field resize-none absolute -left-[9999px] top-0 h-0 w-[600px] opacity-0 pointer-events-none"
@@ -272,7 +308,7 @@ function SyncedAutoBox({
           style={{ height: h ? `${h}px` : undefined, maxHeight: TEXT_MAX_HEIGHT }}
           className="w-full overflow-y-auto px-3 py-2 rounded-lg border border-transparent bg-white text-sm whitespace-pre-line text-gray-600"
         >
-          {effective}
+          {bulletizeForView(effective)}
         </div>
       ) : (
         <textarea
@@ -280,7 +316,6 @@ function SyncedAutoBox({
           value={text}
           onChange={(e) => {
             onChange?.(e.target.value);
-            // update height smoothly as user types
             requestAnimationFrame(recompute);
           }}
           className="w-full px-3 py-2 rounded-lg text-sm whitespace-pre-line resize-none border border-gray-300 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#024CDB]"
@@ -302,10 +337,7 @@ function SectionCard({
   children: React.ReactNode;
   tone?: 'default' | 'danger';
 }) {
-  const toneClass =
-    tone === 'danger'
-      ? 'border-red-200 bg-red-50'
-      : 'border-gray-200 bg-white';
+  const toneClass = tone === 'danger' ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white';
 
   return (
     <div className={`border rounded-lg ${toneClass} overflow-hidden`}>
@@ -366,7 +398,7 @@ function MedicationsTable({
         </thead>
 
         <tbody>
-          {consultMedicines.map((m, idx) => {
+          {consultMedicines.map((m) => {
             const d: MedicineDraft = medicineDrafts[m.id] || {
               name: m.name || '',
               dosage: m.dosage || '',
@@ -423,29 +455,17 @@ function MedicationsTable({
 
                 {/* Dosage */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.dosage || '-'}</span>
-                  ) : (
-                    cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.dosage || '-'}</span> : cellInput(d.dosage, (v) => updateMedicineDraft(m.id, { dosage: v }))}
                 </td>
 
                 {/* Quantity */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.quantity || '-'}</span>
-                  ) : (
-                    cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.quantity || '-'}</span> : cellInput(d.quantity, (v) => updateMedicineDraft(m.id, { quantity: v }))}
                 </td>
 
                 {/* Type */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.type || '-'}</span>
-                  ) : (
-                    cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.type || '-'}</span> : cellInput(d.type, (v) => updateMedicineDraft(m.id, { type: v }))}
                 </td>
 
                 {/* Frequency */}
@@ -459,9 +479,7 @@ function MedicationsTable({
                       onChange={(e) => updateMedicineDraft(m.id, { frequency: e.target.value })}
                     >
                       <option value="">Select</option>
-                      {FREQUENCY_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
+                      {FREQUENCY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   )}
                 </td>
@@ -518,38 +536,24 @@ function MedicationsTable({
                       onChange={(e) => updateMedicineDraft(m.id, { food: e.target.value })}
                     >
                       <option value="">Select</option>
-                      {FOOD_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
+                      {FOOD_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   )}
                 </td>
 
                 {/* Duration */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.duration || '-'}</span>
-                  ) : (
-                    cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.duration || '-'}</span> : cellInput(d.duration, (v) => updateMedicineDraft(m.id, { duration: v }))}
                 </td>
 
                 {/* Instructions */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.instructions || '-'}</span>
-                  ) : (
-                    cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.instructions || '-'}</span> : cellInput(d.instructions, (v) => updateMedicineDraft(m.id, { instructions: v }))}
                 </td>
 
                 {/* Flags */}
                 <td className="border border-gray-300 px-3 py-2 align-top">
-                  {!isEditing ? (
-                    <span className="text-sm text-gray-600">{d.flags || '-'}</span>
-                  ) : (
-                    cellInput(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))
-                  )}
+                  {!isEditing ? <span className="text-sm text-gray-600">{d.flags || '-'}</span> : cellInput(d.flags || '', (v) => updateMedicineDraft(m.id, { flags: v }))}
                 </td>
 
                 {isEditing && (
@@ -607,19 +611,14 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
   const summary = getConsultSummary(consult) as ConsultSummary | null;
 
-  // View text (so view mode still works even before Edit is clicked)
+  // View text
   const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis), [summary]);
-  const viewChief = useMemo(
-    () => toPlainText(summary?.chief_complaints, 'No chief complaints recorded'),
-    [summary]
-  );
+  const viewChief = useMemo(() => toPlainText(summary?.chief_complaints, 'No chief complaints recorded'), [summary]);
   const viewTreatment = useMemo(() => treatmentToText(summary?.treatment_suggested), [summary]);
   const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);
   const viewHistory = useMemo(() => toPlainText(summary?.history, 'No history recorded'), [summary]);
-  const viewFollowup = useMemo(
-    () => toPlainText(summary?.followup_recommendations, 'No follow-up recommendations recorded'),
-    [summary]
-  );
+  const viewFollowup = useMemo(() => toPlainText(summary?.followup_recommendations, 'No follow-up recommendations recorded'), [summary]);
+  const viewKeyInsights = useMemo(() => toPlainText(summary?.key_personal_insights, 'No personal insights recorded'), [summary]);
 
   const flags = useMemo(() => {
     const arr = summary && Array.isArray(summary.flags_for_review) ? summary.flags_for_review : [];
@@ -630,7 +629,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      {/* flex-col + overflow-hidden prevents footer gaps; single scroll area */}
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-4">
@@ -643,7 +641,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Actions (same place, no layout shift) */}
               {!isEditing ? (
                 <button
                   onClick={onStartEdit}
@@ -690,7 +687,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
         <div className="flex-1 overflow-y-auto">
           {summary ? (
             <div className="px-6 py-6 space-y-6">
-              {/* 1) Diagnosis */}
               <SectionCard title="Diagnosis">
                 <SyncedAutoBox
                   isEditing={isEditing}
@@ -700,17 +696,15 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              {/* 2) Chief Complaints */}
               <SectionCard title="Chief Complaints">
                 <SyncedAutoBox
                   isEditing={isEditing}
-                  text={isEditing ? String((editedConsult?.chief_complaints as string) || '') : viewChief}
+                  text={isEditing ? toEditText(editedConsult?.chief_complaints) : viewChief}
                   onChange={(v) => setEditedConsult({ ...editedConsult, chief_complaints: v })}
                   emptyText="No chief complaints recorded"
                 />
               </SectionCard>
 
-              {/* 3) Treatment Suggested */}
               <SectionCard title="Treatment Suggested">
                 <SyncedAutoBox
                   isEditing={isEditing}
@@ -720,7 +714,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              {/* 4) Investigations */}
               <SectionCard title="Investigations">
                 <SyncedAutoBox
                   isEditing={isEditing}
@@ -730,7 +723,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              {/* 5) Medications (same table, becomes editable in edit mode) */}
               <SectionCard
                 title="Medications"
                 right={
@@ -760,27 +752,35 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              {/* 6) History */}
               <SectionCard title="History">
                 <SyncedAutoBox
                   isEditing={isEditing}
-                  text={isEditing ? String((editedConsult?.history as string) || '') : viewHistory}
+                  text={isEditing ? toEditText(editedConsult?.history) : viewHistory}
                   onChange={(v) => setEditedConsult({ ...editedConsult, history: v })}
                   emptyText="No history recorded"
                 />
               </SectionCard>
 
-              {/* 7) Follow-up Recommendations */}
               <SectionCard title="Follow-up Recommendations">
                 <SyncedAutoBox
                   isEditing={isEditing}
-                  text={isEditing ? String((editedConsult?.followup_recommendations as string) || '') : viewFollowup}
+                  text={isEditing ? toEditText(editedConsult?.followup_recommendations) : viewFollowup}
                   onChange={(v) => setEditedConsult({ ...editedConsult, followup_recommendations: v })}
                   emptyText="No follow-up recommendations recorded"
                 />
               </SectionCard>
 
-              {/* 8) Flags at the bottom */}
+              {/* ✅ Key Personal Insights (view + editable) */}
+              <SectionCard title="Key Personal Insights">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? toEditText(editedConsult?.key_personal_insights) : viewKeyInsights}
+                  onChange={(v) => setEditedConsult({ ...editedConsult, key_personal_insights: v })}
+                  emptyText="No personal insights recorded"
+                />
+              </SectionCard>
+
+              {/* Flags at the bottom */}
               {flags.length > 0 && (
                 <div className="border border-red-200 bg-red-50 rounded-lg overflow-hidden">
                   <button
@@ -808,7 +808,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 </div>
               )}
 
-              {/* Bottom breathing room */}
               <div className="h-6" />
             </div>
           ) : (
@@ -832,16 +831,11 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-3">
         <p className="text-sm font-semibold text-gray-900">
-          {isError
-            ? 'Consultation summary failed'
-            : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
+          {isError ? 'Consultation summary failed' : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
         </p>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div
-          className="h-3 rounded-full bg-[#024CDB] transition-all"
-          style={{ width: `${isError ? 100 : pct}%` }}
-        />
+        <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
       </div>
       <div className="mt-3 text-center">
         {isError ? (

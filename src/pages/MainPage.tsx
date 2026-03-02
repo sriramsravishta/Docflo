@@ -263,7 +263,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             />
           </div>
 
-          {/* CHANGED: Added Referred By field */}
+         {/* CHANGED: Added Referred By field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Referred By <span className="text-gray-400 text-xs">(optional)</span>

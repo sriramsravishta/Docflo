@@ -111,7 +111,7 @@ export default function PatientProfile() {
   const [editingVital, setEditingVital] = useState<VitalRow | null>(null);
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
 
-  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male' });
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
 
   useEffect(() => {
     if (patient) {

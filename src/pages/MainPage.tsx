@@ -108,7 +108,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const onSubmitForm = async () => {
     if (existingPatient) {
       if (!checkExistingAppointment(existingPatient.id)) {
-        await handleAddToQueue(existingPatient, user!.id);
+        await handleAddToQueue(existingPatient, user!.id, referredBy); // CHANGED: pass referredBy
         if (!formError) {
           handleCloseModal();
           await loadData();
@@ -117,7 +117,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         setFormError('This patient already has an appointment today!');
       }
     } else {
-      await handleCreatePatient(newPatient, user!.id);
+      await handleCreatePatient(newPatient, user!.id, referredBy); // CHANGED: pass referredBy and uhid is inside newPatient
       if (!formError) {
         handleCloseModal();
         await loadData();

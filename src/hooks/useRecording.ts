@@ -96,6 +96,13 @@ export function useRecording(
         consult_summary_ai: '',
       });
 
+      // CHANGED: Save consult_id back to today's appointment
+      try {
+        await updateAppointmentConsultId(patientId!, userId!, consult.id);
+      } catch (error) {
+        console.error('Error updating appointment consult_id:', error);
+      }
+
       try {
         await completeTodaysAppointmentByPatientAndDoctor(patientId!, userId!);
       } catch (error) {

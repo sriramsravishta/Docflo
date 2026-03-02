@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor } from '../lib/database';
+import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 
 interface UseRecordingReturn {
   isRecording: boolean;

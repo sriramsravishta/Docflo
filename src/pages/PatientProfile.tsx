@@ -498,13 +498,17 @@ export default function PatientProfile() {
       `;
     };
 
-    // CHANGED: Patient/date info block at the top
     let content = `
       <div class="info-block">
         <div class="info-row">
           <span class="info-label">Patient</span>
           <span class="info-value">${escapeHtml(patient?.name || '—')}, ${escapeHtml(patient?.gender || '')}, ${escapeHtml(String(patient?.age || '—'))} Yrs</span>
         </div>
+        ${patient?.uhid ? `
+        <div class="info-row">
+          <span class="info-label">UHID</span>
+          <span class="info-value">${escapeHtml(patient.uhid)}</span>
+        </div>` : ''}
         <div class="info-row">
           <span class="info-label">Date</span>
           <span class="info-value">${escapeHtml(formatDate(consult.created_at))}</span>
@@ -513,8 +517,13 @@ export default function PatientProfile() {
           <span class="info-label">Doctor</span>
           <span class="info-value">${escapeHtml(user?.user_metadata?.name || user?.email || 'Doctor')}</span>
         </div>
+        ${referredBy ? `
+        <div class="info-row">
+          <span class="info-label">Referred By</span>
+          <span class="info-value">${escapeHtml(referredBy)}</span>
+        </div>` : ''}
       </div>
-    `;
+    `; // CHANGED: added UHID (if exists) and Referred By (if exists)
 
     // CHANGED: Diagnosis section — only if data exists
     if (summary.diagnosis) {

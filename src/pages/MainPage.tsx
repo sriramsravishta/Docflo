@@ -108,8 +108,10 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const onSubmitForm = async () => {
     if (existingPatient) {
       if (!checkExistingAppointment(existingPatient.id)) {
-        await handleAddToQueue(existingPatient, user!.id, referredBy); // CHANGED: pass referredBy
-        if (!formError) {
+        // CHANGED: pass uhidToSave only if existing patient has no uhid and user entered one
+        const uhidToSave = !existingPatient.uhid && newPatient.uhid ? newPatient.uhid : undefined;
+        const success = await handleAddToQueue(existingPatient, user!.id, referredBy, uhidToSave); // CHANGED: use returned boolean
+        if (success) { // CHANGED: check returned value, not stale formError
           handleCloseModal();
           await loadData();
         }
@@ -117,8 +119,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         setFormError('This patient already has an appointment today!');
       }
     } else {
-      await handleCreatePatient(newPatient, user!.id, referredBy); // CHANGED: pass referredBy and uhid is inside newPatient
-      if (!formError) {
+      const success = await handleCreatePatient(newPatient, user!.id, referredBy); // CHANGED: use returned boolean
+      if (success) { // CHANGED: check returned value, not stale formError
         handleCloseModal();
         await loadData();
       }

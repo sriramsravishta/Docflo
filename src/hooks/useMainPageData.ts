@@ -123,7 +123,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     }
   };
 
-  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param
+  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param 
     setFormError('');
     setIsSubmitting(true);
     try {

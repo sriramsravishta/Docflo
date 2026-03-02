@@ -627,3 +627,43 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
   return data && data.length > 0 ? data[0] : null;
 };
 
+// CHANGED: Updates today's appointment with the consult_id when recording ends
+export const updateAppointmentConsultId = async (patientId: string, docId: string, consultId: string) => {
+  const { startISO, endISO } = getTodayBoundsISO();
+
+  const { data: row, error: fetchError } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('patient_id', patientId)
+    .eq('doc_id', docId)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!row?.id) return null; // no appointment today, skip silently
+
+  const { data, error: updateError } = await supabase
+    .from('appointments')
+    .update({ consult_id: consultId })
+    .eq('id', row.id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+  return data;
+};
+
+// CHANGED: Fetches appointment by consult_id to get referred_by for PDF
+export const getAppointmentByConsultId = async (consultId: string) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('referred_by, consult_id')
+    .eq('consult_id', consultId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};

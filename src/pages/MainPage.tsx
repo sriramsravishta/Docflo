@@ -249,7 +249,36 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               </select>
             </div>
           </div>
+{/* CHANGED: Added UHID field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              UHID <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={newPatient.uhid}
+              onChange={(e) => setNewPatient({ ...newPatient, uhid: e.target.value })}
+              className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+              readOnly={!!existingPatient}
+              placeholder="e.g., UHID-00123"
+            />
+          </div>
 
+          {/* CHANGED: Added Referred By field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Referred By <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={referredBy}
+              onChange={(e) => setReferredBy(e.target.value)}
+              className="input-field"
+              placeholder="e.g., Dr. Sharma"
+            />
+          </div>
+
+          <div className="flex space-x-3 justify-end pt-4">
           <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel

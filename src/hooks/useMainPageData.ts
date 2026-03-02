@@ -96,8 +96,9 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   };
 
   const handleCreatePatient = async (
-    data: { phone: string; name: string; age: string; gender: string },
-    userId: string
+    data: { phone: string; name: string; age: string; gender: string; uhid: string }, // CHANGED: added uhid
+    userId: string,
+    referredBy?: string // CHANGED: added referredBy
   ) => {
     setFormError('');
     setIsSubmitting(true);
@@ -112,8 +113,9 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         age: parseInt(data.age),
         phone: data.phone,
         gender: data.gender,
+        uhid: data.uhid || undefined, // CHANGED: pass uhid to patient creation
       });
-      await createAppointment(patient.id, userId);
+      await createAppointment(patient.id, userId, referredBy || undefined); // CHANGED: pass referredBy to appointment
       await loadData();
     } catch (error) {
       console.error('Error creating patient:', error);

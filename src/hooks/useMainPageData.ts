@@ -127,7 +127,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
 
   const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param
     setFormError('');
-    setIsSubmitting(true);
+    setIsSubmitting(true); 
     try {
       if (checkExistingAppointment(existingPatient.id)) { // FIXED: was patient.id (wrong variable)
         setFormError('This patient already has an appointment today!');

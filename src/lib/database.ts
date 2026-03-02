@@ -520,18 +520,16 @@ export const updateConsultSummary = async (consultId: string, summaryUpdates: an
   return data;
 };
 
-// Appointments functions
-export const createAppointment = async (patientId: string, docId: string) => {
+export const createAppointment = async (patientId: string, docId: string, referredBy?: string) => { // CHANGED: added referredBy param
   // Get next queue number for today
   const { startISO, endISO } = getTodayBoundsISO();
 
-  
   const { data: existingAppointments } = await supabase
     .from('appointments')
     .select('queue')
     .eq('doc_id', docId)
     .gte('created_at', startISO)
-.lte('created_at', endISO)
+    .lte('created_at', endISO)
     .order('queue', { ascending: false })
     .limit(1);
 
@@ -545,8 +543,9 @@ export const createAppointment = async (patientId: string, docId: string) => {
       patient_id: patientId,
       doc_id: docId,
       queue: nextQueue,
-     pre_consult_filled: false,
-completed: false
+      pre_consult_filled: false,
+      completed: false,
+      referred_by: referredBy || null, // CHANGED: save referred_by, null if not provided
     })
     .select()
     .single();

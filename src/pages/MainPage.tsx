@@ -279,7 +279,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </div>
 
           <div className="flex space-x-3 justify-end pt-4">
-          <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>

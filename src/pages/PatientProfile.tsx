@@ -246,7 +246,7 @@ export default function PatientProfile() {
       setMedicineDrafts(drafts);
     } catch (error) { console.error('Error loading consult medicines:', error); }
   };
-
+ 
   const handleEditPatient = async () => {
     try {
       await updatePatient(patientId!, {
@@ -255,7 +255,6 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
-        uhid: editForm.uhid || undefined, // CHANGED: save uhid
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -1360,25 +1359,9 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
             <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="input-field" required />
           </div>
           <div>
-            <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
             <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
           </div>
-
-          {/* CHANGED: Added UHID field to edit modal */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              UHID <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.uhid}
-              onChange={(e) => setEditForm({ ...editForm, uhid: e.target.value })}
-              className="input-field"
-              placeholder="e.g., UHID-00123"
-            />
-          </div>
-
           <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary">Save Changes</button>

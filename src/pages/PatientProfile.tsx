@@ -678,9 +678,16 @@ export default function PatientProfile() {
     return content;
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => { // CHANGED: made async to fetch referred_by
     if (!selectedConsult) return;
-    const htmlContent = generatePDFHTMLContent(selectedConsult);
+    let referredBy: string | undefined;
+    try {
+      const appt = await getAppointmentByConsultId(selectedConsult.id);
+      referredBy = appt?.referred_by || undefined; // CHANGED: pull referred_by from appointment
+    } catch (e) {
+      console.error('Error fetching appointment for PDF:', e);
+    }
+    const htmlContent = generatePDFHTMLContent(selectedConsult, referredBy); // CHANGED: pass referredBy
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
     printWindow.document.open();

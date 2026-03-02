@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment } from '../lib/database';
+import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient } from '../lib/database'; // CHANGED: added updatePatient
 import type { AppointmentRow, PatientRow } from '../types/db';
 
 interface UseMainPageDataReturn {
@@ -10,8 +10,8 @@ interface UseMainPageDataReturn {
   handleMoveUp: (appointment: AppointmentRow) => Promise<void>;
   handleMoveDown: (appointment: AppointmentRow) => Promise<void>;
   handleConfirmRemove: (appointment: AppointmentRow) => Promise<void>;
-  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string) => Promise<void>; // CHANGED: added uhid and referredBy
-  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string) => Promise<void>; // CHANGED: added referredBy
+  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string) => Promise<boolean>; // CHANGED: returns boolean
+  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string, uhidToSave?: string) => Promise<boolean>; // CHANGED: added uhidToSave, returns boolean
   checkExistingAppointment: (patientId: string) => boolean;
   formError: string;
   setFormError: (e: string) => void;
@@ -99,14 +99,14 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     data: { phone: string; name: string; age: string; gender: string; uhid: string }, // CHANGED: added uhid
     userId: string,
     referredBy?: string // CHANGED: added referredBy
-  ) => {
+  ): Promise<boolean> => { // CHANGED: returns boolean
     setFormError('');
     setIsSubmitting(true);
     try {
       const existing = await getPatientByPhone(data.phone, userId);
       if (existing) {
         setFormError('A patient with this phone number already exists!');
-        return;
+        return false; // CHANGED
       }
       const patient = await createPatient({
         name: data.name,
@@ -117,27 +117,34 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
       });
       await createAppointment(patient.id, userId, referredBy || undefined); // CHANGED: pass referredBy to appointment
       await loadData();
+      return true; // CHANGED
     } catch (error) {
       console.error('Error creating patient:', error);
       setFormError('Failed to create patient. Please try again.');
+      return false; // CHANGED
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param
+  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string, uhidToSave?: string): Promise<boolean> => { // CHANGED: added uhidToSave, returns boolean
     setFormError('');
     setIsSubmitting(true);
     try {
       if (checkExistingAppointment(existingPatient.id)) { // FIXED: was patient.id (wrong variable)
         setFormError('This patient already has an appointment today!');
-        return;
+        return false; // CHANGED
+      }
+      if (uhidToSave) {
+        await updatePatient(existingPatient.id, { uhid: uhidToSave }); // CHANGED: save uhid if provided
       }
       await createAppointment(existingPatient.id, doctorId, referredBy || undefined); // FIXED: was patient.id + userId; CHANGED: pass referredBy
       await loadData();
+      return true; // CHANGED
     } catch (error) {
       console.error('Error adding to queue:', error);
       setFormError('Failed to add to queue. Please try again.');
+      return false; // CHANGED
     } finally {
       setIsSubmitting(false);
     }

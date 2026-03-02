@@ -56,6 +56,7 @@ export const createPatient = async (patientData: {
   phone: string;
   case?: string;
   gender: string;
+  uhid?: string; // CHANGED: added uhid as optional field
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -74,7 +75,7 @@ export const createPatient = async (patientData: {
     .insert({
       doc_id: user.id,
       org_id: userData.org_id,
-      ...patientData,
+      ...patientData, // uhid is included here automatically via spread
     })
     .select()
     .single();

@@ -125,15 +125,15 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     }
   };
 
-  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param 
+  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string) => { // CHANGED: added referredBy param
     setFormError('');
     setIsSubmitting(true);
     try {
-      if (checkExistingAppointment(patient.id)) {
+      if (checkExistingAppointment(existingPatient.id)) { // FIXED: was patient.id (wrong variable)
         setFormError('This patient already has an appointment today!');
         return;
       }
-      await createAppointment(patient.id, userId);
+      await createAppointment(existingPatient.id, doctorId, referredBy || undefined); // FIXED: was patient.id + userId; CHANGED: pass referredBy
       await loadData();
     } catch (error) {
       console.error('Error adding to queue:', error);

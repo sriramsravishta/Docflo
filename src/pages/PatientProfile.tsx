@@ -255,6 +255,7 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
+        uhid: editForm.uhid || undefined, // CHANGED: save uhid
       });
       setShowEditModal(false);
       await loadPatientData();

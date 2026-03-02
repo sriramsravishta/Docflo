@@ -30,6 +30,7 @@ import {
   deleteConsultMedicine,
   searchMedicines,
   updateConsultSummary,
+  getAppointmentByConsultId, // CHANGED: added for PDF referred_by lookup
 } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';

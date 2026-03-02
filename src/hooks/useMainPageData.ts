@@ -10,8 +10,8 @@ interface UseMainPageDataReturn {
   handleMoveUp: (appointment: AppointmentRow) => Promise<void>;
   handleMoveDown: (appointment: AppointmentRow) => Promise<void>;
   handleConfirmRemove: (appointment: AppointmentRow) => Promise<void>;
-  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string }, userId: string) => Promise<void>;
-  handleAddToQueue: (patient: PatientRow, userId: string) => Promise<void>;
+  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string) => Promise<void>; // CHANGED: added uhid and referredBy
+  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string) => Promise<void>; // CHANGED: added referredBy
   checkExistingAppointment: (patientId: string) => boolean;
   formError: string;
   setFormError: (e: string) => void;

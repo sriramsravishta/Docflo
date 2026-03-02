@@ -121,6 +121,7 @@ export default function PatientProfile() {
         phone: patient.phone,
         case: patient.case || '',
         gender: patient.gender,
+        uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
       });
     }
   }, [patient]);

@@ -451,6 +451,7 @@ function MedicationsTable({
 const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overflow-hidden whitespace-normal break-words`;
 
   return (
+    <>
     <div className="max-h-[520px] overflow-auto">
       <table className="w-max border-collapse border border-gray-300 table-auto">
         <thead>

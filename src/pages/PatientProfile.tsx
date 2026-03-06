@@ -734,14 +734,24 @@ export default function PatientProfile() {
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;font-size:13px;background:#fff}
-.info-block{margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #111}
-/* CHANGED: 2-column patient info grid */
+/* CHANGED: remove divider line under patient info */
+.info-block{
+  margin-bottom:20px;
+  padding-bottom:0;
+  border-bottom:none;
+}
 
+/* CHANGED: add bordered square box around patient info */
+.info-box{
+  border:1.5px solid #111;  /* same color/thickness as section header line */
+  padding:10px 14px;
+}
+
+/* CHANGED: keep 2-column layout */
 .info-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:6px 40px;
-  margin-bottom:6px;
 }
 
 .info-item{
@@ -757,8 +767,13 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 .info-value{
   color:#111;
 }
-.section{margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
-.section:last-child{border-bottom:none}
+
+/* CHANGED: remove light divider from sections but keep spacing */
+.section{
+  margin-bottom:18px;
+  padding-bottom:12px;
+  border-bottom:none;
+}
 .section-header{font-size:13px;font-weight:700;color:#111;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #111;text-transform:none;letter-spacing:0}
 .section-text{margin:4px 0;font-size:12px;color:#222}
 .sub-label{font-size:11px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}

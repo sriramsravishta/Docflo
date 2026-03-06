@@ -664,38 +664,7 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
         </tbody>
       </table>
     </div>
-    {/* Dropdown rendered in fixed position to escape overflow:auto clipping */}
-    {medicineSearchResults.length > 0 && activeMedicineSearchId !== null && dropdownPos && (
-      <div
-        ref={searchDropdownRef}
-        style={{
-          position: 'fixed',
-          top: dropdownPos.top,
-          left: dropdownPos.left,
-          width: dropdownPos.width,
-          zIndex: 9999,
-        }}
-        className="bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
-      >
-        {medicineSearchResults.map((r, i) => (
-          <button
-            key={i}
-            type="button"
-            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-            onClick={() => {
-              if (activeMedicineSearchId) {
-                updateMedicineDraft(activeMedicineSearchId, { name: r.name });
-              }
-              setMedicineSearchResults([]);
-              setActiveMedicineSearchId(null);
-              setDropdownPos(null);
-            }}
-          >
-            {r.name}
-          </button>
-        ))}
-      </div>
-    )}
+    
   );
 }
 

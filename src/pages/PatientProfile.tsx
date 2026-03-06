@@ -332,6 +332,25 @@ export default function PatientProfile() {
     setEditedTreatmentText('');
     setEditedInvestigationsText('');
     setMedicineSearchResults([]);
+
+    // CHANGED: Reset medicine drafts back to original DB values so
+    // view mode shows the real saved data, not the cancelled edits
+    const resetDrafts: Record<string, MedicineDraft> = {};
+    consultMedicines.forEach((m) => {
+      resetDrafts[m.id] = {
+        name: m.name || '',
+        dosage: m.dosage || '',
+        quantity: m.quantity || '',
+        type: m.type || '',
+        frequency: m.frequency || '',
+        food: m.food || '',
+        time: normalizeTime(m.time),
+        duration: m.duration || '',
+        instructions: m.instructions || '',
+        flags: m.flags || '',
+      };
+    });
+    setMedicineDrafts(resetDrafts);
   };
 
   const saveMedicineDraftsToDB = async () => {

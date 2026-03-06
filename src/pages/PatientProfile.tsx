@@ -522,7 +522,7 @@ export default function PatientProfile() {
     let content = `
       <div class="info-block">
 
-    <div class="info-grid"> <!-- CHANGED: 2-column layout -->
+    <div class="info-grid">
 
       <div class="info-item">
         <span class="info-label">Patient -</span>

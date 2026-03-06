@@ -483,30 +483,23 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                     </div>
                   ) : (
                     <div className="relative max-w-[170px]">
-                      {cellTextarea(d.name, (v) => {
-  updateMedicineDraft(m.id, { name: v });
-  setActiveMedicineSearchId(m.id); // CHANGED: mark this row as the active search row
-  onMedicineSearch(v);
-})}
-                      {/* CHANGED: Added `activeMedicineSearchId === m.id` so only THIS row shows its dropdown */}
-{medicineSearchResults.length > 0 && activeMedicineSearchId === m.id && (
-  <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-    {medicineSearchResults.map((r, i) => (
-      <button
-        key={i}
-        type="button"
-        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-        onClick={() => {
-          updateMedicineDraft(m.id, { name: r.name });
-          setMedicineSearchResults([]);
-          setActiveMedicineSearchId(null); // CHANGED: clear active row after selecting
-        }}
-      >
-        {r.name}
-      </button>
-    ))}
-  </div>
-)}
+                      <textarea
+                        className={`${inputBase} resize-none leading-5`}
+                        rows={2}
+                        value={d.name}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          updateMedicineDraft(m.id, { name: v });
+                          setActiveMedicineSearchId(m.id);
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setDropdownPos({
+                            top: rect.bottom,
+                            left: rect.left,
+                            width: rect.width,
+                          });
+                          onMedicineSearch(v);
+                        }}
+                      />
                     </div>
                   )}
                 </td>

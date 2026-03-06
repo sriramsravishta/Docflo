@@ -731,9 +731,28 @@ export default function PatientProfile() {
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;font-size:13px;background:#fff}
 .info-block{margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #111}
-.info-row{display:flex;gap:8px;margin-bottom:4px}
-.info-label{font-weight:700;min-width:70px;font-size:12px;color:#444}
-.info-value{font-size:12px;color:#111;white-space:nowrap;overflow:visible;word-break:keep-all}
+/* CHANGED: 2-column patient info grid */
+
+.info-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px 40px;
+  margin-bottom:6px;
+}
+
+.info-item{
+  font-size:12px;
+}
+
+.info-label{
+  font-weight:700;
+  color:#333;
+  margin-right:4px;
+}
+
+.info-value{
+  color:#111;
+}
 .section{margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
 .section:last-child{border-bottom:none}
 .section-header{font-size:13px;font-weight:700;color:#111;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #111;text-transform:none;letter-spacing:0}

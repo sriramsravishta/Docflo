@@ -745,6 +745,7 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 .info-box{
   border:1.5px solid #111;  /* same color/thickness as section header line */
   padding:16px 16px;
+  margin-bottom:16px;
 }
 
 /* CHANGED: keep 2-column layout */

@@ -473,7 +473,9 @@ export default function PatientProfile() {
 
     // CHANGED: Helper to compute M-A-N dosage grid from medicine time[] and quantity
     const getMaNGrid = (time: string[], quantity: string): string => {
-      const qty = quantity || '0';
+      // CHANGED: only use numeric quantity, never fall back to dosage string
+  const rawQty = (quantity || '').trim();
+  const qty = rawQty && /^\d+(\.\d+)?$/.test(rawQty) ? rawQty : '1';
       const normalizedTime = (time || []).map((t) => t.toLowerCase());
       const morning = normalizedTime.some((t) => t.includes('morning')) ? qty : '0';
       const afternoon = normalizedTime.some((t) => t.includes('afternoon') || t.includes('noon')) ? qty : '0';

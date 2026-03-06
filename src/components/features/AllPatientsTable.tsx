@@ -70,6 +70,13 @@ export default function AllPatientsTable({
 }) {
   const navigate = useNavigate();
 
+  // CHANGED: sort patients by last_visit_at descending (latest first)
+  const sortedPatients = [...patients].sort((a, b) => {
+    const dateA = a.last_visit_at ? new Date(a.last_visit_at).getTime() : 0;
+    const dateB = b.last_visit_at ? new Date(b.last_visit_at).getTime() : 0;
+    return dateB - dateA;
+  });
+
   if (patients.length === 0) return null;
 
   return (

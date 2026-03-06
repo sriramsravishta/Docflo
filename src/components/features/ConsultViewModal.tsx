@@ -472,7 +472,7 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                     <div className="relative max-w-[170px]">
                       {cellTextarea(d.name, (v) => {
   updateMedicineDraft(m.id, { name: v });
-  setActiveMedicineSearchId(m.id); // CHANGED: mark this row as the active search row 
+  setActiveMedicineSearchId(m.id); // CHANGED: mark this row as the active search row
   onMedicineSearch(v);
 })}
                       {/* CHANGED: Added `activeMedicineSearchId === m.id` so only THIS row shows its dropdown */}

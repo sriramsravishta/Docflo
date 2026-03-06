@@ -471,9 +471,10 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                   ) : (
                     <div className="relative max-w-[170px]">
                       {cellTextarea(d.name, (v) => {
-                        updateMedicineDraft(m.id, { name: v });
-                        onMedicineSearch(v, m.id); // CHANGED: pass the row's ID along
-                      })}
+  updateMedicineDraft(m.id, { name: v });
+  setActiveMedicineSearchId(m.id); // CHANGED: mark this row as the active search row
+  onMedicineSearch(v);
+})}
                       {medicineSearchResults.length > 0 && activeSearchMedicineId === m.id && ( // CHANGED: gate by active row ID
   <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
     {medicineSearchResults.map((r, i) => (

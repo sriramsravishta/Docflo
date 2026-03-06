@@ -472,9 +472,9 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                         updateMedicineDraft(m.id, { name: v });
                         onMedicineSearch(v);
                       })}
-                      {medicineSearchResults.length > 0 && (
-                        <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                          {medicineSearchResults.map((r, i) => (
+                      {medicineSearchResults.length > 0 && activeSearchMedicineId === m.id && ( // CHANGED: gate by active row ID
+  <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+    {medicineSearchResults.map((r, i) => (
                             <button
                               key={i}
                               type="button"

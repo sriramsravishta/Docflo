@@ -66,6 +66,7 @@ interface ConsultViewModalProps {
   medicineDrafts: Record<string, MedicineDraft>;
   updateMedicineDraft: (id: string, patch: Partial<MedicineDraft>) => void;
   medicineSearchResults: { name: string }[];
+  activeSearchMedicineId: string | null; // CHANGED: add this line directly below
   openTimeDropdownId: string | null;
   setOpenTimeDropdownId: (id: string | null) => void;
   timeDropdownRef: React.RefObject<HTMLDivElement | null>;
@@ -368,6 +369,7 @@ function MedicationsTable({
   medicineDrafts: Record<string, MedicineDraft>;
   updateMedicineDraft: (id: string, patch: Partial<MedicineDraft>) => void;
   medicineSearchResults: { name: string }[];
+  activeSearchMedicineId: string | null; // CHANGED: add this line directly below
   openTimeDropdownId: string | null;
   setOpenTimeDropdownId: (id: string | null) => void;
   timeDropdownRef: React.RefObject<HTMLDivElement | null>;

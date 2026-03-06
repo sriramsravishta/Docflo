@@ -578,10 +578,13 @@ export default function PatientProfile() {
       const medsRows = meds.map((m, idx) => {
         const timeArr = Array.isArray(m?.time) ? m.time : [];
         const manGrid = getMaNGrid(timeArr, m?.quantity || m?.dosage || '');
+        // CHANGED: prepend quantity to detail line, show "1 Tab | 1x everyday | after food"
+        const rawQty = (m?.quantity || '').trim();
+        const displayQty = rawQty && /^\d+(\.\d+)?$/.test(rawQty) ? rawQty : '1';
         const detailParts = [
-          m?.type ? escapeHtml(m.type) : '',
-          m?.frequency ? escapeHtml(m.frequency) : '',
-          m?.food ? `${escapeHtml(m.food)} food` : '',
+          m?.type ? `${displayQty} ${escapeHtml(m.type)}` : '',  // e.g. "1 Tab"
+          m?.frequency ? escapeHtml(m.frequency) : '',            // e.g. "1x everyday"
+          m?.food ? `${escapeHtml(m.food)} food` : '',            // e.g. "after food"
         ].filter(Boolean);
         const detailLine = detailParts.join(' | ');
         const instructionLine = m?.instructions ? `<div class="med-instruction">${escapeHtml(m.instructions)}</div>` : '';

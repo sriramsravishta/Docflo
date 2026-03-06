@@ -475,23 +475,25 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
   setActiveMedicineSearchId(m.id); // CHANGED: mark this row as the active search row
   onMedicineSearch(v);
 })}
-                      {medicineSearchResults.length > 0 && activeSearchMedicineId === m.id && ( // CHANGED: gate by active row ID
+                      {/* CHANGED: Added `activeMedicineSearchId === m.id` so only THIS row shows its dropdown */}
+{medicineSearchResults.length > 0 && activeMedicineSearchId === m.id && (
   <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
     {medicineSearchResults.map((r, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                              onClick={() => {
-                                updateMedicineDraft(m.id, { name: r.name });
-                                setMedicineSearchResults([]);
-                              }}
-                            >
-                              {r.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+      <button
+        key={i}
+        type="button"
+        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+        onClick={() => {
+          updateMedicineDraft(m.id, { name: r.name });
+          setMedicineSearchResults([]);
+          setActiveMedicineSearchId(null); // CHANGED: clear active row after selecting
+        }}
+      >
+        {r.name}
+      </button>
+    ))}
+  </div>
+)}
                     </div>
                   )}
                 </td>

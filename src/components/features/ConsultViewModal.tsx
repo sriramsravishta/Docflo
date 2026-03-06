@@ -377,6 +377,21 @@ function MedicationsTable({
 }) {
   // CHANGED: Track which medicine row's name field is currently being searched
   const [activeMedicineSearchId, setActiveMedicineSearchId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
+        setActiveMedicineSearchId(null);
+        setMedicineSearchResults([]);
+        setDropdownPos(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setMedicineSearchResults]);
+
   if (!consultMedicines.length) {
     return <p className="text-sm text-gray-600">No medications recorded</p>;
   }

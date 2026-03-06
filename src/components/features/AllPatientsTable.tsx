@@ -95,23 +95,26 @@ export default function AllPatientsTable({
           <tbody className="divide-y divide-gray-100">
             {patients.map((patient) => (
               <tr
-                key={patient.id}
-                onClick={() => navigate(`/patient/${patient.id}`)}
-                className="hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <td className="px-4 py-3">
-                  <span className="font-medium text-gray-900">{patient.name}</span>
-                  {patient.case && (
-                    <span className="ml-2 text-xs text-[#024CDB]">{patient.case}</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {patient.age}yrs · {patient.gender}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {patient.last_visit_at ? formatDate(patient.last_visit_at) : <span className="text-gray-400">—</span>}
-                </td>
-              </tr>
+  key={patient.id}
+  onClick={() => navigate(`/patient/${patient.id}`)}
+  className="hover:bg-gray-50 cursor-pointer transition-colors"
+>
+  {/* CHANGED: Date column added first */}
+  <td className="px-4 py-3 text-sm text-gray-600">
+    {patient.last_visit_at ? formatDate(patient.last_visit_at) : <span className="text-gray-400">—</span>}
+  </td>
+
+  <td className="px-4 py-3">
+    <span className="font-medium text-gray-900">{patient.name}</span>
+    {patient.case && (
+      <span className="ml-2 text-xs text-[#024CDB]">{patient.case}</span>
+    )}
+  </td>
+
+  <td className="px-4 py-3 text-sm text-gray-600">
+    {patient.age}yrs · {patient.gender}
+  </td>
+</tr>
             ))}
           </tbody>
         </table>

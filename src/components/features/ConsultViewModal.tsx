@@ -697,6 +697,7 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
         ))}
       </div>
     )}
+      </>
   );
 }
 

@@ -377,6 +377,8 @@ function MedicationsTable({
   onMedicineSearch: (q: string) => void;
   setMedicineSearchResults: (r: { name: string }[]) => void;
 }) {
+  // CHANGED: Track which medicine row's name field is currently being searched
+  const [activeMedicineSearchId, setActiveMedicineSearchId] = useState<string | null>(null);
   if (!consultMedicines.length) {
     return <p className="text-sm text-gray-600">No medications recorded</p>;
   }

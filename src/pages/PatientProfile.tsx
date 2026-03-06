@@ -744,7 +744,7 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 /* CHANGED: add bordered square box around patient info */
 .info-box{
   border:1.5px solid #111;  /* same color/thickness as section header line */
-  padding:40px 40px;
+  padding:16px 16px;
 }
 
 /* CHANGED: keep 2-column layout */

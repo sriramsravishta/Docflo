@@ -522,34 +522,38 @@ export default function PatientProfile() {
     let content = `
       <div class="info-block">
 
-    <div class="info-grid">
+    <div class="info-box"> <!-- CHANGED: added bordered container -->
 
-      <div class="info-item">
-        <span class="info-label">Patient -</span>
-        <span class="info-value">
-          ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-        </span>
-      </div>
+      <div class="info-grid">
 
-      <div class="info-item">
-        <span class="info-label">Date -</span>
-        <span class="info-value">
-          ${escapeHtml(formatDate(consult.created_at))}
-        </span>
-      </div>
+        <div class="info-item">
+          <span class="info-label">Patient -</span>
+          <span class="info-value">
+            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
+          </span>
+        </div>
 
-      <div class="info-item">
-        <span class="info-label">UHID -</span>
-        <span class="info-value">
-          ${escapeHtml(patient?.uhid || '—')}
-        </span>
-      </div>
+        <div class="info-item">
+          <span class="info-label">Date -</span>
+          <span class="info-value">
+            ${escapeHtml(formatDate(consult.created_at))}
+          </span>
+        </div>
 
-      <div class="info-item">
-        <span class="info-label">Referred by -</span>
-        <span class="info-value">
-          ${escapeHtml(referredBy || '—')}
-        </span>
+        <div class="info-item">
+          <span class="info-label">UHID -</span>
+          <span class="info-value">
+            ${escapeHtml(patient?.uhid || '—')}
+          </span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Referred by -</span>
+          <span class="info-value">
+            ${escapeHtml(referredBy || '—')}
+          </span>
+        </div>
+
       </div>
 
     </div>

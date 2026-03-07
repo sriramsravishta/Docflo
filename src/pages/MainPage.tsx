@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -13,6 +14,7 @@ import { getPatientByPhone } from '../lib/database';
 
 export default function MainPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const {
     loading,
     todaysAppointments,
@@ -132,8 +134,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
       <Navbar />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="mb-6 flex flex-row gap-3">
-          <div className="flex-1 relative">
+        <div className="mb-6 flex flex-wrap gap-3">
+          <div className="w-full relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -143,10 +145,16 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
             />
           </div>
-          <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
-            <Plus className="w-5 h-5" />
-            <span>Patient</span>
-          </button>
+          <div className="flex gap-3 ml-auto">
+            <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex items-center space-x-2 shrink-0">
+              <FileText className="w-4 h-4" />
+              <span>Clinical Summariser</span>
+            </button>
+            <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
+              <Plus className="w-5 h-5" />
+              <span>Patient</span>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-10">

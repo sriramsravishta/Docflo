@@ -667,3 +667,85 @@ export const getAppointmentByConsultId = async (consultId: string) => {
   if (error) throw error;
   return data;
 };
+
+export type DischargeSummaryRow = {
+  id: string;
+  doctor_id: string;
+  created_at: string;
+  updated_at: string;
+  status: 'processing' | 'completed';
+  recording_stopped_at: string | null;
+  summary_json: Record<string, unknown> | null;
+  summary_text: string;
+};
+
+export const getDischargeSummaries = async (doctorId: string): Promise<DischargeSummaryRow[]> => {
+  const { data, error } = await supabase
+    .from('discharge_summaries')
+    .select('*')
+    .eq('doctor_id', doctorId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as DischargeSummaryRow[];
+};
+
+export const getDischargeSummaryById = async (id: string): Promise<DischargeSummaryRow | null> => {
+  const { data, error } = await supabase
+    .from('discharge_summaries')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data as DischargeSummaryRow | null;
+};
+
+export const createDischargeSummary = async (doctorId: string): Promise<DischargeSummaryRow> => {
+  const { data, error } = await supabase
+    .from('discharge_summaries')
+    .insert({ doctor_id: doctorId, status: 'processing' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DischargeSummaryRow;
+};
+
+export const updateDischargeSummaryRecordingStopped = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('discharge_summaries')
+    .update({ recording_stopped_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+};
+
+export const updateDischargeSummaryJson = async (
+  id: string,
+  summaryJson: Record<string, unknown>,
+  summaryText: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('discharge_summaries')
+    .update({
+      summary_json: summaryJson,
+      summary_text: summaryText,
+      status: 'completed',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+  if (error) throw error;
+};
+
+export const saveDischargeSummaryEdits = async (
+  id: string,
+  summaryJson: Record<string, unknown>,
+  summaryText: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('discharge_summaries')
+    .update({
+      summary_json: summaryJson,
+      summary_text: summaryText,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+  if (error) throw error;
+};

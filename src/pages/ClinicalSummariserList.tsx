@@ -125,22 +125,29 @@ export default function ClinicalSummariserList() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-2">
+            <div className="md:hidden space-y-3">
               {summaries.map((row) => (
                 <div
                   key={row.id}
                   onClick={() => navigate(`/clinical-summariser/${row.id}`)}
-                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex justify-between items-start mb-3 gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-400 mb-0.5">{formatDate(row.created_at)}</p>
-                      <p className="text-sm text-gray-800 line-clamp-2">{truncate(getSummarySnippet(row), 100)}</p>
+                      <p className="text-xs font-medium text-gray-500 mb-1">{formatDate(row.created_at)}</p>
+                      <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                        {truncate(getSummarySnippet(row), 100)}
+                      </p>
                     </div>
-                    <div className="shrink-0 flex flex-col items-end gap-2">
+                    <div className="shrink-0 mt-0.5">
                       <StatusIndicator status={row.status} />
-                      <span className="text-xs text-[#024CDB] font-medium whitespace-nowrap">View →</span>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-end border-t border-gray-100 pt-3 mt-1">
+                    <span className="text-sm font-medium text-[#024CDB] flex items-center">
+                      View details
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </span>
                   </div>
                 </div>
               ))}

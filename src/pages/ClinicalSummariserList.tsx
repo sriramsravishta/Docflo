@@ -60,7 +60,7 @@ export default function ClinicalSummariserList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showBack />
+      
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
         <div className="flex items-center justify-between mb-4">

@@ -156,7 +156,7 @@ export default function NewSummary() {
   };
 
   const beginAnalysing = useCallback(() => {
-    const cycleTimer = setInterval(() => setCycleIdx((i) => (i + 3) % CYCLING_WORDS.length), 1400);
+    const cycleTimer = setInterval(() => setCycleIdx((i) => (i + 5) % CYCLING_WORDS.length), 1400);
 
     const start = Date.now();
     progressRef.current = setInterval(() => {

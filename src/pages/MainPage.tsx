@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, FileText } from 'lucide-react';
+import { Plus, Search, FileText, Mic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
@@ -147,7 +147,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </div>
           <div className="flex gap-3 ml-auto">
             <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex items-center space-x-2 shrink-0">
-              <FileText className="w-4 h-4" />
+              <Mic className="w-4 h-4" />
               <span>Clinical Summariser</span>
             </button>
             <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">

@@ -119,21 +119,30 @@ function FreeTextArea({
   value,
   onChange,
   placeholder,
-  rows = 5,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  rows?: number;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize logic
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto'; // Reset height to recalculate
+      textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
+    }
+  }, [value]);
+
   return (
     <textarea
-      className="input-field text-sm w-full"
-      rows={rows}
+      ref={textareaRef}
+      className="input-field text-sm w-full p-3 resize-none overflow-hidden border-none focus:ring-0"
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      style={{ resize: 'vertical' }}
+      rows={1} // Start small, let the height logic take over
     />
   );
 }

@@ -699,12 +699,21 @@ export const getDischargeSummaryById = async (id: string): Promise<DischargeSumm
   return data as DischargeSummaryRow | null;
 };
 
-export const createDischargeSummary = async (doctorId: string): Promise<DischargeSummaryRow> => {
+export const createDischargeSummary = async (doctorId: string, fileUrl?: string): Promise<DischargeSummaryRow> => {
+  const insertData: any = { doctor_id: doctorId, status: 'processing' };
+  
+  // If a file URL is provided, add it to the initial row creation
+  if (fileUrl) {
+    insertData.file = fileUrl;
+    insertData.recording_stopped_at = new Date().toISOString();
+  }
+
   const { data, error } = await supabase
     .from('discharge_summaries')
-    .insert({ doctor_id: doctorId, status: 'processing' })
+    .insert(insertData)
     .select()
     .single();
+
   if (error) throw error;
   return data as DischargeSummaryRow;
 };

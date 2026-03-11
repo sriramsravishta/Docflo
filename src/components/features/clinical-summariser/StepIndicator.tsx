@@ -1,7 +1,4 @@
-interface Step {
-  label: string;
-  number: number;
-}
+
 
 const STEPS: Step[] = [
   { number: 1, label: 'Record' },

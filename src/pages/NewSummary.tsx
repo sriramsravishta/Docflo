@@ -245,7 +245,7 @@ export default function NewSummary() {
 
         {step === 1 && (
           <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col items-center">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Step 1: Record</h2>
+            
             <RecordingControls
               state={recordState}
               elapsed={elapsed}

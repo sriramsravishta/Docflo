@@ -74,11 +74,6 @@ export default function ClinicalSummariserList() {
           </button>
         </div>
 
-        <nav className="text-xs text-gray-400 mb-6 flex items-center gap-1">
-          <button onClick={() => navigate('/')} className="hover:text-[#024CDB] transition-colors">Main</button>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-600">Clinical Summariser</span>
-        </nav>
 
         {loading ? (
           <div className="flex justify-center py-16">

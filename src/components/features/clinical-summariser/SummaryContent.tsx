@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import SummaryCard from './SummaryCard';
 
 export interface SummaryJson {
@@ -119,21 +120,29 @@ function FreeTextArea({
   value,
   onChange,
   placeholder,
-  rows = 5,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  rows?: number;
 }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
+    }
+  }, [value]);
+
   return (
     <textarea
+      ref={ref}
       className="input-field text-sm w-full"
-      rows={rows}
+      rows={1}
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      style={{ resize: 'vertical' }}
+      style={{ resize: 'none', overflow: 'hidden' }}
     />
   );
 }
@@ -157,7 +166,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
       <div className="space-y-4">
         <SummaryCard title="Patient Summary">
           <FreeTextArea
-            rows={4}
             value={serializePatientSummary(edited.patient_summary, t.patient_summary)}
             onChange={(v) => setT('patient_summary', v)}
             placeholder={'Presenting Complaint: ...\nDuration of Stay: ...\nAdmitting Diagnosis: ...'}
@@ -166,7 +174,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="History">
           <FreeTextArea
-            rows={6}
             value={serializeHistory(edited.history, t.history)}
             onChange={(v) => setT('history', v)}
             placeholder={'Past Medical History:\n- ...\n\nSurgical History:\n- ...\n\nFamily History: ...\nSocial History: ...'}
@@ -175,7 +182,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Investigations">
           <FreeTextArea
-            rows={6}
             value={serializeInvestigations(edited.investigations, t.investigations)}
             onChange={(v) => setT('investigations', v)}
             placeholder={'Key Findings:\n- ...\n\nLabs:\n- HbA1c: 8.2% (Poorly controlled)'}
@@ -184,7 +190,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Procedures">
           <FreeTextArea
-            rows={3}
             value={serializeProcedures(edited.procedures, t.procedures)}
             onChange={(v) => setT('procedures', v)}
             placeholder={'- Primary PCI performed\n- ICU monitoring for 48 hours'}
@@ -193,7 +198,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Hospital Course">
           <FreeTextArea
-            rows={4}
             value={t.hospital_course !== undefined ? t.hospital_course : (edited.hospital_course || '')}
             onChange={(v) => setT('hospital_course', v)}
             placeholder={'Describe the hospital course...'}
@@ -202,7 +206,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Discharge Medications">
           <FreeTextArea
-            rows={7}
             value={serializeMedications(edited.discharge_medications, t.discharge_medications)}
             onChange={(v) => setT('discharge_medications', v)}
             placeholder={'Aspirin 75mg — Once daily — Lifelong\nClopidogrel 75mg — Once daily — 12 months'}
@@ -211,7 +214,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Discharge Instructions">
           <FreeTextArea
-            rows={5}
             value={serializeInstructions(edited.discharge_instructions, t.discharge_instructions)}
             onChange={(v) => setT('discharge_instructions', v)}
             placeholder={'- Avoid strenuous activity for 4 weeks\n- Monitor blood sugar twice daily'}
@@ -220,7 +222,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Follow-Up">
           <FreeTextArea
-            rows={5}
             value={serializeFollowUp(edited.follow_up, t.follow_up)}
             onChange={(v) => setT('follow_up', v)}
             placeholder={'Appointments:\n- Cardiology OPD: 2 weeks\n\nWarning Signs:\n- Return immediately if chest pain recurs'}
@@ -229,7 +230,6 @@ export default function SummaryContent({ summary, isEditing, edited, onChange }:
 
         <SummaryCard title="Flags for Review">
           <FreeTextArea
-            rows={3}
             value={serializeFlags(edited.flags_for_review, t.flags_for_review)}
             onChange={(v) => setT('flags_for_review', v)}
             placeholder={'- EF 38% — monitor for HFrEF progression'}

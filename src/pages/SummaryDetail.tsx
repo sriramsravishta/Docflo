@@ -45,7 +45,7 @@ export default function SummaryDetail() {
   const handleCancelEdit = () => {
     if (row?.summary_json) {
       setEditedJson(row.summary_json as SummaryJson);
-    }
+    } 
     setIsEditing(false);
   };
 

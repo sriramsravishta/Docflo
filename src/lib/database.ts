@@ -734,6 +734,14 @@ export const updateDischargeSummaryJson = async (
   if (error) throw error;
 };
 
+export const updateDischargeSummaryFile = async (id: string, fileUrl: string): Promise<void> => {
+  const { error } = await supabase
+    .from('discharge_summaries')
+    .update({ file: fileUrl, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+};
+
 export const saveDischargeSummaryEdits = async (
   id: string,
   summaryJson: Record<string, unknown>,

@@ -6,9 +6,11 @@ import StepIndicator from '../components/features/clinical-summariser/StepIndica
 import RecordingControls from '../components/features/clinical-summariser/RecordingControls';
 import SummaryContent, { type SummaryJson } from '../components/features/clinical-summariser/SummaryContent';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import {
   createDischargeSummary,
   updateDischargeSummaryRecordingStopped,
+  updateDischargeSummaryFile,
   getDischargeSummaryById,
   updateDischargeSummaryJson,
   saveDischargeSummaryEdits,
@@ -102,6 +104,8 @@ export default function NewSummary() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -122,35 +126,80 @@ export default function NewSummary() {
   const handleStart = async () => {
     if (!user?.id) return;
     try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+
       const row = await createDischargeSummary(user.id);
       setSummaryId(row.id);
       setRecordState('recording');
       startTimer();
     } catch (e) {
       console.error(e);
+      alert('Failed to start recording. Please check microphone permissions.');
     }
   };
 
   const handlePause = () => {
+    mediaRecorderRef.current?.pause();
     setRecordState('paused');
     stopTimer();
   };
 
   const handleResume = () => {
+    mediaRecorderRef.current?.resume();
     setRecordState('recording');
     startTimer();
   };
 
-  const handleStop = async () => {
+  const handleStop = async (currentSummaryId?: string) => {
     stopTimer();
     setRecordState('idle');
-    if (summaryId) {
+
+    const idToUse = currentSummaryId ?? summaryId;
+
+    const recorder = mediaRecorderRef.current;
+    let audioBlob: Blob | null = null;
+
+    if (recorder && recorder.state !== 'inactive') {
+      audioBlob = await new Promise<Blob>((resolve) => {
+        recorder.onstop = () => {
+          resolve(new Blob(audioChunksRef.current, { type: 'audio/webm' }));
+        };
+        recorder.stop();
+        recorder.stream.getTracks().forEach((t) => t.stop());
+      });
+    }
+
+    if (idToUse) {
       try {
-        await updateDischargeSummaryRecordingStopped(summaryId);
+        await updateDischargeSummaryRecordingStopped(idToUse);
       } catch (e) {
         console.error(e);
       }
+
+      if (audioBlob && audioBlob.size > 0) {
+        try {
+          const fileName = `summary-${idToUse}-${Date.now()}.webm`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('clinical_summarizer')
+            .upload(fileName, audioBlob, { contentType: 'audio/webm', upsert: false });
+          if (uploadError) throw uploadError;
+          const { data: urlData } = supabase.storage
+            .from('clinical_summarizer')
+            .getPublicUrl(uploadData.path);
+          await updateDischargeSummaryFile(idToUse, urlData.publicUrl);
+        } catch (e) {
+          console.error('Failed to upload clinical summarizer recording:', e);
+        }
+      }
     }
+
     setStep(2);
     beginAnalysing();
   };

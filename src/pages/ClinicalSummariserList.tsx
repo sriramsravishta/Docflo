@@ -9,15 +9,15 @@ import { getDischargeSummaries, type DischargeSummaryRow } from '../lib/database
 function StatusIndicator({ status }: { status: 'processing' | 'completed' }) {
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-green-700">
-        <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs font-medium text-green-700">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
         Completed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
       Processing…
     </span>
   );

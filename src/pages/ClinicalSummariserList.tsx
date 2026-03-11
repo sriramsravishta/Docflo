@@ -135,7 +135,7 @@ export default function ClinicalSummariserList() {
                   <div className="flex justify-between items-start mb-3 gap-3">
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-gray-500 mb-1">{formatDate(row.created_at)}</p>
-                      <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                      <p className="text-sm font-regular text-gray-900 line-clamp-2">
                         {truncate(getSummarySnippet(row), 100)}
                       </p>
                     </div>

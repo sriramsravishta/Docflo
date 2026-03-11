@@ -157,52 +157,66 @@ export default function NewSummary() {
     startTimer();
   };
 
-  const handleStop = async (currentSummaryId?: string) => {
-    stopTimer();
-    setRecordState('idle');
+  const handleStop = async () => {
+  stopTimer();
+  setRecordState('idle');
 
-    const idToUse = currentSummaryId ?? summaryId;
+  if (!mediaRecorderRef.current) return;
 
-    const recorder = mediaRecorderRef.current;
-    let audioBlob: Blob | null = null;
+  // 1. We create a Promise to wait for the recorder to fully finish
+  const recordingPromise = new Promise<Blob>((resolve) => {
+    const recorder = mediaRecorderRef.current!;
+    
+    recorder.onstop = () => {
+      // Create the blob ONLY after the stop event has fired
+      const fullBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      resolve(fullBlob);
+    };
 
-    if (recorder && recorder.state !== 'inactive') {
-      audioBlob = await new Promise<Blob>((resolve) => {
-        recorder.onstop = () => {
-          resolve(new Blob(audioChunksRef.current, { type: 'audio/webm' }));
-        };
-        recorder.stop();
-        recorder.stream.getTracks().forEach((t) => t.stop());
-      });
+    if (recorder.state !== 'inactive') {
+      recorder.stop();
+      // Also stop the microphone hardware
+      recorder.stream.getTracks().forEach((t) => t.stop());
     }
+  });
+
+  try {
+    const audioBlob = await recordingPromise; // Wait for the blob to be ready
+    const idToUse = summaryId;
 
     if (idToUse) {
-      try {
-        await updateDischargeSummaryRecordingStopped(idToUse);
-      } catch (e) {
-        console.error(e);
-      }
+      // Mark as recording stopped in DB
+      await updateDischargeSummaryRecordingStopped(idToUse);
 
       if (audioBlob && audioBlob.size > 0) {
-        try {
-          const fileName = `summary-${idToUse}-${Date.now()}.webm`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('clinical_summarizer')
-            .upload(fileName, audioBlob, { contentType: 'audio/webm', upsert: false });
-          if (uploadError) throw uploadError;
-          const { data: urlData } = supabase.storage
-            .from('clinical_summarizer')
-            .getPublicUrl(uploadData.path);
-          await updateDischargeSummaryFile(idToUse, urlData.publicUrl);
-        } catch (e) {
-          console.error('Failed to upload clinical summarizer recording:', e);
-        }
+        const fileName = `summary-${idToUse}-${Date.now()}.webm`;
+        
+        // 2. Upload to the correct bucket
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('clinical_summarizer')
+          .upload(fileName, audioBlob, { 
+            contentType: 'audio/webm', 
+            upsert: false 
+          });
+
+        if (uploadError) throw uploadError;
+
+        // 3. Get URL and update DB
+        const { data: urlData } = supabase.storage
+          .from('clinical_summarizer')
+          .getPublicUrl(fileName);
+
+        await updateDischargeSummaryFile(idToUse, urlData.publicUrl);
+        console.log("File uploaded successfully:", urlData.publicUrl);
       }
     }
+  } catch (e) {
+    console.error('Error in handleStop:', e);
+  }
 
-    setStep(2);
-    beginAnalysing();
-  };
+  setStep(2);
+  beginAnalysing();
+};
 
   const beginAnalysing = useCallback(() => {
     const cycleTimer = setInterval(() => setCycleIdx((i) => (i + 1) % CYCLING_WORDS.length), 1400);

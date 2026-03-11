@@ -231,13 +231,7 @@ export default function NewSummary() {
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <nav className="text-xs text-gray-400 mb-6 flex items-center gap-1">
-          <button onClick={() => navigate('/')} className="hover:text-[#024CDB] transition-colors">Main</button>
-          <ChevronRight className="w-3 h-3" />
-          <button onClick={() => navigate('/clinical-summariser')} className="hover:text-[#024CDB] transition-colors">Clinical Summariser</button>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-600">New Summary</span>
-        </nav>
+        
 
         <div className="mb-8">
           <StepIndicator currentStep={step} />

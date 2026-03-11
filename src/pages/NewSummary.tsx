@@ -15,15 +15,65 @@ import {
 } from '../lib/database';
 
 const SAMPLE_SUMMARY: SummaryJson = {
-  patient_summary: '65-year-old male admitted with acute onset chest pain radiating to left arm, associated with diaphoresis and shortness of breath for 3 hours.\n\nAdmitting Diagnosis: Acute ST-Elevation Myocardial Infarction (STEMI) — Anterior wall\nDuration of Stay: 5 days (12 Mar 2025 – 17 Mar 2025)',
-  history: 'Past Medical History: Hypertension (10 years), Type 2 Diabetes Mellitus (7 years), Dyslipidaemia.\n\nSurgical History: Appendectomy (2001).\n\nFamily/Social History: Father had CAD. Ex-smoker (quit 2015, 20 pack-years).',
-  investigations: 'ECG: ST elevations in V1–V4, reciprocal changes in inferior leads.\nTroponin I: 4.8 ng/mL (markedly elevated).\nEcho: EF 38%, anterior wall hypokinesia.\nCoronary angiography: 95% LAD occlusion.\n\nKey Labs: HbA1c 8.2% (Poorly controlled), LDL 168 mg/dL (Elevated), Creatinine 1.1 mg/dL.',
-  procedures: '• Primary PCI performed — drug-eluting stent placed in proximal LAD\n• Coronary care unit monitoring for 48 hours post-procedure',
+  patient_summary: {
+    presenting_complaint: '65-year-old male admitted with acute onset chest pain radiating to left arm, associated with diaphoresis and shortness of breath for 3 hours.',
+    duration_of_stay: '5 days (12 Mar 2025 – 17 Mar 2025)',
+    admitting_diagnosis: 'Acute ST-Elevation Myocardial Infarction (STEMI) — Anterior wall',
+  },
+  history: {
+    past_medical_history: ['Hypertension — 10 years', 'Type 2 Diabetes Mellitus — 7 years', 'Dyslipidaemia'],
+    surgical_history: ['Appendectomy — 2001'],
+    family_history: 'Father had coronary artery disease. Mother had Type 2 DM.',
+    social_history: 'Ex-smoker (quit 2015, 20 pack-years). Occasional alcohol.',
+  },
+  investigations: {
+    key_findings: [
+      'ECG: ST elevations in V1–V4, reciprocal changes in inferior leads',
+      'Troponin I: 4.8 ng/mL (markedly elevated)',
+      'Echo: EF 38%, anterior wall hypokinesia',
+      'Coronary angiography: 95% LAD occlusion',
+    ],
+    labs: [
+      { name: 'HbA1c', value: '8.2%', interpretation: 'Poorly controlled' },
+      { name: 'LDL Cholesterol', value: '168 mg/dL', interpretation: 'Elevated' },
+      { name: 'Creatinine', value: '1.1 mg/dL', interpretation: 'Normal' },
+    ],
+  },
+  procedures: [
+    'Primary PCI performed — drug-eluting stent placed in proximal LAD',
+    'Coronary care unit monitoring for 48 hours post-procedure',
+  ],
   hospital_course: 'Patient underwent successful primary PCI within 90 minutes of presentation. Post-procedure course was uneventful. Cardiac rehabilitation counselling initiated. Diabetic and lipid management optimised.',
-  discharge_medications: '• Aspirin 75mg — Once daily (Lifelong)\n• Clopidogrel 75mg — Once daily (12 months)\n• Atorvastatin 40mg — Once at night (Lifelong)\n• Metoprolol 25mg — Twice daily (6 months)\n• Ramipril 5mg — Once daily (Lifelong)\n• Metformin 500mg — Twice daily (Ongoing)',
-  discharge_instructions: '• Avoid strenuous activity for 4 weeks\n• Cardiac rehab programme to be started within 2 weeks\n• Low salt, low fat diet strictly advised\n• Monitor blood sugar twice daily and maintain log\n• Do not miss any medications — dual antiplatelet therapy is critical',
-  follow_up: 'Appointments:\n• Cardiology OPD in 2 weeks\n• Diabetology in 4 weeks\n\nWarning Signs to return to ER:\n• Return immediately if chest pain recurs\n• Seek emergency care for breathlessness, palpitations, or syncope',
-  flags_for_review: '• EF 38% — monitor for HFrEF progression\n• HbA1c 8.2% — endocrinology review recommended',
+  discharge_medications: [
+    { name: 'Aspirin', dose: '75mg', frequency: 'Once daily', duration: 'Lifelong' },
+    { name: 'Clopidogrel', dose: '75mg', frequency: 'Once daily', duration: '12 months' },
+    { name: 'Atorvastatin', dose: '40mg', frequency: 'Once at night', duration: 'Lifelong' },
+    { name: 'Metoprolol', dose: '25mg', frequency: 'Twice daily', duration: '6 months' },
+    { name: 'Ramipril', dose: '5mg', frequency: 'Once daily', duration: 'Lifelong' },
+    { name: 'Metformin', dose: '500mg', frequency: 'Twice daily', duration: 'Ongoing' },
+  ],
+  discharge_instructions: [
+    'Avoid strenuous activity for 4 weeks',
+    'Cardiac rehab programme to be started within 2 weeks',
+    'Low salt, low fat diet strictly advised',
+    'Monitor blood sugar twice daily and maintain log',
+    'Do not miss any medications — dual antiplatelet therapy is critical',
+  ],
+  follow_up: {
+    appointments: [
+      { department: 'Cardiology OPD', timeframe: '2 weeks' },
+      { department: 'Diabetology', timeframe: '4 weeks' },
+    ],
+    warning_signs: [
+      'Return immediately if chest pain recurs',
+      'Seek emergency care for breathlessness, palpitations, or syncope',
+    ],
+  },
+  flags_for_review: [
+    'EF 38% — monitor for HFrEF progression',
+    'HbA1c 8.2% — endocrinology review recommended',
+    'Patient counselled on smoking cessation maintenance',
+  ],
 };
 
 const CYCLING_WORDS = ['key details…', 'diagnosis…', 'medications…', 'history…', 'findings…', 'procedures…'];

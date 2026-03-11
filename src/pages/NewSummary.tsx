@@ -263,10 +263,10 @@ export default function NewSummary() {
 
             <div className="flex flex-col items-center gap-2 mt-2">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold text-gray-800">Extracting</span>
+                <span className="text-lg font-semibold text-gray-800">Extracting</span>
                 <span
                   key={cycleIdx}
-                  className="text-sm font-semibold text-[#024CDB] transition-all"
+                  className="text-lg font-semibold text-[#024CDB] transition-all"
                   style={{ animation: 'fadeIn 0.4s ease' }}
                 >
                   {CYCLING_WORDS[cycleIdx]}

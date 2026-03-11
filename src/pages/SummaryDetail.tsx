@@ -45,7 +45,7 @@ export default function SummaryDetail() {
   const handleCancelEdit = () => {
     if (row?.summary_json) {
       setEditedJson(row.summary_json as SummaryJson);
-    }
+    } 
     setIsEditing(false);
   };
 
@@ -53,8 +53,7 @@ export default function SummaryDetail() {
     if (!id || !row) return;
     setIsSaving(true);
     try {
-      // UPDATED: patient_summary is now just a string, so we can slice it directly to create the preview text
-      const text = (editedJson.patient_summary || '').slice(0, 200);
+      const text = ((editedJson.patient_summary?.presenting_complaint || editedJson.patient_summary?.admitting_diagnosis) ?? '').slice(0, 200);
       await saveDischargeSummaryEdits(id, editedJson as unknown as Record<string, unknown>, text);
       setRow({ ...row, summary_json: editedJson as unknown as Record<string, unknown>, summary_text: text });
       setIsEditing(false);
@@ -114,7 +113,7 @@ export default function SummaryDetail() {
 
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Summary</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Discharge Summary</h1>
             <p className="text-sm text-gray-400 mt-0.5">{formatDate(row.created_at)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">

@@ -122,7 +122,7 @@ function FreeTextArea({
 }: {
   value: string;
   onChange: (v: string) => void;
-  placeholder?: string;
+  placeholder?: string; 
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 

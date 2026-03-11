@@ -157,41 +157,36 @@ export default function NewSummary() {
   };
 
   const handleStop = async () => {
-  stopTimer();
-  setRecordState('idle');
+    stopTimer();
+    setRecordState('idle');
 
-  if (!mediaRecorderRef.current) return;
+    if (!mediaRecorderRef.current || !user?.id) return;
 
-  // 1. We create a Promise to wait for the recorder to fully finish
-  const recordingPromise = new Promise<Blob>((resolve) => {
-    const recorder = mediaRecorderRef.current!;
-    
-    recorder.onstop = () => {
-      // Create the blob ONLY after the stop event has fired
-      const fullBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      resolve(fullBlob);
-    };
+    // 1. Wait for the recording to fully finish
+    const recordingPromise = new Promise<Blob>((resolve) => {
+      const recorder = mediaRecorderRef.current!;
+      recorder.onstop = () => {
+        const fullBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        resolve(fullBlob);
+      };
 
-    if (recorder.state !== 'inactive') {
-      recorder.stop();
-      // Also stop the microphone hardware
-      recorder.stream.getTracks().forEach((t) => t.stop());
-    }
-  });
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+        recorder.stream.getTracks().forEach((t) => t.stop());
+      }
+    });
 
-  try {
-    const audioBlob = await recordingPromise; // Wait for the blob to be ready
-    const idToUse = summaryId;
+    let newSummaryRowId = '';
 
-    if (idToUse) {
-      // Mark as recording stopped in DB
-      await updateDischargeSummaryRecordingStopped(idToUse);
-
+    try {
+      const audioBlob = await recordingPromise; 
+      
       if (audioBlob && audioBlob.size > 0) {
-        const fileName = `summary-${idToUse}-${Date.now()}.webm`;
+        // Generate a temporary file name using the user ID instead of row ID
+        const fileName = `summary-${user.id}-${Date.now()}.webm`;
         
-        // 2. Upload to the correct bucket
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        // 2. Upload to bucket FIRST
+        const { error: uploadError } = await supabase.storage
           .from('clinical_summarizer')
           .upload(fileName, audioBlob, { 
             contentType: 'audio/webm', 
@@ -200,24 +195,31 @@ export default function NewSummary() {
 
         if (uploadError) throw uploadError;
 
-        // 3. Get URL and update DB
+        // 3. Get URL
         const { data: urlData } = supabase.storage
           .from('clinical_summarizer')
           .getPublicUrl(fileName);
 
-        await updateDischargeSummaryFile(idToUse, urlData.publicUrl);
-        console.log("File uploaded successfully:", urlData.publicUrl);
+        // 4. Create the DB row NOW, passing the URL securely
+        const row = await createDischargeSummary(user.id, urlData.publicUrl);
+        
+        newSummaryRowId = row.id;
+        setSummaryId(row.id);
+        console.log("File uploaded and row created:", urlData.publicUrl);
       }
+    } catch (e) {
+      console.error('Error in handleStop:', e);
+      alert('Failed to process recording. Please try again.');
+      return; // Stop execution if upload fails
     }
-  } catch (e) {
-    console.error('Error in handleStop:', e);
-  }
 
-  setStep(2);
-  beginAnalysing();
-};
+    if (newSummaryRowId) {
+      setStep(2);
+      beginAnalysing(newSummaryRowId); // Pass the new ID directly to the analysis function
+    }
+  };
 
-  const beginAnalysing = useCallback(() => {
+  const beginAnalysing = useCallback((currentId: string) => {
     const cycleTimer = setInterval(() => setCycleIdx((i) => (i + 1) % CYCLING_WORDS.length), 1400);
 
     const start = Date.now();
@@ -234,9 +236,9 @@ export default function NewSummary() {
 
     const pollStart = setTimeout(() => {
       pollRef.current = setInterval(async () => {
-        if (!summaryId) return;
+        if (!currentId) return; // Use the passed ID instead of state
         try {
-          const row = await getDischargeSummaryById(summaryId);
+          const row = await getDischargeSummaryById(currentId);
           if (row?.summary_json) {
             clearInterval(pollRef.current!);
             clearInterval(cycleTimer);
@@ -260,7 +262,7 @@ export default function NewSummary() {
       clearTimeout(pollStart);
       clearTimeout(longWaitTimer);
     };
-  }, [summaryId]);
+  }, []); // Removed summaryId dependency to prevent stale closures
 
   const handleUseSample = () => {
     setSummaryJson(SAMPLE_SUMMARY);

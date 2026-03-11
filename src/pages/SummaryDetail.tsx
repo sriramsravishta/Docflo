@@ -113,7 +113,7 @@ export default function SummaryDetail() {
 
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Discharge Summary</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Summary</h1>
             <p className="text-sm text-gray-400 mt-0.5">{formatDate(row.created_at)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">

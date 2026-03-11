@@ -132,18 +132,14 @@ export default function ClinicalSummariserList() {
                   onClick={() => navigate(`/clinical-summariser/${row.id}`)}
                   className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex justify-between items-start mb-3 gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-500 mb-1">{formatDate(row.created_at)}</p>
-                      <p className="text-sm font-regular text-gray-900 line-clamp-2">
-                        {truncate(getSummarySnippet(row), 100)}
-                      </p>
-                    </div>
-                    <div className="shrink-0 mt-0.5">
-                      <StatusIndicator status={row.status} />
-                    </div>
+                  <div className="mb-3 min-w-0">
+                    <p className="text-xs font-medium text-gray-500 mb-1">{formatDate(row.created_at)}</p>
+                    <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                      {truncate(getSummarySnippet(row), 100)}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-end border-t border-gray-100 pt-3 mt-1">
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-1">
+                    <StatusIndicator status={row.status} />
                     <span className="text-sm font-medium text-[#024CDB] flex items-center">
                       View details
                       <ChevronRight className="w-4 h-4 ml-1" />

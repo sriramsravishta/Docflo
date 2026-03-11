@@ -9,15 +9,15 @@ import { getDischargeSummaries, type DischargeSummaryRow } from '../lib/database
 function StatusIndicator({ status }: { status: 'processing' | 'completed' }) {
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs font-medium text-green-700">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+      <span className="inline-flex items-center gap-1.5 text-sm text-green-700">
+        <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
         Completed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+    <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
+      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse" />
       Processing…
     </span>
   );
@@ -51,7 +51,7 @@ export default function ClinicalSummariserList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) return; 
+    if (!user?.id) return;
     getDischargeSummaries(user.id)
       .then(setSummaries)
       .catch(console.error)
@@ -63,7 +63,7 @@ export default function ClinicalSummariserList() {
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-semibold text-gray-900">Clinical Summariser</h1>
           <button
             onClick={() => navigate('/clinical-summariser/new')}
@@ -74,6 +74,11 @@ export default function ClinicalSummariserList() {
           </button>
         </div>
 
+        <nav className="text-xs text-gray-400 mb-6 flex items-center gap-1">
+          <button onClick={() => navigate('/')} className="hover:text-[#024CDB] transition-colors">Main</button>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-gray-600">Clinical Summariser</span>
+        </nav>
 
         {loading ? (
           <div className="flex justify-center py-16">
@@ -125,25 +130,22 @@ export default function ClinicalSummariserList() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-2">
               {summaries.map((row) => (
                 <div
                   key={row.id}
                   onClick={() => navigate(`/clinical-summariser/${row.id}`)}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all duration-200"
+                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <div className="mb-3 min-w-0">
-                    <p className="text-xs font-medium text-gray-500 mb-1">{formatDate(row.created_at)}</p>
-                    <p className="text-sm font-regular text-gray-900 line-clamp-2">
-                      {truncate(getSummarySnippet(row), 100)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-1">
-                    <StatusIndicator status={row.status} />
-                    <span className="text-sm font-medium text-[#024CDB] flex items-center">
-                      View details
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-400 mb-0.5">{formatDate(row.created_at)}</p>
+                      <p className="text-sm text-gray-800 line-clamp-2">{truncate(getSummarySnippet(row), 100)}</p>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-2">
+                      <StatusIndicator status={row.status} />
+                      <span className="text-xs text-[#024CDB] font-medium whitespace-nowrap">View →</span>
+                    </div>
                   </div>
                 </div>
               ))}

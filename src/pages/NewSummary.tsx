@@ -259,7 +259,7 @@ export default function NewSummary() {
 
         {step === 2 && (
           <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col items-center gap-6">
-            <h2 className="text-lg font-semibold text-gray-900">Step 2: Analysing</h2>
+            
 
             <div className="flex flex-col items-center gap-2 mt-2">
               <div className="flex items-center gap-1.5">

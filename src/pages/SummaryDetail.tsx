@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronRight, Download } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
@@ -45,7 +45,7 @@ export default function SummaryDetail() {
   const handleCancelEdit = () => {
     if (row?.summary_json) {
       setEditedJson(row.summary_json as SummaryJson);
-    } 
+    }
     setIsEditing(false);
   };
 

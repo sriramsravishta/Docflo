@@ -62,7 +62,7 @@ export default function ClinicalSummariserList() {
     <div className="min-h-screen bg-gray-50">
       <Navbar showBack />
 
-      <div className="w-full px-4 py-6 xl:px-[160px] mb-4">
+      <div className="w-full px-4 py-6 xl:px-[160px]">
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-semibold text-gray-900">Clinical Summariser</h1>
           <button

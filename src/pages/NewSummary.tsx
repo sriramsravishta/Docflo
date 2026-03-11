@@ -135,8 +135,7 @@ export default function NewSummary() {
       recorder.start();
       mediaRecorderRef.current = recorder;
 
-      const row = await createDischargeSummary(user.id);
-      setSummaryId(row.id);
+      // REMOVED: Row creation and setSummaryId from here
       setRecordState('recording');
       startTimer();
     } catch (e) {

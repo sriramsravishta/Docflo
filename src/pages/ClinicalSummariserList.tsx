@@ -63,7 +63,7 @@ export default function ClinicalSummariserList() {
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-gray-900">Clinical Summariser</h1>
           <button
             onClick={() => navigate('/clinical-summariser/new')}

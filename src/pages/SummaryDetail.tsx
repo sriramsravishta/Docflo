@@ -53,7 +53,8 @@ export default function SummaryDetail() {
     if (!id || !row) return;
     setIsSaving(true);
     try {
-      const text = ((editedJson.patient_summary?.presenting_complaint || editedJson.patient_summary?.admitting_diagnosis) ?? '').slice(0, 200);
+      // UPDATED: patient_summary is now just a string, so we can slice it directly to create the preview text
+      const text = (editedJson.patient_summary || '').slice(0, 200);
       await saveDischargeSummaryEdits(id, editedJson as unknown as Record<string, unknown>, text);
       setRow({ ...row, summary_json: editedJson as unknown as Record<string, unknown>, summary_text: text });
       setIsEditing(false);

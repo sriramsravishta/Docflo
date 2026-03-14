@@ -525,7 +525,13 @@ export default function PatientProfile() {
     <div class="info-box"> <!-- CHANGED: added bordered container -->
 
       <div class="info-grid">
-
+<div class="info-item">
+          <div style="margin-bottom: 6px;">
+            <span class="info-label" style="display:inline-block; width:65px;">Doctor -</span>
+            <span class="info-value">
+              ${escapeHtml(user?.user_metadata?.display_name || user?.user_metadata?.name || '—')}
+            </span>
+          </div>
         <div class="info-item">
           <span class="info-label">Patient -</span>
           <span class="info-value">

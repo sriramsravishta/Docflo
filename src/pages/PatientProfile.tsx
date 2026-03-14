@@ -529,7 +529,7 @@ export default function PatientProfile() {
           <div style="margin-bottom: 6px;">
             <span class="info-label" style="display:inline-block; width:65px;">Doctor -</span>
             <span class="info-value">
-              ${escapeHtml(user?.user_metadata?.display_name || user?.user_metadata?.name || '—')}
+              ${escapeHtml(doctorName || '—')}
             </span>
           </div>
         <div class="info-item">

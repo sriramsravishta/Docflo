@@ -723,16 +723,36 @@ export default function PatientProfile() {
     return content;
   };
 
-  const handleDownloadPDF = async () => { // CHANGED: made async to fetch referred_by
+  const handleDownloadPDF = async () => {
     if (!selectedConsult) return;
     let referredBy: string | undefined;
+    let fetchedDoctorName: string | undefined;
+
     try {
+      // 1. Fetch referred_by
       const appt = await getAppointmentByConsultId(selectedConsult.id);
-      referredBy = appt?.referred_by || undefined; // CHANGED: pull referred_by from appointment
+      referredBy = appt?.referred_by || undefined;
+
+      // 2. Fetch doctor name from the organizations table
+      if (user?.id) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('name')
+          .eq('auth_id', user.id)
+          .single();
+        
+        if (orgData?.name) {
+          fetchedDoctorName = orgData.name;
+        }
+      }
     } catch (e) {
-      console.error('Error fetching appointment for PDF:', e);
+      console.error('Error fetching data for PDF:', e);
     }
-    const htmlContent = generatePDFHTMLContent(selectedConsult, referredBy); // CHANGED: pass referredBy
+
+    // Fallback to Auth metadata if the database fetch fails
+    const finalDoctorName = fetchedDoctorName || user?.user_metadata?.display_name || user?.user_metadata?.name || '—';
+
+    const htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName);
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
     printWindow.document.open();

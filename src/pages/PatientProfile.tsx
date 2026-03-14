@@ -483,7 +483,7 @@ export default function PatientProfile() {
     });
   };
 
-  const generatePDFHTMLContent = (consult: ConsultRow, referredBy?: string): string => { // CHANGED: added referredBy param
+  const generatePDFHTMLContent = (consult: ConsultRow, referredBy?: string, doctorName?: string): string => {
     // CHANGED: Fully rewritten for Apollo247-inspired clean layout
     const summary = getConsultSummary(consult) as ConsultSummary | null;
     if (!summary) return '<p>No consultation summary available.</p>';

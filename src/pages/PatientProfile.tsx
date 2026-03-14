@@ -520,29 +520,18 @@ export default function PatientProfile() {
     };
 
     let content = `
-      <div class="info-block">
+      <div class="info-block"> 
 
     <div class="info-box"> <!-- CHANGED: added bordered container -->
 
       <div class="info-grid">
 
         <div class="info-item">
-  {/* Doctor Name Row */}
-  <div style="margin-bottom: 6px;">
-    <span class="info-label">Doctor -</span>
-    <span class="info-value">
-      ${escapeHtml(user?.user_metadata?.full_name || user?.user_metadata?.display_name || '—')}
-    </span>
-  </div>
-  
-  {/* Patient Name Row */}
-  <div>
-    <span class="info-label">Patient -</span>
-    <span class="info-value">
-      ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-    </span>
-  </div>
-</div>
+          <span class="info-label">Patient -</span>
+          <span class="info-value">
+            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
+          </span>
+        </div>
 
         <div class="info-item">
           <span class="info-label">Date -</span>

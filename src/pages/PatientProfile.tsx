@@ -527,11 +527,22 @@ export default function PatientProfile() {
       <div class="info-grid">
 
         <div class="info-item">
-          <span class="info-label">Patient -</span>
-          <span class="info-value">
-            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-          </span>
-        </div>
+  {/* Doctor Name Row */}
+  <div style="margin-bottom: 6px;">
+    <span class="info-label">Doctor -</span>
+    <span class="info-value">
+      ${escapeHtml(user?.user_metadata?.full_name || user?.user_metadata?.display_name || '—')}
+    </span>
+  </div>
+  
+  {/* Patient Name Row */}
+  <div>
+    <span class="info-label">Patient -</span>
+    <span class="info-value">
+      ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
+    </span>
+  </div>
+</div>
 
         <div class="info-item">
           <span class="info-label">Date -</span>

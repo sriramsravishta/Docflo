@@ -525,25 +525,25 @@ export default function PatientProfile() {
     <div class="info-box"> <!-- CHANGED: added bordered container -->
 
       <div class="info-grid">
-<div class="info-item">
-          <div style="margin-bottom: 6px;">
-            <span class="info-label" style="display:inline-block; width:65px;">Doctor -</span>
-            <span class="info-value">
-              ${escapeHtml(doctorName || '—')}
-            </span>
-          </div>
-          <div>
-            <span class="info-label" style="display:inline-block; width:65px;">Patient -</span>
-            <span class="info-value">
-              ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-            </span>
-          </div>
+
+        <div class="info-item">
+          <span class="info-label">Doctor -</span>
+          <span class="info-value">
+            ${escapeHtml(doctorName || '—')}
+          </span>
         </div>
 
         <div class="info-item">
           <span class="info-label">Date -</span>
           <span class="info-value">
             ${escapeHtml(formatDate(consult.created_at))}
+          </span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Patient -</span>
+          <span class="info-value">
+            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
           </span>
         </div>
 

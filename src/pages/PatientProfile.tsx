@@ -532,11 +532,12 @@ export default function PatientProfile() {
               ${escapeHtml(doctorName || '—')}
             </span>
           </div>
-        <div class="info-item">
-          <span class="info-label">Patient -</span>
-          <span class="info-value">
-            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-          </span>
+          <div>
+            <span class="info-label" style="display:inline-block; width:65px;">Patient -</span>
+            <span class="info-value">
+              ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
+            </span>
+          </div>
         </div>
 
         <div class="info-item">

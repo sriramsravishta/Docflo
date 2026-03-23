@@ -146,12 +146,12 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             />
           </div>
           <div className="flex gap-3 ml-auto">
-            {/* TEMPORARILY HIDDEN: Clinical Summariser Button
+            
             <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex items-center space-x-2 shrink-0">
               <Mic className="w-4 h-4" />
               <span>Clinical Summariser</span>
             </button> 
-            */}
+            
             <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
               <Plus className="w-5 h-5" />
               <span>Patient</span>

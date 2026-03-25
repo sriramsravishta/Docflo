@@ -378,6 +378,7 @@ function MedicationsTable({
   // CHANGED: Track which medicine row's name field is currently being searched
   const [activeMedicineSearchId, setActiveMedicineSearchId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [timeDropdownPos, setTimeDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const searchDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

@@ -686,18 +686,25 @@ export default function PatientProfile() {
       }
     }
 
-    // CURRENT — replace the entire investigations block
-if (summary.investigations && typeof summary.investigations === 'object') {
-  const inv = summary.investigations as InvestigationsSummary;
-  const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
-  if (ordered.length || inv.notes) {
-    let invHtml = '';
+    // REPLACEMENT
+if (summary.investigations) {
+  let invHtml = '';
+
+  if (typeof summary.investigations === 'string' && summary.investigations.trim()) {
+    // Plain string — user rewrote from scratch
+    invHtml = `<p class="section-text">${escapeHtml(summary.investigations)}</p>`;
+  } else if (typeof summary.investigations === 'object') {
+    const inv = summary.investigations as InvestigationsSummary;
+    const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
     if (ordered.length) {
       invHtml += `<ul class="section-list">${ordered.map((o) =>
         `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
       ).join('')}</ul>`;
     }
     if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
+  }
+
+  if (invHtml) {
     content += `
       <div class="section">
         <div class="section-header">Investigations</div>

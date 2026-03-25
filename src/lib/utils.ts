@@ -237,18 +237,18 @@ export function investigationsToEditableText(investigations: unknown): string {
   const notes = ii.notes ? String(ii.notes) : '';
 
   const lines: string[] = [];
-  if (notes) { lines.push('Notes:'); lines.push(notes); lines.push(''); }
-  if (ordered.length) {
-    lines.push('Ordered:');
-    ordered.forEach((o) => {
-      const name = o?.name ? String(o.name) : '-';
-      const b = o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
-      const p = o?.priority ? ` (Priority: ${String(o.priority)})` : '';
-      lines.push(`- ${name}${b}${p}`.trim());
-    });
-    lines.push('');
-  }
-  return lines.join('\n').trim();
+if (ordered.length) {
+  lines.push('Ordered:');
+  ordered.forEach((o) => {
+    const name = o?.name ? String(o.name) : '-';
+    const b = o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
+    const p = o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+    lines.push(`- ${name}${b}${p}`.trim());
+  });
+  lines.push('');
+}
+if (notes) { lines.push('Notes:'); lines.push(notes); lines.push(''); }
+return lines.join('\n').trim();
 }
 
 export function investigationsTextToJson(text: string, fallback: unknown): unknown {

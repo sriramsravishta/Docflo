@@ -182,7 +182,7 @@ export function diagnosisToEditableText(diagnosis: unknown): string {
 
 export function diagnosisTextToJson(text: string, fallback: unknown): unknown {
   const raw = text.trim();
-  if (!raw) return fallback ?? '';
+  if (!raw) return '';
   const lines = raw.split('\n').map((l) => l.trim());
   const provIdx = lines.findIndex((l) => /^provisional\s*:/i.test(l));
   const keyIdx = lines.findIndex((l) => /^key findings\s*:/i.test(l));
@@ -213,7 +213,7 @@ export function treatmentToEditableText(treatment: unknown): string {
 
 export function treatmentTextToJson(text: string, fallback: unknown): unknown {
   const raw = text.trim();
-  if (!raw) return fallback ?? '';
+  if (!raw) return '';
   const lines = raw.split('\n').map((l) => l.trim());
   const immIdx = lines.findIndex((l) => /^immediate plan\s*:/i.test(l));
   const conIdx = lines.findIndex((l) => /^contingent plan\s*:/i.test(l));
@@ -253,7 +253,7 @@ return lines.join('\n').trim();
 
 export function investigationsTextToJson(text: string, fallback: unknown): unknown {
   const raw = text.trim();
-  if (!raw) return fallback ?? '';
+  if (!raw) return '';
   const lines = raw.split('\n').map((l) => l.trim());
   const notesIdx = lines.findIndex((l) => /^notes\s*:/i.test(l));
   const ordIdx = lines.findIndex((l) => /^ordered\s*:/i.test(l));

@@ -687,8 +687,6 @@ export default function PatientProfile() {
     }
 
     // REPLACEMENT
-if (summary.investigations) {
-  let invHtml = '';
 
   if (summary.investigations) {
   let invHtml = '';

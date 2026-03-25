@@ -621,7 +621,7 @@ export default function PatientProfile() {
         const manGrid = getMaNGrid(timeArr, m?.quantity || m?.dosage || '');
         // CHANGED: prepend quantity to detail line, show "1 Tab | 1x everyday | after food"
         const rawQty = (m?.quantity || '').trim();
-        const displayQty = rawQty && /^\d+(\.\d+)?$/.test(rawQty) ? rawQty : '1';
+        const displayQty = rawQty || '1';
         const detailParts = [
           m?.type ? `${displayQty} ${escapeHtml(m.type)}` : '',  // e.g. "1 Tab"
           m?.frequency ? escapeHtml(m.frequency) : '',            // e.g. "1x everyday"

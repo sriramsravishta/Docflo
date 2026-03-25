@@ -686,26 +686,26 @@ export default function PatientProfile() {
       }
     }
 
-    // CHANGED: Investigations — only if ordered items or notes exist
-    if (summary.investigations && typeof summary.investigations === 'object') {
-      const inv = summary.investigations as InvestigationsSummary;
-      const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
-      if (ordered.length || inv.notes) {
-        let invHtml = '';
-        if (ordered.length) {
-          invHtml += `<ul class="section-list">${ordered.map((o) =>
-            `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
-          ).join('')}</ul>`;
-        }
-        if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
-        content += `
-          <div class="section">
-            <div class="section-header">Investigations</div>
-            ${invHtml}
-          </div>
-        `;
-      }
+    // CURRENT — replace the entire investigations block
+if (summary.investigations && typeof summary.investigations === 'object') {
+  const inv = summary.investigations as InvestigationsSummary;
+  const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
+  if (ordered.length || inv.notes) {
+    let invHtml = '';
+    if (ordered.length) {
+      invHtml += `<ul class="section-list">${ordered.map((o) =>
+        `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
+      ).join('')}</ul>`;
     }
+    if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
+    content += `
+      <div class="section">
+        <div class="section-header">Investigations</div>
+        ${invHtml}
+      </div>
+    `;
+  }
+}
 
     // CHANGED: Follow-up Recommendations — only if data exists
     if (summary.followup_recommendations) {

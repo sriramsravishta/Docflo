@@ -592,7 +592,7 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                           {TIME_OPTIONS.map((opt) => {
                             const current = Array.isArray(d.time) ? d.time : [];
                             const checked = current.includes(opt);
-                            return (
+                            return ( 
                               <label
                                 key={opt}
                                 className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-50 cursor-pointer"

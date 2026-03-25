@@ -811,13 +811,23 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     {/* Desktop actions stay on the right */}
     <div className="hidden md:flex items-center gap-2">
       {!isEditing ? (
-        <button
-          onClick={onStartEdit}
-          className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-        >
-          <Edit className="w-4 h-4" />
-          <span>Edit</span>
-        </button>
+        <>
+          <button
+            onClick={onStartEdit}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit</span>
+          </button>
+
+          <button
+            onClick={onDownloadPDF}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>PDF</span>
+          </button>
+        </>
       ) : (
         <>
           <button
@@ -836,14 +846,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
           </button>
         </>
       )}
-
-      <button
-        onClick={onDownloadPDF}
-        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-      >
-        <Download className="w-4 h-4" />
-        <span>PDF</span>
-      </button>
     </div>
 
     {/* Close stays top-right on all sizes */}

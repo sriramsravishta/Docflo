@@ -560,17 +560,35 @@ const flagsWrapClass = `${hasAnyFlags ? 'max-w-[300px]' : 'max-w-[120px]'} overf
                       {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : '-'}
                     </span>
                   ) : (
-                    <div ref={openTimeDropdownId === m.id ? timeDropdownRef : null} className="relative">
+                    <div ref={openTimeDropdownId === m.id ? timeDropdownRef : null}>
                       <button
                         type="button"
-                        onClick={() => setOpenTimeDropdownId(openTimeDropdownId === m.id ? null : m.id)}
-                        className={`${inputBase} text-left hover:bg-gray-100`}
+                        onClick={(e) => {
+                          if (openTimeDropdownId === m.id) {
+                            setOpenTimeDropdownId(null);
+                            setTimeDropdownPos(null);
+                          } else {
+                            setOpenTimeDropdownId(m.id);
+                            // Calculate exact position on the screen
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setTimeDropdownPos({ top: rect.bottom + 4, left: rect.left });
+                          }
+                        }}
+                        className={`${inputBase} text-left hover:bg-gray-100 w-full`}
                       >
                         {Array.isArray(d.time) && d.time.length ? d.time.join(', ') : 'Select time'}
                       </button>
 
-                      {openTimeDropdownId === m.id && (
-                        <div className="absolute z-30 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+                      {openTimeDropdownId === m.id && timeDropdownPos && (
+                        <div 
+                          style={{
+                            position: 'fixed',
+                            top: timeDropdownPos.top,
+                            left: timeDropdownPos.left,
+                            zIndex: 9999,
+                          }}
+                          className="w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2"
+                        >
                           {TIME_OPTIONS.map((opt) => {
                             const current = Array.isArray(d.time) ? d.time : [];
                             const checked = current.includes(opt);

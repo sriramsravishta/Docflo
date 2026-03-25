@@ -690,8 +690,10 @@ export default function PatientProfile() {
 if (summary.investigations) {
   let invHtml = '';
 
+  if (summary.investigations) {
+  let invHtml = '';
+
   if (typeof summary.investigations === 'string' && summary.investigations.trim()) {
-    // Plain string — user rewrote from scratch
     invHtml = `<p class="section-text">${escapeHtml(summary.investigations)}</p>`;
   } else if (typeof summary.investigations === 'object') {
     const inv = summary.investigations as InvestigationsSummary;

@@ -441,7 +441,9 @@ export default function PatientProfile() {
 
   const handleDeleteMedicine = async (medicineId: string) => {
     try {
-      await deleteConsultMedicine(medicineId);
+      if (!medicineId.startsWith('temp_')) {
+        await deleteConsultMedicine(medicineId);
+      }
       setConsultMedicines((prev) => prev.filter((m) => m.id !== medicineId));
       setMedicineDrafts((prev) => { const next = { ...prev }; delete next[medicineId]; return next; });
       setMedicineSearchResults([]);

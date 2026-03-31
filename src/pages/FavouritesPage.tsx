@@ -104,7 +104,7 @@ export default function FavouritesPage() {
           </div>
           <button onClick={openAdd} className="btn-primary flex items-center gap-2 text-sm">
             <Plus className="w-4 h-4" />
-            Add Favourite
+            Add
           </button>
         </div>
 

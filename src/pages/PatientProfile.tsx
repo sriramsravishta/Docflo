@@ -449,32 +449,40 @@ export default function PatientProfile() {
     if (!selectedConsult) return;
     for (const fav of favs) {
       try {
-        const newMed = await createConsultMedicine({
-          consult_id: selectedConsult.id,
-          name: fav.name,
-          quantity: fav.quantity || '',
-          frequency: fav.frequency || '',
-          time: parseTimeString(fav.time || ''),
-          food: fav.food || '',
-          duration: fav.duration || '',
-          instructions: fav.instructions || '',
-        });
-        setConsultMedicines((prev) => [...prev, newMed]);
-        setMedicineDrafts((prev) => ({
-          ...prev,
-          [newMed.id]: {
-            name: fav.name || '',
-            dosage: fav.dosage || '',
-            quantity: fav.quantity || '',
-            type: fav.type || '',
-            frequency: fav.frequency || '',
-            food: fav.food || '',
-            time: parseTimeString(fav.time || ''),
-            duration: fav.duration || '',
-            instructions: fav.instructions || '',
-            flags: '',
-          },
-        }));
+        const handleAddFromFavourites = (favs: import('../lib/database').FavouriteMedicineRow[]) => {
+  if (!selectedConsult) return;
+  for (const fav of favs) {
+    const tempId = `temp_${crypto.randomUUID()}`;
+    const parsedTime = parseTimeString(fav.time || '');
+    const tempMed = {
+      id: tempId,
+      consult_id: selectedConsult.id,
+      name: fav.name || '',
+      dosage: fav.dosage || '',
+      quantity: fav.quantity || '',
+      type: fav.type || '',
+      frequency: fav.frequency || '',
+      food: fav.food || '',
+      time: parsedTime,
+      duration: fav.duration || '',
+      instructions: fav.instructions || '',
+      flags: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      patient_id: patientId || '',
+    } as ConsultMedicineRow;
+    setConsultMedicines((prev) => [...prev, tempMed]);
+    setMedicineDrafts((prev) => ({
+      ...prev,
+      [tempId]: {
+        name: fav.name || '', dosage: fav.dosage || '', quantity: fav.quantity || '',
+        type: fav.type || '', frequency: fav.frequency || '', food: fav.food || '',
+        time: parsedTime, duration: fav.duration || '',
+        instructions: fav.instructions || '', flags: '',
+      },
+    }));
+  }
+};
       } catch (e) {
         console.error('Error adding favourite medicine:', e);
       }

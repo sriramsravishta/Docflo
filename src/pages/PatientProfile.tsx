@@ -337,7 +337,8 @@ export default function PatientProfile() {
 
     // CHANGED: Reset medicine drafts back to original DB values so
     // view mode shows the real saved data, not the cancelled edits
-    const resetDrafts: Record<string, MedicineDraft> = {};
+    setConsultMedicines((prev) => prev.filter((m) => !m.id.startsWith('temp_')));
+const resetDrafts: Record<string, MedicineDraft> = {};
     consultMedicines.forEach((m) => {
       resetDrafts[m.id] = {
         name: m.name || '',

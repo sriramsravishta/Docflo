@@ -359,18 +359,36 @@ export default function PatientProfile() {
     for (const m of consultMedicines) {
       const d = medicineDrafts[m.id];
       if (!d) continue;
-      await updateConsultMedicine(m.id, {
-        name: d.name || '',
-        dosage: d.dosage || '',
-        quantity: d.quantity || '',
-        type: d.type || '',
-        frequency: d.frequency || '',
-        food: d.food || '',
-        time: normalizeTime(d.time),
-        duration: d.duration || '',
-        instructions: d.instructions || '',
-        flags: d.flags || '',
-      });
+      if (m.id.startsWith('temp_')) {
+        // New row — INSERT
+        await createConsultMedicine({
+          consult_id: selectedConsult!.id,
+          name: d.name || '',
+          dosage: d.dosage || '',
+          quantity: d.quantity || '',
+          type: d.type || '',
+          frequency: d.frequency || '',
+          food: d.food || '',
+          time: normalizeTime(d.time),
+          duration: d.duration || '',
+          instructions: d.instructions || '',
+          flags: d.flags || '',
+        });
+      } else {
+        // Existing row — UPDATE
+        await updateConsultMedicine(m.id, {
+          name: d.name || '',
+          dosage: d.dosage || '',
+          quantity: d.quantity || '',
+          type: d.type || '',
+          frequency: d.frequency || '',
+          food: d.food || '',
+          time: normalizeTime(d.time),
+          duration: d.duration || '',
+          instructions: d.instructions || '',
+          flags: d.flags || '',
+        });
+      }
     }
     if (selectedConsult?.id) await loadConsultMedicines(selectedConsult.id);
   };

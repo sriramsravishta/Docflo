@@ -403,16 +403,23 @@ export default function PatientProfile() {
     }
   };
 
-  const handleAddMedicine = async () => {
-    try {
-      const newMedicine = await createConsultMedicine({
-        consult_id: selectedConsult!.id,
-        name: '', dosage: '', quantity: '', type: '',
-        frequency: '', time: [], food: '', duration: '', instructions: '', flags: '',
-      });
-      setConsultMedicines((prev) => [newMedicine, ...prev]);
-    } catch (error) { console.error('Error adding medicine:', error); }
-  };
+  const handleAddMedicine = () => {
+  const tempId = `temp_${crypto.randomUUID()}`;
+  const tempMed = {
+    id: tempId,
+    consult_id: selectedConsult!.id,
+    name: '', dosage: '', quantity: '', type: '',
+    frequency: '', time: [], food: '', duration: '', instructions: '', flags: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    patient_id: patientId || '',
+  } as ConsultMedicineRow;
+  setConsultMedicines((prev) => [tempMed, ...prev]);
+  setMedicineDrafts((prev) => ({
+    ...prev,
+    [tempId]: { name: '', dosage: '', quantity: '', type: '', frequency: '', food: '', time: [], duration: '', instructions: '', flags: '' },
+  }));
+};
 
   const handleDeleteMedicine = async (medicineId: string) => {
     try {

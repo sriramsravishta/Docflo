@@ -99,7 +99,7 @@ export default function FavouritesPage() {
       <div className="w-full px-4 py-6 xl:px-[160px]">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Favourite Medicines</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Favourite Medicines</h1>
             <p className="text-sm text-gray-500 mt-1">Manage your frequently prescribed medicines</p>
           </div>
           <button onClick={openAdd} className="btn-primary flex items-center gap-2 text-sm">

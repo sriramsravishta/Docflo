@@ -751,6 +751,99 @@ export const updateDischargeSummaryFile = async (id: string, fileUrl: string): P
   if (error) throw error;
 };
 
+export interface FavouriteMedicineRow {
+  id: string;
+  doc_id: string;
+  name: string;
+  dosage: string;
+  quantity: string;
+  type: string;
+  frequency: string;
+  food: string;
+  time: string;
+  duration: string;
+  instructions: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const getFavouriteMedicines = async (docId: string): Promise<FavouriteMedicineRow[]> => {
+  const { data, error } = await supabase
+    .from('favourite_medicines')
+    .select('*')
+    .eq('doc_id', docId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as FavouriteMedicineRow[];
+};
+
+export const createFavouriteMedicine = async (medicine: {
+  doc_id: string;
+  name: string;
+  dosage?: string;
+  quantity?: string;
+  type?: string;
+  frequency?: string;
+  food?: string;
+  time?: string;
+  duration?: string;
+  instructions?: string;
+}): Promise<FavouriteMedicineRow> => {
+  const { data, error } = await supabase
+    .from('favourite_medicines')
+    .insert(medicine)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as FavouriteMedicineRow;
+};
+
+export const updateFavouriteMedicine = async (
+  id: string,
+  updates: Partial<Omit<FavouriteMedicineRow, 'id' | 'doc_id' | 'created_at'>>
+): Promise<FavouriteMedicineRow> => {
+  const { data, error } = await supabase
+    .from('favourite_medicines')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as FavouriteMedicineRow;
+};
+
+export const deleteFavouriteMedicine = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('favourite_medicines')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+};
+
+export const getPreviousConsultMedicines = async (
+  patientId: string,
+  currentConsultId: string
+): Promise<ConsultMedicineRow[]> => {
+  const { data: prevConsult, error: consultError } = await supabase
+    .from('consult')
+    .select('id')
+    .eq('patient_id', patientId)
+    .neq('id', currentConsultId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (consultError) throw consultError;
+  if (!prevConsult) return [];
+
+  const { data, error } = await supabase
+    .from('consult_medicine')
+    .select('*')
+    .eq('consult_id', prevConsult.id)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []) as ConsultMedicineRow[];
+};
+
 export const saveDischargeSummaryEdits = async (
   id: string,
   summaryJson: Record<string, unknown>,

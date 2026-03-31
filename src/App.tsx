@@ -7,6 +7,7 @@ import PreConsultForm from './pages/PreConsultForm';
 import ClinicalSummariserList from './pages/ClinicalSummariserList';
 import NewSummary from './pages/NewSummary';
 import SummaryDetail from './pages/SummaryDetail';
+import FavouritesPage from './pages/FavouritesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="/clinical-summariser" element={<ProtectedRoute><ClinicalSummariserList /></ProtectedRoute>} />
           <Route path="/clinical-summariser/new" element={<ProtectedRoute><NewSummary /></ProtectedRoute>} />
           <Route path="/clinical-summariser/:id" element={<ProtectedRoute><SummaryDetail /></ProtectedRoute>} />
+          <Route path="/favorites" element={<ProtectedRoute><FavouritesPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

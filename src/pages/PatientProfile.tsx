@@ -15,7 +15,9 @@ import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientProfileHeader from '../components/features/PatientProfileHeader';
 import ConsultViewModal from '../components/features/ConsultViewModal';
-
+import AddFavouritesModal from '../components/features/AddFavouritesModal';
+import LoadPreviousModal from '../components/features/LoadPreviousModal';
+import { parseTimeString } from '../components/features/AddFavouritesModal';
 import { DocumentUploadModal, DocumentUploadStatusModal } from '../components/features/DocumentUploadModal';
 import Spinner from '../components/ui/Spinner';
 import { usePatientData } from '../hooks/usePatientData';
@@ -431,6 +433,81 @@ export default function PatientProfile() {
       const results = await searchMedicines(query.trim(), 10);
       setMedicineSearchResults(results);
     } catch (error) { console.error('Error searching medicines:', error); }
+  };
+
+  const [showAddFavourites, setShowAddFavourites] = useState(false);
+  const [showLoadPrevious, setShowLoadPrevious] = useState(false);
+
+  const handleAddFromFavourites = async (favs: import('../lib/database').FavouriteMedicineRow[]) => {
+    if (!selectedConsult) return;
+    for (const fav of favs) {
+      try {
+        const newMed = await createConsultMedicine({
+          consult_id: selectedConsult.id,
+          name: fav.name,
+          quantity: fav.quantity || '',
+          frequency: fav.frequency || '',
+          time: parseTimeString(fav.time || ''),
+          food: fav.food || '',
+          duration: fav.duration || '',
+          instructions: fav.instructions || '',
+        });
+        setConsultMedicines((prev) => [...prev, newMed]);
+        setMedicineDrafts((prev) => ({
+          ...prev,
+          [newMed.id]: {
+            name: fav.name || '',
+            dosage: fav.dosage || '',
+            quantity: fav.quantity || '',
+            type: fav.type || '',
+            frequency: fav.frequency || '',
+            food: fav.food || '',
+            time: parseTimeString(fav.time || ''),
+            duration: fav.duration || '',
+            instructions: fav.instructions || '',
+            flags: '',
+          },
+        }));
+      } catch (e) {
+        console.error('Error adding favourite medicine:', e);
+      }
+    }
+  };
+
+  const handleAddFromPrevious = async (prevMeds: ConsultMedicineRow[]) => {
+    if (!selectedConsult) return;
+    for (const pm of prevMeds) {
+      try {
+        const newMed = await createConsultMedicine({
+          consult_id: selectedConsult.id,
+          name: pm.name || '',
+          quantity: pm.quantity || '',
+          frequency: pm.frequency || '',
+          time: normalizeTime(pm.time),
+          food: pm.food || '',
+          duration: pm.duration || '',
+          instructions: pm.instructions || '',
+        });
+        setConsultMedicines((prev) => [...prev, newMed]);
+        setMedicineDrafts((prev) => ({
+          ...prev,
+          [newMed.id]: {
+            name: pm.name || '',
+            dosage: pm.dosage || '',
+            quantity: pm.quantity || '',
+            type: pm.type || '',
+            frequency: pm.frequency || '',
+            food: pm.food || '',
+            time: normalizeTime(pm.time),
+            duration: pm.duration || '',
+            instructions: pm.instructions || '',
+            flags: pm.flags || '',
+          },
+        }));
+      } catch (e) {
+        console.error('Error adding previous medicine:', e);
+      }
+    }
   };
 
   const handleSendPreConsultLink = () => {
@@ -1573,8 +1650,29 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
     onDeleteMedicine={handleDeleteMedicine}
     onMedicineSearch={handleMedicineSearch}
     setMedicineSearchResults={setMedicineSearchResults}
+    onAddFavourites={() => setShowAddFavourites(true)}
+    onLoadPrevious={() => setShowLoadPrevious(true)}
   />
 )}
+
+    {user?.id && (
+      <AddFavouritesModal
+        isOpen={showAddFavourites}
+        onClose={() => setShowAddFavourites(false)}
+        onAdd={handleAddFromFavourites}
+        docId={user.id}
+      />
+    )}
+
+    {selectedConsult && patientId && (
+      <LoadPreviousModal
+        isOpen={showLoadPrevious}
+        onClose={() => setShowLoadPrevious(false)}
+        onAdd={handleAddFromPrevious}
+        patientId={patientId}
+        currentConsultId={selectedConsult.id}
+      />
+    )}
 
       <ConfirmationModal
         isOpen={showConfirmation}

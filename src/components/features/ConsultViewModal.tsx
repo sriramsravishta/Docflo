@@ -8,6 +8,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  Heart,
+  History,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 
@@ -73,6 +75,8 @@ interface ConsultViewModalProps {
   onDeleteMedicine: (id: string) => void;
   onMedicineSearch: (q: string) => void;
   setMedicineSearchResults: (r: { name: string }[]) => void;
+  onAddFavourites: () => void;
+  onLoadPrevious: () => void;
 
   // existing
   onClose: () => void;
@@ -746,6 +750,8 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     onDeleteMedicine,
     onMedicineSearch,
     setMedicineSearchResults,
+    onAddFavourites,
+    onLoadPrevious,
     onClose,
     onDownloadPDF,
     formatDate,
@@ -919,13 +925,29 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 title="Medications"
                 right={
                   isEditing ? (
-                    <button
-                      onClick={onAddMedicine}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={onLoadPrevious}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                      >
+                        <History className="w-4 h-4" />
+                        <span className="hidden sm:inline">Load Previous</span>
+                      </button>
+                      <button
+                        onClick={onAddFavourites}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                      >
+                        <Heart className="w-4 h-4" />
+                        <span className="hidden sm:inline">Add Favourites</span>
+                      </button>
+                      <button
+                        onClick={onAddMedicine}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add</span>
+                      </button>
+                    </div>
                   ) : null
                 }
               >

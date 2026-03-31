@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { User, LogOut, ArrowLeft } from 'lucide-react';
+import { User, LogOut, ArrowLeft, Heart } from 'lucide-react';
 
 interface NavbarProps {
   showBack?: boolean;
@@ -52,6 +52,13 @@ export default function Navbar({ showBack = false }: NavbarProps) {
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="text-sm text-gray-600 truncate">{user?.email}</p>
                 </div>
+                <button
+                  onClick={() => { setShowMenu(false); navigate('/favorites'); }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-gray-700"
+                >
+                  <Heart className="w-4 h-4" />
+                  <span>Favourites</span>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-gray-700"

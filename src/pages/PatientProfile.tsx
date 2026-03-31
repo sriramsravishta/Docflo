@@ -465,11 +465,7 @@ export default function PatientProfile() {
   const [showAddFavourites, setShowAddFavourites] = useState(false);
   const [showLoadPrevious, setShowLoadPrevious] = useState(false);
 
-  const handleAddFromFavourites = async (favs: import('../lib/database').FavouriteMedicineRow[]) => {
-    if (!selectedConsult) return;
-    for (const fav of favs) {
-      try {
-        const handleAddFromFavourites = (favs: import('../lib/database').FavouriteMedicineRow[]) => {
+  const handleAddFromFavourites = (favs: import('../lib/database').FavouriteMedicineRow[]) => {
   if (!selectedConsult) return;
   for (const fav of favs) {
     const tempId = `temp_${crypto.randomUUID()}`;
@@ -477,16 +473,10 @@ export default function PatientProfile() {
     const tempMed = {
       id: tempId,
       consult_id: selectedConsult.id,
-      name: fav.name || '',
-      dosage: fav.dosage || '',
-      quantity: fav.quantity || '',
-      type: fav.type || '',
-      frequency: fav.frequency || '',
-      food: fav.food || '',
-      time: parsedTime,
-      duration: fav.duration || '',
-      instructions: fav.instructions || '',
-      flags: '',
+      name: fav.name || '', dosage: fav.dosage || '', quantity: fav.quantity || '',
+      type: fav.type || '', frequency: fav.frequency || '', food: fav.food || '',
+      time: parsedTime, duration: fav.duration || '',
+      instructions: fav.instructions || '', flags: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       patient_id: patientId || '',
@@ -503,11 +493,6 @@ export default function PatientProfile() {
     }));
   }
 };
-      } catch (e) {
-        console.error('Error adding favourite medicine:', e);
-      }
-    }
-  };
 
   const handleAddFromPrevious = (prevMeds: ConsultMedicineRow[]) => {
   if (!selectedConsult) return;

@@ -489,41 +489,34 @@ export default function PatientProfile() {
     }
   };
 
-  const handleAddFromPrevious = async (prevMeds: ConsultMedicineRow[]) => {
-    if (!selectedConsult) return;
-    for (const pm of prevMeds) {
-      try {
-        const newMed = await createConsultMedicine({
-          consult_id: selectedConsult.id,
-          name: pm.name || '',
-          quantity: pm.quantity || '',
-          frequency: pm.frequency || '',
-          time: normalizeTime(pm.time),
-          food: pm.food || '',
-          duration: pm.duration || '',
-          instructions: pm.instructions || '',
-        });
-        setConsultMedicines((prev) => [...prev, newMed]);
-        setMedicineDrafts((prev) => ({
-          ...prev,
-          [newMed.id]: {
-            name: pm.name || '',
-            dosage: pm.dosage || '',
-            quantity: pm.quantity || '',
-            type: pm.type || '',
-            frequency: pm.frequency || '',
-            food: pm.food || '',
-            time: normalizeTime(pm.time),
-            duration: pm.duration || '',
-            instructions: pm.instructions || '',
-            flags: pm.flags || '',
-          },
-        }));
-      } catch (e) {
-        console.error('Error adding previous medicine:', e);
-      }
-    }
-  };
+  const handleAddFromPrevious = (prevMeds: ConsultMedicineRow[]) => {
+  if (!selectedConsult) return;
+  for (const pm of prevMeds) {
+    const tempId = `temp_${crypto.randomUUID()}`;
+    const parsedTime = normalizeTime(pm.time);
+    const tempMed = {
+      id: tempId,
+      consult_id: selectedConsult.id,
+      name: pm.name || '', dosage: pm.dosage || '', quantity: pm.quantity || '',
+      type: pm.type || '', frequency: pm.frequency || '', food: pm.food || '',
+      time: parsedTime, duration: pm.duration || '',
+      instructions: pm.instructions || '', flags: pm.flags || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      patient_id: patientId || '',
+    } as ConsultMedicineRow;
+    setConsultMedicines((prev) => [...prev, tempMed]);
+    setMedicineDrafts((prev) => ({
+      ...prev,
+      [tempId]: {
+        name: pm.name || '', dosage: pm.dosage || '', quantity: pm.quantity || '',
+        type: pm.type || '', frequency: pm.frequency || '', food: pm.food || '',
+        time: parsedTime, duration: pm.duration || '',
+        instructions: pm.instructions || '', flags: pm.flags || '',
+      },
+    }));
+  }
+};
 
   const handleSendPreConsultLink = () => {
     if (!patient || !patient.phone || !user) return;

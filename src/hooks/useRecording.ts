@@ -32,8 +32,18 @@ export function useRecording(
       setRecordingTime(0);
 
       const interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
+  setRecordingTime((prev) => {
+    const next = prev + 1;
+
+    // CHANGED: auto-stop at 20 minutes (1200 seconds)
+    if (next >= 1200) {
+      handleEndRecording(); // auto trigger stop
+      return prev; // stop incrementing
+    }
+
+    return next;
+  });
+}, 1000);
       (window as Window & { recordingInterval?: ReturnType<typeof setInterval> }).recordingInterval = interval;
     } catch (error) {
       console.error('Error starting recording:', error);

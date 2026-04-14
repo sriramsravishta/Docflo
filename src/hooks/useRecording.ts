@@ -87,9 +87,17 @@ export function useRecording(
 
     try {
       const finalChunks = await recordingPromise;
-      let recordingFileUrl: string | null = null;
 
-      if (finalChunks.length > 0) {
+// CHANGED: skip processing if recording is less than 10 seconds
+if (recordingTime < 10) {
+  console.log('Recording too short, skipping processing');
+  alert('Recording must be at least 10 seconds');
+  return; // stop everything here
+}
+
+let recordingFileUrl: string | null = null;
+
+if (finalChunks.length > 0) {
         const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
         const fileName = `consultation-${patientId}-${Date.now()}.webm`;
         const { data: uploadData, error: uploadError } = await supabase.storage

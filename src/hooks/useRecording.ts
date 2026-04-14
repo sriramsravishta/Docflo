@@ -2,10 +2,17 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 
+interface ToastInfo {
+  message: string;
+  type: 'error' | 'success' | 'info';
+}
+
 interface UseRecordingReturn {
   isRecording: boolean;
   isPaused: boolean;
   recordingTime: number;
+  toast: ToastInfo | null;
+  clearToast: () => void;
   handleStartRecording: () => Promise<void>;
   handlePauseRecording: () => void;
   handleEndRecording: () => Promise<void>;
@@ -20,6 +27,8 @@ export function useRecording(
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [toast, setToast] = useState<ToastInfo | null>(null);
+  const clearToast = () => setToast(null);
 
   const handleStartRecording = async () => {
     try {
@@ -35,10 +44,10 @@ export function useRecording(
   setRecordingTime((prev) => {
     const next = prev + 1;
 
-    // CHANGED: auto-stop at 20 minutes (1200 seconds)
     if (next >= 1200) {
-      handleEndRecording(); // auto trigger stop
-      return prev; // stop incrementing
+      handleEndRecording();
+      setToast({ message: 'Recording limit per session is 20 minutes. Recording stopped automatically.', type: 'info' });
+      return prev;
     }
 
     return next;
@@ -88,11 +97,9 @@ export function useRecording(
     try {
       const finalChunks = await recordingPromise;
 
-// CHANGED: skip processing if recording is less than 10 seconds
 if (recordingTime < 10) {
-  console.log('Recording too short, skipping processing');
-  alert('Recording must be at least 10 seconds');
-  return; // stop everything here
+  setToast({ message: 'Recording must be at least 10 seconds to process', type: 'error' });
+  return;
 }
 
 let recordingFileUrl: string | null = null;
@@ -134,5 +141,5 @@ if (finalChunks.length > 0) {
     }
   };
 
-  return { isRecording, isPaused, recordingTime, handleStartRecording, handlePauseRecording, handleEndRecording };
+  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording };
 }

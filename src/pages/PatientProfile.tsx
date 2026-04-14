@@ -20,6 +20,7 @@ import LoadPreviousModal from '../components/features/LoadPreviousModal';
 import { parseTimeString } from '../components/features/AddFavouritesModal';
 import { DocumentUploadModal, DocumentUploadStatusModal } from '../components/features/DocumentUploadModal';
 import Spinner from '../components/ui/Spinner';
+import Toast from '../components/ui/Toast';
 import { usePatientData } from '../hooks/usePatientData';
 import { useRecording } from '../hooks/useRecording';
 import {
@@ -96,7 +97,7 @@ export default function PatientProfile() {
     preConsultSectionRef,
   } = usePatientData(patientId, user?.id);
 
-  const { isRecording, isPaused, recordingTime, handleStartRecording, handlePauseRecording, handleEndRecording } =
+  const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording } =
     useRecording(patientId, user?.id, async () => { await loadPatientData(); });
 
   const [uiNow, setUiNow] = useState(Date.now());
@@ -1421,6 +1422,7 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {toast && <Toast message={toast.message} type={toast.type} onDismiss={clearToast} />}
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">

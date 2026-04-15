@@ -1042,7 +1042,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
 
   // 2. Adjust elapsed time based on whether we are retrying
   let elapsed = getElapsedSeconds(consult, uiNow);
-  let pct = getProgressPercent(consult, uiNow); 
+  let pct = getProgressPercent(consult, uiNow);
 
   // If retry was clicked, calculate time from the retry timestamp instead of the database creation time
   if (retryTimestamp) {

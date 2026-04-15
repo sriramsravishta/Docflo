@@ -1051,7 +1051,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
   }
 
   const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
-  const isError = elapsed > MAX_PROCESS_SECONDS;
+  const isError = true; // elapsed > MAX_PROCESS_SECONDS;
 
   // 3. The function that triggers n8n directly
   const handleRetry = async () => {

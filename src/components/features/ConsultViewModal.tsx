@@ -1036,24 +1036,80 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 }
 
 function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: number }) {
-  const elapsed = getElapsedSeconds(consult, uiNow);
-  const pct = getProgressPercent(consult, uiNow);
+  // 1. New local states to handle the retry process and reset the visual timer
+  const [retryTimestamp, setRetryTimestamp] = useState<number | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // 2. Adjust elapsed time based on whether we are retrying
+  let elapsed = getElapsedSeconds(consult, uiNow);
+  let pct = getProgressPercent(consult, uiNow);
+
+  // If retry was clicked, calculate time from the retry timestamp instead of the database creation time
+  if (retryTimestamp) {
+    elapsed = Math.max(0, Math.floor((uiNow - retryTimestamp) / 1000));
+    pct = Math.min(100, Math.round((elapsed / ESTIMATED_PROCESS_SECONDS) * 100));
+  }
+
   const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
   const isError = elapsed > MAX_PROCESS_SECONDS;
+
+  // 3. The function that triggers n8n directly
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      // Send a direct POST request to your n8n webhook
+      // The payload perfectly matches what your "Get a row2" node looks for
+      await fetch('https://atblink.app.n8n.cloud/webhook/voice_op', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          record: {
+            id: consult.id
+          }
+        })
+      });
+
+      // Reset the visual timer to start the progress bar over
+      setRetryTimestamp(Date.now());
+    } catch (error) {
+      console.error("Retry failed:", error);
+      alert("Failed to trigger retry. Please check your connection and try again.");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-3">
         <p className="text-sm font-semibold text-gray-900">
-          {isError ? 'Consultation summary failed' : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
+          {isError
+            ? 'Consultation summary failed'
+            : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
         </p>
       </div> 
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div className="h-3 rounded-full bg-[#024CDB] transition-all" style={{ width: `${isError ? 100 : pct}%` }} />
+        <div 
+          className="h-3 rounded-full bg-[#024CDB] transition-all" 
+          style={{ width: `${isError ? 100 : pct}%` }} 
+        />
       </div>
       <div className="mt-3 text-center">
         {isError ? (
-          <p className="text-sm font-semibold text-red-600">There was an issue analyzing the recording.</p>
+          <div className="flex flex-col items-center gap-4 mt-2">
+            <p className="text-sm font-semibold text-red-600">
+              There was an issue analyzing the recording. Spikes in AI demand are usually temporary.
+            </p>
+            {/* 4. The New Retry Button */}
+            <button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="flex items-center gap-2 px-4 py-2 bg-[#024CDB] hover:bg-[#023BA3] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              <History className="w-4 h-4" />
+              {isRetrying ? 'Retrying...' : 'Retry Processing'}
+            </button>
+          </div>
         ) : (
           <>
             <p className="text-sm text-gray-600">It takes around 60 sec to prepare the consultation summary.</p>
@@ -1062,7 +1118,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         )}
       </div>
       <div className="mt-4 text-center text-xs text-gray-500">
-        {isError ? 'Please retry the recording.' : 'You can keep this open — it will auto-update when ready.'}
+        {isError ? 'Please click retry to process the audio again.' : 'You can keep this open — it will auto-update when ready.'}
       </div>
     </div>
   );

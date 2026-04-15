@@ -1042,7 +1042,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
 
   // 2. Adjust elapsed time based on whether we are retrying
   let elapsed = getElapsedSeconds(consult, uiNow);
-  let pct = getProgressPercent(consult, uiNow);
+  let pct = getProgressPercent(consult, uiNow); 
 
   // If retry was clicked, calculate time from the retry timestamp instead of the database creation time
   if (retryTimestamp) {
@@ -1051,7 +1051,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
   }
 
   const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
-  const isError = true; // elapsed > MAX_PROCESS_SECONDS;
+  const isError = elapsed > MAX_PROCESS_SECONDS;
 
   // 3. The function that triggers n8n directly
   const handleRetry = async () => {
@@ -1059,7 +1059,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
     try {
       // Send a direct POST request to your n8n webhook
       // The payload perfectly matches what your "Get a row2" node looks for
-      await fetch('https://atblink.app.n8n.cloud/webhook-test/voice_op', {
+      await fetch('https://atblink.app.n8n.cloud/webhook/voice_op', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1036,41 +1036,36 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 }
 
 function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: number }) {
-  // 1. New local states to handle the retry process and reset the visual timer
-  const [retryTimestamp, setRetryTimestamp] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
-  // 2. Adjust elapsed time based on whether we are retrying
-  let elapsed = getElapsedSeconds(consult, uiNow);
-  let pct = getProgressPercent(consult, uiNow);
+  const elapsed = getElapsedSeconds(consult, uiNow);
+  const isError = isConsultError(consult, uiNow);
+  const takingLonger = !isError && elapsed > ESTIMATED_PROCESS_SECONDS;
+  const pct = isError ? 100 : getProgressPercent(consult, uiNow);
 
-  // If retry was clicked, calculate time from the retry timestamp instead of the database creation time
-  if (retryTimestamp) {
-    elapsed = Math.max(0, Math.floor((uiNow - retryTimestamp) / 1000));
-    pct = Math.min(100, Math.round((elapsed / ESTIMATED_PROCESS_SECONDS) * 100));
-  }
-
-  const takingLonger = elapsed > ESTIMATED_PROCESS_SECONDS;
-  const isError = elapsed > MAX_PROCESS_SECONDS;
-
-  // 3. The function that triggers n8n directly
   const handleRetry = async () => {
     setIsRetrying(true);
     try {
-      // Send a direct POST request to your n8n webhook
-      // The payload perfectly matches what your "Get a row2" node looks for
+      // 1. COST SAVING: React resets the DB directly (Costs 0 n8n executions).
+      // This instantly clears the zero-lag error state globally via WebSockets.
+      await import('../../lib/supabase').then(({ supabase }) => 
+        supabase
+          .from('consult')
+          .update({ 
+            status: 'Processing', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', consult.id)
+      );
+
+      // 2. Trigger n8n webhook
       await fetch('https://atblink.app.n8n.cloud/webhook/voice_op', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          record: {
-            id: consult.id
-          }
+          record: { id: consult.id }
         })
       });
-
-      // Reset the visual timer to start the progress bar over
-      setRetryTimestamp(Date.now());
     } catch (error) {
       console.error("Retry failed:", error);
       alert("Failed to trigger retry. Please check your connection and try again.");
@@ -1090,8 +1085,8 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
       </div> 
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
         <div 
-          className="h-3 rounded-full bg-[#024CDB] transition-all" 
-          style={{ width: `${isError ? 100 : pct}%` }} 
+          className={`h-3 rounded-full transition-all duration-500 ease-out ${isError ? 'bg-red-500' : 'bg-[#024CDB]'}`} 
+          style={{ width: `${pct}%` }} 
         />
       </div>
       <div className="mt-3 text-center">
@@ -1100,7 +1095,6 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
             <p className="text-sm font-semibold text-red-600">
               There was an issue analyzing the recording. Spikes in AI demand are usually temporary.
             </p>
-            {/* 4. The New Retry Button */}
             <button
               onClick={handleRetry}
               disabled={isRetrying}

@@ -1003,7 +1003,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-red-100/40 transition-colors"
                   >
                     {flagsOpen ? (
-                      <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" /> 
+                      <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
                     ) : (
                       <ChevronRight className="w-5 h-5 text-gray-500 shrink-0" />
                     )}

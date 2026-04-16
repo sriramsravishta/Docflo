@@ -190,20 +190,25 @@ export default function PatientProfile() {
   }, [selectedConsult?.id]);
 
   useEffect(() => {
-    if (!selectedConsult?.id) return;
-    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
+    if (!selectedConsult?.id) return;
+    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
 
-    const createdAt = selectedConsult?.created_at ? new Date(selectedConsult.created_at).getTime() : Date.now();
-    const elapsed = Math.floor((Date.now() - createdAt) / 1000);
-    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
-    let interval: ReturnType<typeof setInterval> | null = null;
+    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
+    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    const startPolling = () => {
-      if (Math.floor((Date.now() - createdAt) / 1000) >= 180) return;
-      interval = setInterval(async () => {
-        if (Math.floor((Date.now() - createdAt) / 1000) >= 180) { if (interval) clearInterval(interval); return; }
-        try {
-          const { data, error } = await supabase.from('consult').select('id, consult_summary_final, created_at').eq('id', selectedConsult.id).single();
+    const startPolling = () => {
+      if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) return;
+      
+      // COST SAVING: Increased polling interval from 3s to 15s. 
+      // WebSockets handle the instant UI updates; this is just a safety net.
+      interval = setInterval(async () => {
+        if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) { if (interval) clearInterval(interval); return; }
+        try {
+          // Added updated_at and status to the query
+          const { data, error } = await supabase.from('consult').select('id, consult_summary_final, created_at, updated_at, status').eq('id', selectedConsult.id).single();
           if (error || !data) return;
           setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
           setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));

@@ -21,6 +21,7 @@ import {
   getElapsedSeconds,
   getProgressPercent,
   safeJsonParse,
+  isConsultError,
   ESTIMATED_PROCESS_SECONDS,
   MAX_PROCESS_SECONDS,
   FREQUENCY_OPTIONS,

@@ -108,15 +108,23 @@ export function isConsultProcessed(consult: ConsultRow): boolean {
 }
 
 export function isConsultError(consult: ConsultRow, uiNow: number): boolean {
+  // 1. ZERO-LAG CHECK: If explicitly marked as failed by n8n, instantly return true.
+  if (consult.status === 'Error' || consult.status === 'Failed') return true;
+
   if (isConsultProcessed(consult)) return false;
+  
+  // 2. FALLBACK TIMEOUT: If n8n crashes without updating the DB, fallback to the 5-min timer.
   const elapsed = getElapsedSeconds(consult, uiNow);
   return elapsed > MAX_PROCESS_SECONDS;
 }
 
-export function getElapsedSeconds(item: { created_at?: string }, uiNow: number): number {
-  const createdAt = item?.created_at ? new Date(item.created_at).getTime() : null;
-  if (!createdAt || isNaN(createdAt)) return 0;
-  return Math.max(0, Math.floor((uiNow - createdAt) / 1000));
+export function getElapsedSeconds(item: { created_at?: string; updated_at?: string }, uiNow: number): number {
+  // Use updated_at as the primary timer source so retries reset the clock globally.
+  const timestampToUse = item?.updated_at || item?.created_at;
+  const startTime = timestampToUse ? new Date(timestampToUse).getTime() : null;
+  if (!startTime || isNaN(startTime)) return 0;
+  
+  return Math.max(0, Math.floor((uiNow - startTime) / 1000));
 }
 
 export const ESTIMATED_PROCESS_SECONDS = 60;

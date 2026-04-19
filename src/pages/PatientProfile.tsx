@@ -222,7 +222,7 @@ useEffect(() => {
 
     const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
     return () => { clearTimeout(timeout); if (interval) clearInterval(interval); };
-  }, [selectedConsult?.id, selectedConsult?.consult_summary_final]);
+  }, [selectedConsult?.id, selectedConsult?.consult_summary_final, selectedConsult?.status]);
 
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {

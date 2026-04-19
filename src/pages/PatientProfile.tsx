@@ -193,14 +193,26 @@ export default function PatientProfile() {
   }, [patientId]);
 
   useEffect(() => {
-    if (!selectedConsult?.id) return;
-    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
+    if (!selectedConsult?.id) return;
+    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
 
-    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
-    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
-    let interval: ReturnType<typeof setInterval> | null = null;
+    // 2. INSTANT FETCH: Guarantees the popup has the latest status the millisecond it opens!
+    supabase.from('consult')
+      .select('id, consult_summary_final, created_at, updated_at, status')
+      .eq('id', selectedConsult.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
+          setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
+        }
+      });
+
+    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
+    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     const startPolling = () => {
       if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) return;

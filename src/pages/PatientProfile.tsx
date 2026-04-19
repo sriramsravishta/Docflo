@@ -1681,10 +1681,15 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
     onLoadPrevious={() => setShowLoadPrevious(true)}
     onRetryOptimistic={(consultId: string) => {
       const newTime = new Date().toISOString();
+      // Update background cards
       setConsultations((prev) =>
         prev.map((c) =>
           c.id === consultId ? { ...c, status: 'Processing', updated_at: newTime } : c
         )
+      );
+      // Update the popup memory so it doesn't revert when reopened!
+      setSelectedConsult((prev) => 
+        prev?.id === consultId ? { ...prev, status: 'Processing', updated_at: newTime } : prev
       );
     }}
   />

@@ -754,6 +754,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     setMedicineSearchResults,
     onAddFavourites,
     onLoadPrevious,
+    onRetryOptimistic,
     onClose,
     onDownloadPDF,
     formatDate,

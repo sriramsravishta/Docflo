@@ -172,22 +172,25 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
+  // 1. GLOBAL PATIENT WATCHER: Keeps background cards in sync even when the modal is closed!
   useEffect(() => {
-    if (!selectedConsult?.id) return;
+    if (!patientId) return;
     const channel = supabase
-      .channel(`consult-watch-${selectedConsult.id}`)
+      .channel(`patient-consult-watch-${patientId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `patient_id=eq.${patientId}` },
         (payload) => {
           const updated = payload.new as ConsultRow;
-          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
+          // Update the background cards instantly
           setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+          // Update the popup if it happens to be open
+          setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [selectedConsult?.id]);
+  }, [patientId]);
 
   useEffect(() => {
     if (!selectedConsult?.id) return;

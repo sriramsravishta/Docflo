@@ -1676,6 +1676,16 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
     setMedicineSearchResults={setMedicineSearchResults}
     onAddFavourites={() => setShowAddFavourites(true)}
     onLoadPrevious={() => setShowLoadPrevious(true)}
+    onRetryOptimistic={(consultId: string) => {
+      const newTime = new Date().toISOString();
+      setConsultations((prev) =>
+        prev.map((c) =>
+          c.id === consultId ? { ...c, status: 'Processing', updated_at: newTime } : c
+        )
+      );
+    }}
+  />
+)}
   />
 )}
 

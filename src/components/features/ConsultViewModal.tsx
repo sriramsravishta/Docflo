@@ -1083,7 +1083,9 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          record: { id: consult.id }
+          type: 'INSERT',
+          table: 'consult',
+          record: consult // <--- Pass the entire row, just like Supabase does!
         })
       });
     } catch (error) {

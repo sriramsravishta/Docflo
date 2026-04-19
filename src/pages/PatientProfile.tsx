@@ -177,7 +177,7 @@ export default function PatientProfile() {
   // but it ensures the background list cards instantly flip to "Failed" when n8n crashes.
   useEffect(() => {
     if (!patientId) return;
-    
+     
     const channel = supabase
       .channel(`patient-consult-watch-${patientId}`)
       .on(

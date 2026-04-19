@@ -172,22 +172,28 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
+  // STANDARD PRACTICE: Listen to the patient's consults at the profile level.
+  // Supabase bills by connection. This is still exactly 1 connection (zero extra cost), 
+  // but it ensures the background list cards instantly flip to "Failed" when n8n crashes.
   useEffect(() => {
-    if (!selectedConsult?.id) return;
+    if (!patientId) return;
+    
     const channel = supabase
-      .channel(`consult-watch-${selectedConsult.id}`)
+      .channel(`patient-consult-watch-${patientId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `patient_id=eq.${patientId}` },
         (payload) => {
           const updated = payload.new as ConsultRow;
-          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
+          // Update both the list view AND the modal if it happens to be open
           setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+          setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
         }
       )
       .subscribe();
+      
     return () => { supabase.removeChannel(channel); };
-  }, [selectedConsult?.id]);
+  }, [patientId]);
 
   useEffect(() => {
     if (!selectedConsult?.id) return;

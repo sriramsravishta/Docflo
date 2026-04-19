@@ -172,20 +172,23 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
-  // 1. GLOBAL PATIENT WATCHER: Keeps background cards in sync even when the modal is closed!
+  // 1. GLOBAL PATIENT WATCHER: Keeps background cards and popup in sync instantly!
   useEffect(() => {
     if (!patientId) return;
     const channel = supabase
       .channel(`patient-consult-watch-${patientId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `patient_id=eq.${patientId}` },
+        // STANDARD PRACTICE: Listen to the table and filter on the client. 
+        // This bypasses the Supabase strict 'Replica Identity' block for non-primary keys.
+        { event: 'UPDATE', schema: 'public', table: 'consult' }, 
         (payload) => {
           const updated = payload.new as ConsultRow;
-          // Update the background cards instantly
-          setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
-          // Update the popup if it happens to be open
-          setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+          // Only process updates for the patient we are currently looking at
+          if (updated.patient_id === patientId) {
+            setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+            setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+          }
         }
       )
       .subscribe();

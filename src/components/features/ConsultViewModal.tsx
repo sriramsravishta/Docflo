@@ -1038,47 +1038,34 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
 
 function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: number }) {
   const [isRetrying, setIsRetrying] = useState(false);
-  // OPTIMISTIC STATE: Holds the instant UI reset so we don't have to wait for the network
-  const [optimisticConsult, setOptimisticConsult] = useState<ConsultRow | null>(null);
 
-  // If the real database sends us a new update via WebSockets, clear our optimistic fake state
-  useEffect(() => {
-    setOptimisticConsult(null);
-  }, [consult.status, consult.updated_at]);
-
-  // Always use the optimistic version if it exists, otherwise use the real DB one
-  const activeConsult = optimisticConsult || consult;
-
-  const elapsed = getElapsedSeconds(activeConsult, uiNow);
-  const isError = isConsultError(activeConsult, uiNow);
+  const elapsed = getElapsedSeconds(consult, uiNow);
+  const isError = isConsultError(consult, uiNow);
   const takingLonger = !isError && elapsed > ESTIMATED_PROCESS_SECONDS;
-  const pct = isError ? 100 : getProgressPercent(activeConsult, uiNow);
+  const pct = isError ? 100 : getProgressPercent(consult, uiNow);
 
   const handleRetry = async () => {
     setIsRetrying(true);
     try {
       const newTime = new Date().toISOString();
 
-      // 1. INSTANT UI UPDATE: Reset the progress bar locally right now
-      setOptimisticConsult({
-        ...consult,
-        status: 'Processing',
-        updated_at: newTime
-      });
-
-      // 2. UPDATE DB: Reset the timer and clear the old execution ID
-      await import('../../lib/supabase').then(({ supabase }) => 
-        supabase
+      // 1. UPDATE DB FIRST
+      // 'as any' is required here because n8n_execution_id was added via SQL 
+      // and isn't in local types yet. This update will trigger the WebSocket instantly!
+      await import('../../lib/supabase').then(async ({ supabase }) => {
+        const { error } = await supabase
           .from('consult')
           .update({ 
             status: 'Processing',
             updated_at: newTime,
-            n8n_execution_id: null // Clear the old tracking ID so it doesn't conflict
-          })
-          .eq('id', consult.id)
-      );
+            n8n_execution_id: null 
+          } as any)
+          .eq('id', consult.id);
+          
+        if (error) throw error;
+      });
 
-      // 3. TRIGGER n8n: Fire the webhook again
+      // 2. TRIGGER n8n
       await fetch('https://atblink.app.n8n.cloud/webhook/voice_op', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1088,7 +1075,6 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
       });
     } catch (error) {
       console.error("Retry failed:", error);
-      setOptimisticConsult(null); // Revert the UI if the network failed completely
       alert("Failed to trigger retry. Please check your connection and try again.");
     } finally {
       setIsRetrying(false);

@@ -179,12 +179,17 @@ useEffect(() => {
     .channel(`patient-consult-watch-${patientId}`)
     .on(
       'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'consult' }, // ← no filter here
+      { event: 'UPDATE', schema: 'public', table: 'consult' },
       (payload) => {
         const updated = payload.new as ConsultRow;
-        // Client-side guard — ignore rows belonging to other patients
-        if (updated.patient_id !== patientId) return;
-        setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+        // Guard using the consultations array instead of payload.new.patient_id
+        // because Supabase only sends changed columns in payload.new,
+        // so patient_id is often undefined/missing in the payload
+        setConsultations((prev) => {
+          const exists = prev.some((c) => c.id === updated.id);
+          if (!exists) return prev; // Not a consult belonging to this patient
+          return prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        });
         setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
       }
     )

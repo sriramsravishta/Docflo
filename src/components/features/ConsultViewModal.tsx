@@ -1068,6 +1068,11 @@ function ProcessingState({ consult, uiNow, onRetryOptimistic }: { consult: Consu
         updated_at: newTime
       });
 
+      // 2. Update parent cards array so closing the popup shows Processing not Error
+      onRetryOptimistic(consult.id);
+
+      // 3. UPDATE DB: Reset the timer and clear the old execution ID
+
       // 2. UPDATE DB: Reset the timer and clear the old execution ID
       await import('../../lib/supabase').then(({ supabase }) => 
         supabase

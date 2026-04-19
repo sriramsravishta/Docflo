@@ -172,22 +172,25 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
-  useEffect(() => {
-    if (!selectedConsult?.id) return;
-    const channel = supabase
-      .channel(`consult-watch-${selectedConsult.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
-        (payload) => {
-          const updated = payload.new as ConsultRow;
-          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
-          setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedConsult?.id]);
+  // AFTER (correct — no server filter, filter client-side instead)
+useEffect(() => {
+  if (!patientId) return;
+  const channel = supabase
+    .channel(`patient-consult-watch-${patientId}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'consult' }, // ← no filter here
+      (payload) => {
+        const updated = payload.new as ConsultRow;
+        // Client-side guard — ignore rows belonging to other patients
+        if (updated.patient_id !== patientId) return;
+        setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+        setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+      }
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [patientId]);
 
   useEffect(() => {
     if (!selectedConsult?.id) return;

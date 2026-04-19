@@ -172,39 +172,60 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
-  
-
+  // 1. GLOBAL WEBSOCKET WATCHER
   useEffect(() => {
-    if (!selectedConsult?.id) return;
-    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
+    if (!patientId) return;
+    const channel = supabase
+      .channel(`patient-consult-watch-${patientId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'consult' },
+        (payload) => {
+          const updated = payload.new as ConsultRow;
+          setConsultations((prev) => {
+            const exists = prev.some((c) => c.id === updated.id);
+            if (!exists) return prev;
+            return prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+          });
+          setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [patientId]);
 
-    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
-    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
-    let interval: ReturnType<typeof setInterval> | null = null;
+  // 2. BULLETPROOF BACKGROUND POLLER 
+  // Guarantees all cards (and popup) update every 4 seconds even if WebSockets drop partial payloads!
+  useEffect(() => {
+    const activeIds = consultations
+      .filter(c => !isConsultProcessed(c) && c.status !== 'Failed' && c.status !== 'Error')
+      .map(c => c.id);
+      
+    if (activeIds.length === 0) return;
 
-    const startPolling = () => {
-      if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) return;
-      
-      // COST SAVING: Increased polling interval from 3s to 15s. 
-      // WebSockets handle the instant UI updates; this is just a safety net.
-      interval = setInterval(async () => {
-        if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) { if (interval) clearInterval(interval); return; }
-        try {
-          // Added updated_at and status to the query
-          const { data, error } = await supabase.from('consult').select('id, consult_summary_final, created_at, updated_at, status').eq('id', selectedConsult.id).single();
-          if (error || !data) return;
-          setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
-          setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
-          if (getConsultSummary(data as ConsultRow) && interval) clearInterval(interval);
-        } catch (e) { console.error('Error polling consult popup (fallback catch):', e); }
-      }, 3000);
-    };
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('consult')
+        .select('id, consult_summary_final, created_at, updated_at, status')
+        .in('id', activeIds);
+        
+      if (data && data.length > 0) {
+        setConsultations((prev) => 
+          prev.map(c => {
+            const fetched = data.find(d => d.id === c.id);
+            return fetched ? { ...c, ...fetched } : c;
+          })
+        );
+        setSelectedConsult((prev) => {
+          if (!prev) return prev;
+          const fetched = data.find(d => d.id === prev.id);
+          return fetched ? { ...prev, ...fetched } : prev;
+        });
+      }
+    }, 4000);
 
-    const timeout = setTimeout(startPolling, POLL_START_DELAY_MS);
-    return () => { clearTimeout(timeout); if (interval) clearInterval(interval); };
-  }, [selectedConsult?.id, selectedConsult?.consult_summary_final, selectedConsult?.status]);
+    return () => clearInterval(interval);
+  }, [consultations]);
 
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
@@ -1660,15 +1681,10 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
     onLoadPrevious={() => setShowLoadPrevious(true)}
     onRetryOptimistic={(consultId: string) => {
       const newTime = new Date().toISOString();
-      // Update background cards
       setConsultations((prev) =>
         prev.map((c) =>
           c.id === consultId ? { ...c, status: 'Processing', updated_at: newTime } : c
         )
-      );
-      // Update the popup memory so it doesn't revert when reopened!
-      setSelectedConsult((prev) => 
-        prev?.id === consultId ? { ...prev, status: 'Processing', updated_at: newTime } : prev
       );
     }}
   />

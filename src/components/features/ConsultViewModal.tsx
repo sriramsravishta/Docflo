@@ -1071,7 +1071,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         supabase
           .from('consult')
           .update({ 
-            status: 'Processing', 
+            status: 'Processing',
             updated_at: newTime,
             n8n_execution_id: null // Clear the old tracking ID so it doesn't conflict
           })
@@ -1083,9 +1083,7 @@ function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: numbe
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'INSERT',
-          table: 'consult',
-          record: consult // <--- Pass the entire row, just like Supabase does!
+          record: { id: consult.id }
         })
       });
     } catch (error) {

@@ -172,50 +172,32 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
-  // 1. GLOBAL PATIENT WATCHER: Keeps background cards and popup in sync instantly!
   useEffect(() => {
-    if (!patientId) return;
+    if (!selectedConsult?.id) return;
     const channel = supabase
-      .channel(`patient-consult-watch-${patientId}`)
+      .channel(`consult-watch-${selectedConsult.id}`)
       .on(
         'postgres_changes',
-        // STANDARD PRACTICE: Listen to the table and filter on the client. 
-        // This bypasses the Supabase strict 'Replica Identity' block for non-primary keys.
-        { event: 'UPDATE', schema: 'public', table: 'consult' }, 
+        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
         (payload) => {
           const updated = payload.new as ConsultRow;
-          // Only process updates for the patient we are currently looking at
-          if (updated.patient_id === patientId) {
-            setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
-            setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
-          }
+          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
+          setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [patientId]);
+  }, [selectedConsult?.id]);
 
   useEffect(() => {
-    if (!selectedConsult?.id) return;
-    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
+    if (!selectedConsult?.id) return;
+    if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
 
-    // 2. INSTANT FETCH: Guarantees the popup has the latest status the millisecond it opens!
-    supabase.from('consult')
-      .select('id, consult_summary_final, created_at, updated_at, status')
-      .eq('id', selectedConsult.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
-          setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
-        }
-      });
-
-    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
-    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
-    let interval: ReturnType<typeof setInterval> | null = null;
+    const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
+    const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const POLL_START_DELAY_MS = Math.max(0, (30 - elapsed) * 1000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     const startPolling = () => {
       if (Math.floor((Date.now() - startTime) / 1000) >= MAX_PROCESS_SECONDS) return;

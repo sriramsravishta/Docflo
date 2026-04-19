@@ -1029,7 +1029,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
             </div>
           ) : (
             <div className="p-6">
-              <ProcessingState consult={consult} uiNow={uiNow} />
+              <ProcessingState consult={consult} uiNow={uiNow} onRetryOptimistic={onRetryOptimistic} />
             </div>
           )}
         </div>
@@ -1038,7 +1038,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   );
 }
 
-function ProcessingState({ consult, uiNow }: { consult: ConsultRow; uiNow: number }) {
+function ProcessingState({ consult, uiNow, onRetryOptimistic }: { consult: ConsultRow; uiNow: number; onRetryOptimistic: (consultId: string) => void }) {
   const [isRetrying, setIsRetrying] = useState(false);
   // OPTIMISTIC STATE: Holds the instant UI reset so we don't have to wait for the network
   const [optimisticConsult, setOptimisticConsult] = useState<ConsultRow | null>(null);

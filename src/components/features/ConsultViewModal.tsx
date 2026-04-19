@@ -78,6 +78,7 @@ interface ConsultViewModalProps {
   setMedicineSearchResults: (r: { name: string }[]) => void;
   onAddFavourites: () => void;
   onLoadPrevious: () => void;
+  onRetryOptimistic: (consultId: string) => void;
 
   // existing
   onClose: () => void;

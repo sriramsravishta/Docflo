@@ -199,6 +199,17 @@ export default function PatientProfile() {
     if (!selectedConsult?.id) return;
     if (isConsultProcessed(selectedConsult) || isConsultError(selectedConsult, uiNow)) return;
 
+    supabase.from('consult')
+      .select('id, consult_summary_final, created_at, updated_at, status')
+      .eq('id', selectedConsult.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedConsult((prev) => prev?.id === data.id ? { ...prev, ...data } : prev);
+          setConsultations((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
+        }
+      });
+
     const timestampToUse = selectedConsult?.updated_at || selectedConsult?.created_at;
     const startTime = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
     const elapsed = Math.floor((Date.now() - startTime) / 1000);

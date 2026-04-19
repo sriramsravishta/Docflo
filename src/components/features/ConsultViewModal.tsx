@@ -1085,12 +1085,15 @@ function ProcessingState({ consult, uiNow, onRetryOptimistic }: { consult: Consu
           .eq('id', consult.id)
       );
 
-      // 3. TRIGGER n8n: Fire the webhook again
+     // 3. TRIGGER n8n: Fire the webhook again
       await fetch('https://atblink.app.n8n.cloud/webhook/voice_op', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          record: { id: consult.id }
+          record: { 
+            id: consult.id,
+            doc_id: 'e34a9b39-1b59-48c2-be29-42dc52c03f00'
+          }
         })
       });
     } catch (error) {

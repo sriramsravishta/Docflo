@@ -172,22 +172,27 @@ export default function PatientProfile() {
     setMedicineSearchResults([]);
   }, [selectedConsult]);
 
+  // STANDARD PRACTICE: Listen to all consults for this patient globally.
+  // This keeps background cards instantly in sync without the popup needing to be open.
   useEffect(() => {
-    if (!selectedConsult?.id) return;
+    if (!patientId) return;
+    
     const channel = supabase
-      .channel(`consult-watch-${selectedConsult.id}`)
+      .channel(`patient-consult-watch-${patientId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `id=eq.${selectedConsult.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'consult', filter: `patient_id=eq.${patientId}` },
         (payload) => {
           const updated = payload.new as ConsultRow;
-          setSelectedConsult((prev) => (prev?.id === updated?.id ? { ...prev, ...updated } : prev));
+          // Instantly update the background cards AND the modal if it's open
           setConsultations((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+          setSelectedConsult((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
         }
       )
       .subscribe();
+      
     return () => { supabase.removeChannel(channel); };
-  }, [selectedConsult?.id]);
+  }, [patientId]);
 
   useEffect(() => {
     if (!selectedConsult?.id) return;

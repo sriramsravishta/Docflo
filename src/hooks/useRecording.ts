@@ -1,6 +1,14 @@
-import { useState } from 'react';
+// src/hooks/useRecording.ts
+
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
+import {
+  createConsult,
+  updateConsult,
+  completeTodaysAppointmentByPatientAndDoctor,
+  updateAppointmentConsultId,
+} from '../lib/database';
+import { recordingStore } from '../lib/recordingStore';
 
 interface ToastInfo {
   message: string;
@@ -21,125 +29,216 @@ interface UseRecordingReturn {
 export function useRecording(
   patientId: string | undefined,
   userId: string | undefined,
-  onRecordingComplete: () => void
+  onRecordingComplete: () => void,
 ): UseRecordingReturn {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  // On mount (including remount after navigation), read any existing session
+  // for this patient so state is instantly restored.
+  const existingSession = patientId ? recordingStore.get(patientId) : undefined;
+
+  const [isRecording, setIsRecording] = useState(!!existingSession);
+  const [isPaused, setIsPaused] = useState(existingSession?.recordingState === 'paused');
+  const [recordingTime, setRecordingTime] = useState(existingSession?.elapsed ?? 0);
   const [toast, setToast] = useState<ToastInfo | null>(null);
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref so the timer callback always calls the latest handleEndRecording closure
+  const endRecordingRef = useRef<() => Promise<void>>();
+
   const clearToast = () => setToast(null);
 
+  // ── Timer helpers ────────────────────────────────────────────────────────────
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const startTimer = () => {
+    stopTimer(); // avoid double-intervals
+    timerRef.current = setInterval(() => {
+      if (!patientId) return;
+      const session = recordingStore.get(patientId);
+      if (!session) { stopTimer(); return; }
+
+      session.elapsed += 1;          // mutate in-place (same object reference)
+      setRecordingTime(session.elapsed);
+
+      if (session.elapsed >= 1200) { // 20-minute hard cap
+        endRecordingRef.current?.();
+        setToast({
+          message: 'Recording limit per session is 20 minutes. Recording stopped automatically.',
+          type: 'info',
+        });
+      }
+    }, 1000);
+  };
+
+  // ── Mount / unmount lifecycle ────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!patientId) return;
+
+    // If the user navigated away while recording (not paused), we auto-paused it
+    // (see cleanup below). On remount we just show the paused state — no timer needed.
+    // If somehow they come back to an actively recording session, restart the timer.
+    const session = recordingStore.get(patientId);
+    if (session?.recordingState === 'recording') {
+      startTimer();
+    }
+
+    return () => {
+      // Stop the local timer regardless — it's component-scoped.
+      stopTimer();
+
+      // Auto-pause so the MediaRecorder and collected audio are preserved
+      // in the store while the user is away on a different page.
+      const s = recordingStore.get(patientId);
+      if (s?.recordingState === 'recording') {
+        s.mediaRecorder.pause();
+        s.recordingState = 'paused'; // mutate in-place
+      }
+    };
+  // patientId is stable for the lifetime of a PatientProfile page
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
+
+  // ── Recording actions ────────────────────────────────────────────────────────
+
   const handleStartRecording = async () => {
+    if (!patientId) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
-      setMediaRecorder(recorder);
-      recorder.start();
+      const chunks: Blob[] = [];
+
+      // Chunks accumulate in the store-owned array via this closure.
+      // Using timeslice (1000 ms) means data is available progressively,
+      // not only at stop() — so a hard refresh still has most of the audio.
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recordingStore.set(patientId, {
+        mediaRecorder: recorder,
+        stream,
+        chunks,
+        recordingState: 'recording',
+        elapsed: 0,
+      });
+
+      recorder.start(1000);
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);
-
-      const interval = setInterval(() => {
-  setRecordingTime((prev) => {
-    const next = prev + 1;
-
-    if (next >= 1200) {
-      handleEndRecording();
-      setToast({ message: 'Recording limit per session is 20 minutes. Recording stopped automatically.', type: 'info' });
-      return prev;
-    }
-
-    return next;
-  });
-}, 1000);
-      (window as Window & { recordingInterval?: ReturnType<typeof setInterval> }).recordingInterval = interval;
-    } catch (error) {
-      console.error('Error starting recording:', error);
+      startTimer();
+    } catch (err) {
+      console.error('Error starting recording:', err);
       alert('Failed to start recording. Please check microphone permissions.');
     }
   };
 
   const handlePauseRecording = () => {
-    if (!mediaRecorder) return;
-    const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
+    if (!patientId) return;
+    const session = recordingStore.get(patientId);
+    if (!session) return;
+
     if (isPaused) {
-      mediaRecorder.resume();
-      const interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-      win.recordingInterval = interval;
+      // Resume
+      session.mediaRecorder.resume();
+      session.recordingState = 'recording';
+      setIsPaused(false);
+      startTimer();
     } else {
-      mediaRecorder.pause();
-      clearInterval(win.recordingInterval);
+      // Pause
+      session.mediaRecorder.pause();
+      session.recordingState = 'paused';
+      setIsPaused(true);
+      stopTimer();
     }
-    setIsPaused(!isPaused);
   };
 
   const handleEndRecording = async () => {
-    if (!mediaRecorder) return;
+    if (!patientId) return;
+    const session = recordingStore.get(patientId);
+    if (!session) return;
+
+    stopTimer();
     setIsRecording(false);
-    const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
-    clearInterval(win.recordingInterval);
+    setIsPaused(false);
 
-    const recordingPromise = new Promise<Blob[]>((resolve) => {
-      const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
-      mediaRecorder.onstop = () => resolve(chunks);
+    const { mediaRecorder, stream, chunks, elapsed } = session;
+
+    // Remove from store immediately so a quick remount doesn't re-attach
+    recordingStore.delete(patientId);
+
+    // Wait for the recorder to flush the final chunk and fire onstop
+    const donePromise = new Promise<void>((resolve) => {
+      mediaRecorder.onstop = () => resolve();
     });
+    if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    stream.getTracks().forEach((t) => t.stop());
+    await donePromise;
 
-    if (mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
+    if (elapsed < 10) {
+      setToast({ message: 'Recording must be at least 10 seconds to process', type: 'error' });
+      return;
     }
 
     try {
-      const finalChunks = await recordingPromise;
+      let recordingFileUrl: string | null = null;
 
-if (recordingTime < 10) {
-  setToast({ message: 'Recording must be at least 10 seconds to process', type: 'error' });
-  return;
-}
-
-let recordingFileUrl: string | null = null;
-
-if (finalChunks.length > 0) {
-        const audioBlob = new Blob(finalChunks, { type: 'audio/webm' });
+      if (chunks.length > 0) {
+        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
         const fileName = `consultation-${patientId}-${Date.now()}.webm`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('consultation-recordings')
           .upload(fileName, audioBlob, { contentType: 'audio/webm', upsert: false });
         if (uploadError) throw new Error('Failed to upload recording');
-        const { data: urlData } = supabase.storage.from('consultation-recordings').getPublicUrl(uploadData.path);
+        const { data: urlData } = supabase.storage
+          .from('consultation-recordings')
+          .getPublicUrl(uploadData.path);
         recordingFileUrl = urlData.publicUrl;
       }
 
-      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '');
+      const consult = await createConsult(userId!, patientId, recordingFileUrl || '');
       await updateConsult(consult.id, {
-        recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+        recording_transcript:
+          'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
         consult_summary_ai: '',
       });
 
-      // CHANGED: Save consult_id back to today's appointment
       try {
-        await updateAppointmentConsultId(patientId!, userId!, consult.id);
-      } catch (error) {
-        console.error('Error updating appointment consult_id:', error);
+        await updateAppointmentConsultId(patientId, userId!, consult.id);
+      } catch (e) {
+        console.error('Error updating appointment consult_id:', e);
       }
 
       try {
-        await completeTodaysAppointmentByPatientAndDoctor(patientId!, userId!);
-      } catch (error) {
-        console.error('Error marking appointment as completed:', error);
+        await completeTodaysAppointmentByPatientAndDoctor(patientId, userId!);
+      } catch (e) {
+        console.error('Error marking appointment as completed:', e);
       }
 
       onRecordingComplete();
-    } catch (error) {
-      console.error('Error saving consultation:', error);
+    } catch (err) {
+      console.error('Error saving consultation:', err);
       alert('Failed to save consultation');
     }
   };
 
-  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording };
+  // Keep the ref current on every render so the timer callback is never stale
+  endRecordingRef.current = handleEndRecording;
+
+  return {
+    isRecording,
+    isPaused,
+    recordingTime,
+    toast,
+    clearToast,
+    handleStartRecording,
+    handlePauseRecording,
+    handleEndRecording,
+  };
 }

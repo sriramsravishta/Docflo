@@ -19,6 +19,8 @@ export default function MainPage() {
     loading,
     todaysAppointments,
     allPatients,
+    patientsCount,
+    prescriptionsCount,
     loadData,
     handleMoveUp,
     handleMoveDown,
@@ -162,6 +164,18 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         <div className="space-y-10">
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Patient Queue</h2>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+              <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+                <div className="flex-1 px-6 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Patients Today</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.length}</p>
+                </div>
+                <div className="flex-1 px-6 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consultations Left</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.filter((a) => a.completed !== true).length}</p>
+                </div>
+              </div>
+            </div>
             {loading ? (
               <div className="flex justify-center py-8"><Spinner size="md" /></div>
             ) : filteredTodaysAppointments.length === 0 ? (
@@ -182,7 +196,19 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">All Patients ({filteredAllPatients.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">All Patients</h2>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+              <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+                <div className="flex-1 px-6 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Number of Patients</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{patientsCount}</p>
+                </div>
+                <div className="flex-1 px-6 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prescriptions Created</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{prescriptionsCount}</p>
+                </div>
+              </div>
+            </div>
             {loading ? (
               <div className="flex justify-center py-8"><Spinner size="md" /></div>
             ) : filteredAllPatients.length === 0 ? (

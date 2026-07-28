@@ -107,6 +107,24 @@ export const getPatients = async () => {
   return data || [];
 };
 
+export const getPrescriptionsCount = async (): Promise<number> => {
+  const { count, error } = await supabase
+    .from('consult')
+    .select('*', { count: 'exact', head: true });
+
+  if (error) throw error;
+  return count ?? 0;
+};
+
+export const getPatientsCount = async (): Promise<number> => {
+  const { count, error } = await supabase
+    .from('patients')
+    .select('*', { count: 'exact', head: true });
+
+  if (error) throw error;
+  return count ?? 0;
+};
+
 export const updatePatient = async (patientId: string, updates: Partial<{
   name: string;
   age: number;

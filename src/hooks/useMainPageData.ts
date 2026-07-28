@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient } from '../lib/database'; // CHANGED: added updatePatient
+import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient, getPrescriptionsCount, getPatientsCount } from '../lib/database'; // CHANGED: added updatePatient
 import type { AppointmentRow, PatientRow } from '../types/db';
 
 interface UseMainPageDataReturn {
   loading: boolean;
   todaysAppointments: AppointmentRow[];
   allPatients: PatientRow[];
+  patientsCount: number;
+  prescriptionsCount: number;
   loadData: () => Promise<void>;
   handleMoveUp: (appointment: AppointmentRow) => Promise<void>;
   handleMoveDown: (appointment: AppointmentRow) => Promise<void>;
@@ -23,6 +25,8 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   const [loading, setLoading] = useState(true);
   const [todaysAppointments, setTodaysAppointments] = useState<AppointmentRow[]>([]);
   const [allPatients, setAllPatients] = useState<PatientRow[]>([]);
+  const [patientsCount, setPatientsCount] = useState(0);
+  const [prescriptionsCount, setPrescriptionsCount] = useState(0);
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,12 +34,16 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     if (!userId) return;
     try {
       setLoading(true);
-      const [appointments, patients] = await Promise.all([
+      const [appointments, patients, rxCount, patientsTotal] = await Promise.all([
         getTodaysAppointments(userId),
         getPatients(),
+        getPrescriptionsCount(),
+        getPatientsCount(),
       ]);
       setTodaysAppointments(appointments);
       setAllPatients(patients);
+      setPrescriptionsCount(rxCount);
+      setPatientsCount(patientsTotal);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -154,6 +162,8 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     loading,
     todaysAppointments,
     allPatients,
+    patientsCount,
+    prescriptionsCount,
     loadData,
     handleMoveUp,
     handleMoveDown,

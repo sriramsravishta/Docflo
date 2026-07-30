@@ -765,12 +765,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const summary = getConsultSummary(consult) as ConsultSummary | null;
 
   // View text
-const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindings), [summary, hasFindings]);
-  const viewChief = useMemo(() => toPlainText(summary?.chief_complaints, 'No chief complaints recorded'), [summary]);
-  const viewTreatment = useMemo(() => treatmentToText(summary?.treatment_suggested), [summary]);
-  const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);
-  const viewHistory = useMemo(() => toPlainText(summary?.history, 'No history recorded'), [summary]);
-  const viewPMH = useMemo(() => toPlainText((summary as any)?.past_medical_history, 'No past medical history recorded'), [summary]);
   const viewFindings = useMemo(() => {
     // New consults: examination_findings at top level
     const newFindings = (summary as any)?.examination_findings;
@@ -790,6 +784,14 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
     const v = newF || oldF;
     return Array.isArray(v) ? v.length > 0 : typeof v === 'string' && v.trim().length > 0;
   }, [summary]);
+  
+const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindings), [summary, hasFindings]);
+  const viewChief = useMemo(() => toPlainText(summary?.chief_complaints, 'No chief complaints recorded'), [summary]);
+  const viewTreatment = useMemo(() => treatmentToText(summary?.treatment_suggested), [summary]);
+  const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);
+  const viewHistory = useMemo(() => toPlainText(summary?.history, 'No history recorded'), [summary]);
+  const viewPMH = useMemo(() => toPlainText((summary as any)?.past_medical_history, 'No past medical history recorded'), [summary]);
+  
   const viewFollowup = useMemo(() => toPlainText(summary?.followup_recommendations, 'No follow-up recommendations recorded'), [summary]);
   const viewKeyInsights = useMemo(() => toPlainText(summary?.key_personal_insights, 'No personal insights recorded'), [summary]);
 

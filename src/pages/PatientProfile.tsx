@@ -679,9 +679,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       } else {
         const d = summary.diagnosis as DiagnosisSummary;
         const prov = Array.isArray(d.provisional) ? d.provisional : [];
-        const keyf = Array.isArray(d.key_findings) ? d.key_findings : [];
         if (prov.length) diagContent += `<p class="sub-label">Provisional Diagnosis</p>${toHtmlList(prov)}`;
-        if (keyf.length) diagContent += `<p class="sub-label">Key Findings</p>${toHtmlList(keyf)}`;
       }
       if (diagContent) {
         content += `
@@ -715,6 +713,21 @@ const resetDrafts: Record<string, MedicineDraft> = {};
           <p class="section-text">${escapeHtml(summary.history)}</p>
         </div>
       `;
+    }
+
+    // Past Medical History — K/C/O line per Indian OP prescription convention
+    if ((summary as any).past_medical_history) {
+      const pmh = (summary as any).past_medical_history;
+      const pmhArr = Array.isArray(pmh) ? pmh : String(pmh).split('\n');
+      const cleaned = pmhArr.map((s: unknown) => String(s).replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+      if (cleaned.length) {
+        content += `
+          <div class="section">
+            <div class="section-header">Past Medical History (K/C/O)</div>
+            <p class="section-text">${escapeHtml(cleaned.join(', '))}</p>
+          </div>
+        `;
+      }
     }
 
     // CHANGED: Medications — Apollo-style numbered table, only if medicines exist

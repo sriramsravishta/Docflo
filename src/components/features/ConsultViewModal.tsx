@@ -770,6 +770,25 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);
   const viewHistory = useMemo(() => toPlainText(summary?.history, 'No history recorded'), [summary]);
   const viewPMH = useMemo(() => toPlainText((summary as any)?.past_medical_history, 'No past medical history recorded'), [summary]);
+  const viewFindings = useMemo(() => {
+    // New consults: examination_findings at top level
+    const newFindings = (summary as any)?.examination_findings;
+    // Old consults: key_findings inside diagnosis
+    const oldFindings = typeof summary?.diagnosis === 'object' && summary?.diagnosis !== null
+      ? (summary.diagnosis as DiagnosisSummary).key_findings
+      : undefined;
+    const merged = newFindings || oldFindings;
+    return toPlainText(merged, 'No examination findings recorded');
+  }, [summary]);
+
+  const hasFindings = useMemo(() => {
+    const newF = (summary as any)?.examination_findings;
+    const oldF = typeof summary?.diagnosis === 'object' && summary?.diagnosis !== null
+      ? (summary.diagnosis as DiagnosisSummary).key_findings
+      : undefined;
+    const v = newF || oldF;
+    return Array.isArray(v) ? v.length > 0 : typeof v === 'string' && v.trim().length > 0;
+  }, [summary]);
   const viewFollowup = useMemo(() => toPlainText(summary?.followup_recommendations, 'No follow-up recommendations recorded'), [summary]);
   const viewKeyInsights = useMemo(() => toPlainText(summary?.key_personal_insights, 'No personal insights recorded'), [summary]);
 
@@ -924,6 +943,17 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                   emptyText="No past medical history recorded"
                 />
               </SectionCard>
+
+              {(isEditing || hasFindings) && (
+                <SectionCard title="Examination & Findings">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText((editedConsult as any)?.examination_findings) : viewFindings}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, examination_findings: v })}
+                    emptyText="No examination findings recorded"
+                  />
+                </SectionCard>
+              )}
 
               <SectionCard
                 title="Current Medications"

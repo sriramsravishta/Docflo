@@ -765,7 +765,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const summary = getConsultSummary(consult) as ConsultSummary | null;
 
   // View text
-  const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis), [summary]);
+const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindings), [summary, hasFindings]);
   const viewChief = useMemo(() => toPlainText(summary?.chief_complaints, 'No chief complaints recorded'), [summary]);
   const viewTreatment = useMemo(() => treatmentToText(summary?.treatment_suggested), [summary]);
   const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);

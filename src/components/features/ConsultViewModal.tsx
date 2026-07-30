@@ -970,14 +970,6 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              <SectionCard title="Treatment Suggested">
-                <SyncedAutoBox
-                  isEditing={isEditing}
-                  text={isEditing ? editedTreatmentText : viewTreatment}
-                  onChange={setEditedTreatmentText}
-                  emptyText="No treatment recorded"
-                />
-              </SectionCard>
 
               <SectionCard title="Investigations">
                 <SyncedAutoBox
@@ -989,7 +981,14 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
               </SectionCard>
 
               
-
+<SectionCard title="Treatment Suggested">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? editedTreatmentText : viewTreatment}
+                  onChange={setEditedTreatmentText}
+                  emptyText="No treatment recorded"
+                />
+              </SectionCard>
               
 
               <SectionCard title="Follow-up Recommendations">

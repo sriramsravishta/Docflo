@@ -907,6 +907,24 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
+              <SectionCard title="History of Present Illness">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? toEditText(editedConsult?.history) : viewHistory}
+                  onChange={(v) => setEditedConsult({ ...editedConsult, history: v })}
+                  emptyText="No history recorded"
+                />
+              </SectionCard>
+
+              <SectionCard title="Past Medical History">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? toEditText((editedConsult as any)?.past_medical_history) : viewPMH}
+                  onChange={(v) => setEditedConsult({ ...editedConsult, past_medical_history: v })}
+                  emptyText="No past medical history recorded"
+                />
+              </SectionCard>
+
               <SectionCard title="Treatment Suggested">
                 <SyncedAutoBox
                   isEditing={isEditing}
@@ -970,14 +988,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              <SectionCard title="History">
-                <SyncedAutoBox
-                  isEditing={isEditing}
-                  text={isEditing ? toEditText(editedConsult?.history) : viewHistory}
-                  onChange={(v) => setEditedConsult({ ...editedConsult, history: v })}
-                  emptyText="No history recorded"
-                />
-              </SectionCard>
+              
 
               <SectionCard title="Follow-up Recommendations">
                 <SyncedAutoBox

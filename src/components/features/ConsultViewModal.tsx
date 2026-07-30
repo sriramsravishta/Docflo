@@ -925,26 +925,8 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                 />
               </SectionCard>
 
-              <SectionCard title="Treatment Suggested">
-                <SyncedAutoBox
-                  isEditing={isEditing}
-                  text={isEditing ? editedTreatmentText : viewTreatment}
-                  onChange={setEditedTreatmentText}
-                  emptyText="No treatment recorded"
-                />
-              </SectionCard>
-
-              <SectionCard title="Investigations">
-                <SyncedAutoBox
-                  isEditing={isEditing}
-                  text={isEditing ? editedInvestigationsText : viewInvestigations}
-                  onChange={setEditedInvestigationsText}
-                  emptyText="No investigations recorded"
-                />
-              </SectionCard>
-
               <SectionCard
-                title="Medications"
+                title="Current Medications"
                 right={
                   isEditing ? (
                     <div className="flex items-center gap-2">
@@ -987,6 +969,26 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
                   setMedicineSearchResults={setMedicineSearchResults}
                 />
               </SectionCard>
+
+              <SectionCard title="Treatment Suggested">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? editedTreatmentText : viewTreatment}
+                  onChange={setEditedTreatmentText}
+                  emptyText="No treatment recorded"
+                />
+              </SectionCard>
+
+              <SectionCard title="Investigations">
+                <SyncedAutoBox
+                  isEditing={isEditing}
+                  text={isEditing ? editedInvestigationsText : viewInvestigations}
+                  onChange={setEditedInvestigationsText}
+                  emptyText="No investigations recorded"
+                />
+              </SectionCard>
+
+              
 
               
 

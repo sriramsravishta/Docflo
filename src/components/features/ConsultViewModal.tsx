@@ -150,7 +150,7 @@ function toEditText(value: unknown) {
   }
 }
 
-function diagnosisToText(diagnosis: unknown) {
+function diagnosisToText(diagnosis: unknown, hasExaminationFindings: boolean) {
   const parsed = safeJsonParse(diagnosis);
   const d = parsed ?? diagnosis;
 
@@ -160,16 +160,17 @@ function diagnosisToText(diagnosis: unknown) {
   if (typeof d === 'object' && d !== null) {
     const dd = d as DiagnosisSummary;
     const prov = Array.isArray(dd.provisional) ? dd.provisional : [];
-    const keyf = Array.isArray(dd.key_findings) ? dd.key_findings : [];
+    // Show key_findings here ONLY for old consults that don't have examination_findings
+    const keyf = !hasExaminationFindings && Array.isArray(dd.key_findings) ? dd.key_findings : [];
     if (!prov.length && !keyf.length) return 'No detailed diagnosis available';
 
     const lines: string[] = [];
     if (prov.length) {
       lines.push('Provisional:');
       prov.forEach((x) => lines.push(`- ${x}`));
-      lines.push('');
     }
     if (keyf.length) {
+      lines.push('');
       lines.push('Key Findings:');
       keyf.forEach((x) => lines.push(`- ${x}`));
     }

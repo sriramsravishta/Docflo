@@ -769,6 +769,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const viewTreatment = useMemo(() => treatmentToText(summary?.treatment_suggested), [summary]);
   const viewInvestigations = useMemo(() => investigationsToText(summary?.investigations), [summary]);
   const viewHistory = useMemo(() => toPlainText(summary?.history, 'No history recorded'), [summary]);
+  const viewPMH = useMemo(() => toPlainText((summary as any)?.past_medical_history, 'No past medical history recorded'), [summary]);
   const viewFollowup = useMemo(() => toPlainText(summary?.followup_recommendations, 'No follow-up recommendations recorded'), [summary]);
   const viewKeyInsights = useMemo(() => toPlainText(summary?.key_personal_insights, 'No personal insights recorded'), [summary]);
 

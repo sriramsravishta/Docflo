@@ -127,6 +127,7 @@ export interface ConsultSummary {
   investigations?: InvestigationsSummary | string;
   past_medical_history?: string[] | string;
   history?: string;
+  examination_findings?: string[] | string;
   followup_recommendations?: string[] | string;
   key_personal_insights?: string[] | string;
   flags_for_review?: string[];

@@ -125,6 +125,7 @@ export interface ConsultSummary {
   treatment_suggested?: TreatmentSummary | string;
   medications?: SummaryMedication[];
   investigations?: InvestigationsSummary | string;
+  past_medical_history?: string[] | string;
   history?: string;
   followup_recommendations?: string[] | string;
   key_personal_insights?: string[] | string;

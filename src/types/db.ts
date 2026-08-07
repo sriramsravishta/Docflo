@@ -67,6 +67,7 @@ export interface VitalRow {
   blood_pressure?: string | null;
   heart_rate?: string | null;
   spo2?: string | null;
+  weight?: string | null;
   created_at: string;
 }
 

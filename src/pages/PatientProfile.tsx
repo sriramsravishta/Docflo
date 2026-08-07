@@ -9,6 +9,8 @@ import {
   Activity,
   HeartPulse,
   Droplets,
+  Loader2,
+  Weight,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
@@ -113,7 +115,8 @@ export default function PatientProfile() {
   const [showGraphView, setShowGraphView] = useState(false);
   const [selectedGraphParam, setSelectedGraphParam] = useState<string>('');
   const [editingVital, setEditingVital] = useState<VitalRow | null>(null);
-  const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
+  const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
+  const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
   const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
 
@@ -281,6 +284,8 @@ export default function PatientProfile() {
   };
 
   const handleAddVital = async () => {
+    if (vitalsSubmitting) return;
+    setVitalsSubmitting(true);
     try {
       const { error } = await supabase.from('vitals').insert([{
         patient_id: patientId,
@@ -289,26 +294,32 @@ export default function PatientProfile() {
         blood_pressure: vitalForm.blood_pressure || null,
         heart_rate: vitalForm.heart_rate || null,
         spo2: vitalForm.spo2 || null,
+        weight: vitalForm.weight || null,
       }]).select();
       if (error) throw error;
       await loadTodaysVitals();
       handleCloseVitalsModal();
     } catch (error) { console.error('Error adding vital:', error); alert('Failed to add vitals'); }
+    finally { setVitalsSubmitting(false); }
   };
 
   const handleUpdateVital = async () => {
     if (!editingVital) return;
+    if (vitalsSubmitting) return;
+    setVitalsSubmitting(true);
     try {
       const { error } = await supabase.from('vitals').update({
         temperature: vitalForm.temperature || null,
         blood_pressure: vitalForm.blood_pressure || null,
         heart_rate: vitalForm.heart_rate || null,
         spo2: vitalForm.spo2 || null,
+        weight: vitalForm.weight || null,
       }).eq('id', editingVital.id);
       if (error) throw error;
       await loadTodaysVitals();
       handleCloseVitalsModal();
     } catch (error) { console.error('Error updating vital:', error); alert('Failed to update vitals'); }
+    finally { setVitalsSubmitting(false); }
   };
 
   const handleEditVital = (vital: VitalRow) => {
@@ -318,6 +329,7 @@ export default function PatientProfile() {
       blood_pressure: vital.blood_pressure || '',
       heart_rate: vital.heart_rate || '',
       spo2: vital.spo2 || '',
+      weight: vital.weight || '',
     });
     setShowVitalsModal(true);
   };
@@ -325,7 +337,7 @@ export default function PatientProfile() {
   const handleCloseVitalsModal = () => {
     setShowVitalsModal(false);
     setEditingVital(null);
-    setVitalForm({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '' });
+    setVitalForm({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
   };
 
   const handleEditConsult = () => {
@@ -1490,12 +1502,13 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
   </button>
 </div>
 
-<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
   {[
     { label: 'Temperature', value: vital.temperature, unit: '°C', Icon: Thermometer },
     { label: 'Blood Pressure', value: vital.blood_pressure, unit: 'mmHg', Icon: Activity },
     { label: 'Heart Rate', value: vital.heart_rate, unit: 'bpm', Icon: HeartPulse },
     { label: 'SpO2', value: vital.spo2, unit: '%', Icon: Droplets },
+    { label: 'Weight', value: vital.weight, unit: 'kg', Icon: Weight },
   ].map(({ label, value, unit, Icon }) => (
     <div
       key={label}
@@ -1772,9 +1785,28 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
               placeholder="e.g., 98"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+            <input
+              type="text"
+              value={vitalForm.weight}
+              onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setVitalForm({ ...vitalForm, weight: v }); }}
+              className="input-field"
+              placeholder="e.g., 70"
+            />
+          </div>
           <div className="flex space-x-3 justify-end pt-4">
-            <button type="button" onClick={handleCloseVitalsModal} className="btn-secondary">Cancel</button>
-            <button type="submit" className="btn-primary">{editingVital ? 'Update Vitals' : 'Add Vitals'}</button>
+            <button type="button" onClick={handleCloseVitalsModal} className="btn-secondary" disabled={vitalsSubmitting}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={vitalsSubmitting}>
+              {vitalsSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {editingVital ? 'Updating...' : 'Adding...'}
+                </span>
+              ) : (
+                editingVital ? 'Update Vitals' : 'Add Vitals'
+              )}
+            </button>
           </div>
         </form>
       </Modal>

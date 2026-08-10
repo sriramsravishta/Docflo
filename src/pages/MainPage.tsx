@@ -204,15 +204,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Today's Patient Queue</h2>
-              <button
-                type="button"
-                onClick={() => setShowManageLocations(true)}
-                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-                title="Manage Locations"
-              >
-                <Settings className="w-4 h-4" />
-                <span className="sr-only">Manage Locations</span>
-              </button>
+              
             </div>
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">

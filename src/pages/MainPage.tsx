@@ -210,7 +210,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         <div className="space-y-10">
          <section>
             {/* TABS NAVIGATION */}
-            <div className="border-b border-gray-200 mb-6 mt-2">
+            <div className="border-b border-gray-200 mb-8 mt-2">
               <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('today')}

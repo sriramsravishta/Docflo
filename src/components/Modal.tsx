@@ -12,9 +12,16 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center bg-gray-900/50 p-4 sm:p-6 overflow-y-auto" 
+      onClick={onClose}
+    >
+      {/* We use overflow-visible here so the dropdown can break out, and my-8 ensures it has top/bottom spacing when scrolling */}
+      <div 
+        className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8 relative overflow-visible" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
@@ -27,4 +34,3 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       </div>
     </div>
   );
-}

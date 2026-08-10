@@ -236,6 +236,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   return {
     loading,
     todaysAppointments,
+    upcomingAppointments, // ADDED: export to the component
     allPatients,
     locations,
     patientsCount,

@@ -1051,6 +1051,22 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               
 
               <SectionCard title="Follow-up Recommendations">
+                {(() => {
+                const charts = (summary as any)?.attached_diet_charts;
+                const chartList = Array.isArray(charts) ? charts.filter(Boolean) : [];
+                if (!chartList.length) return null;
+                return (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span className="text-sm font-medium text-green-800">
+                      📎 Attached to prescription: {chartList.join(', ')}
+                    </span>
+                  </div>
+                );
+              })()}
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText(editedConsult?.followup_recommendations) : viewFollowup}

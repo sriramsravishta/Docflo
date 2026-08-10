@@ -180,8 +180,9 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
       <Navbar onManageLocations={() => setShowManageLocations(true)} />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <div className="mb-6 flex flex-wrap gap-3">
-          <div className="w-full relative">
+        <div className="mb-6 flex flex-col md:flex-row gap-3 items-start md:items-center">
+          {/* Search bar takes up remaining flexible space on desktop */}
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -191,19 +192,20 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#024CDB] focus:border-transparent"
             />
           </div>
-          <div className="flex gap-3 ml-auto">
-            
-            <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex items-center space-x-2 shrink-0">
+          
+          {/* Buttons anchor to the right on desktop, split 50/50 on mobile */}
+          <div className="flex gap-3 w-full md:w-auto shrink-0">
+            <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex-1 md:flex-none flex items-center justify-center space-x-2">
               <Mic className="w-4 h-4" />
               <span>Summariser</span>
             </button> 
-            
-            <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
+            <button onClick={() => setShowAddPatient(true)} className="btn-primary flex-1 md:flex-none flex items-center justify-center space-x-2">
               <Plus className="w-5 h-5" />
               <span>Appointment</span>
             </button>
           </div>
         </div>
+       
 
         <div className="space-y-10">
          <section>

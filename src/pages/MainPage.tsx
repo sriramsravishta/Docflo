@@ -195,7 +195,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             
             <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
               <Plus className="w-5 h-5" />
-              <span>New Appointment</span>
+              <span>Appointment</span>
             </button>
           </div>
         </div>

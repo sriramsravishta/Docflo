@@ -172,7 +172,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar onManageLocations={() => setShowManageLocations(true)} />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
         <div className="mb-6 flex flex-wrap gap-3">

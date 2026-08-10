@@ -80,6 +80,15 @@ interface MedicineDraft {
   flags?: string;
 }
 
+function formatEventDate(dt: string): string {
+  if (!dt || dt.toLowerCase() === 'unknown') return dt;
+  // Handle both "2026-08-08 13:43" (no TZ, treat as UTC) and full ISO with TZ
+  const normalized = /[zZ+]|[+-]\d{2}:?\d{2}$/.test(dt) ? dt : dt.replace(' ', 'T') + 'Z';
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return dt;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function PatientProfile() {
   const { patientId } = useParams<{ patientId: string }>();
   const { user } = useAuth();

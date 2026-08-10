@@ -1007,7 +1007,22 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 .man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
 @page{margin-top:160px;margin-bottom:100px;margin-left:12mm;margin-right:12mm}
 @media print{body{margin:0}}
-</style></head><body>${htmlContent}<script>setTimeout(function(){window.focus();window.print()},300);window.onafterprint=function(){window.close()};</script></body></html>`);
+</style></head><body>${htmlContent}<script>
+  var imgs = document.querySelectorAll('img');
+  var total = imgs.length;
+  if (total === 0) { window.focus(); window.print(); }
+  var loaded = 0;
+  imgs.forEach(function(img) {
+    if (img.complete) { loaded++; if (loaded === total) { window.focus(); window.print(); } }
+    else {
+      img.onload = img.onerror = function() {
+        loaded++;
+        if (loaded === total) { window.focus(); window.print(); }
+      };
+    }
+  });
+  window.onafterprint = function(){ window.close(); };
+</script></body></html>`);
     printWindow.document.close();
   };
 

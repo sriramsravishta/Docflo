@@ -130,6 +130,7 @@ export interface ConsultSummary {
   history?: string;
   examination_findings?: string[] | string;
   followup_recommendations?: string[] | string;
+  attached_diet_charts?: string[];
   key_personal_insights?: string[] | string;
   flags_for_review?: string[];
 }

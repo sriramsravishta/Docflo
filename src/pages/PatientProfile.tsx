@@ -1001,7 +1001,7 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
             </div>
             {(event.location || event.event_datetime) && (
               <p className="text-sm text-gray-600 mb-4">
-                {event.event_datetime ? formatDate(event.event_datetime) : '—'}
+                {event.event_datetime ? formatEventDate(event.event_datetime) : '—'}
                 {event.location && event.event_datetime ? ' • ' : ''}
                 {event.location || ''}
               </p>

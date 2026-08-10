@@ -297,42 +297,47 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
       </div>
 
       <Modal isOpen={showAddPatient} onClose={handleCloseModal} title="Add New Patient">
-        <form
+       <form
           onSubmit={(e) => { e.preventDefault(); onSubmitForm(); }}
-          className="space-y-4"
+          className="flex flex-col gap-5"
         >
           {formError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{formError}</div>
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              value={newPatient.phone}
-              onChange={(e) => { const v = e.target.value; if (v === '' || /^[0-9+]*$/.test(v)) handlePhoneChange(v); }}
-              className="input-field"
-              required
-            />
-            {existingPatient && <p className="text-sm text-green-600 mt-1">Patient found! Details auto-filled.</p>}
+
+          {/* Group 1: Contact & Identity */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={newPatient.phone}
+                onChange={(e) => { const v = e.target.value; if (v === '' || /^[0-9+]*$/.test(v)) handlePhoneChange(v); }}
+                className="input-field"
+                required
+              />
+              {existingPatient && <p className="text-xs text-green-600 mt-1">Patient found! Details auto-filled.</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newPatient.name}
+                onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+                readOnly={!!existingPatient}
+                required
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newPatient.name}
-              onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-              className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
-              readOnly={!!existingPatient}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          {/* Group 2: Demographics */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age <span className="text-red-500">*</span>
@@ -363,62 +368,62 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               </select>
             </div>
           </div>
-{/* CHANGED: Added UHID field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              UHID <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={newPatient.uhid}
-              onChange={(e) => setNewPatient({ ...newPatient, uhid: e.target.value })}
-              // CHANGED: read-only only if existing patient already HAS a uhid
-              // if existing patient has no uhid, allow editing so it can be saved
-              className={`input-field ${existingPatient && existingPatient.uhid ? 'bg-gray-50' : ''}`}
-              readOnly={!!(existingPatient && existingPatient.uhid)}
-            />
+
+          {/* Group 3: Clinical Identifiers */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UHID <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={newPatient.uhid}
+                onChange={(e) => setNewPatient({ ...newPatient, uhid: e.target.value })}
+                className={`input-field ${existingPatient && existingPatient.uhid ? 'bg-gray-50' : ''}`}
+                readOnly={!!(existingPatient && existingPatient.uhid)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referred By <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={referredBy}
+                onChange={(e) => setReferredBy(e.target.value)}
+                className="input-field"
+              />
+            </div>
           </div>
 
-         {/* CHANGED: Added Referred By field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Referred By <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={referredBy}
-              onChange={(e) => setReferredBy(e.target.value)}
-              className="input-field"
-            />
+          {/* Group 4: Appointment Logistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <LocationSelect
+                locations={locations}
+                value={newLocationId}
+                onChange={setNewLocationId}
+                onCreate={handleCreateLocation}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date &amp; Time <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={newScheduledAt}
+                onChange={(e) => setNewScheduledAt(e.target.value)}
+                className="input-field"
+              />
+            </div>
           </div>
 
-          {/* CHANGED: Added Location field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <LocationSelect
-              locations={locations}
-              value={newLocationId}
-              onChange={setNewLocationId}
-              onCreate={handleCreateLocation}
-            />
-          </div>
-
-          {/* CHANGED: Added Date & Time field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date &amp; Time <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="datetime-local"
-              value={newScheduledAt}
-              onChange={(e) => setNewScheduledAt(e.target.value)}
-              className="input-field"
-            />
-          </div>
-
-          <div className="flex space-x-3 justify-end pt-4">
+          {/* Actions */}
+          <div className="flex space-x-3 justify-end pt-4 mt-2 border-t border-gray-100">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>

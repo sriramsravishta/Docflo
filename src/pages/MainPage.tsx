@@ -207,7 +207,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         </div>
        
 
-        <div className="space-y-10">
+        <div className="space-y-20">
          <section>
             {/* TABS NAVIGATION */}
             <div className="border-b border-gray-200 mb-6 mt-2">

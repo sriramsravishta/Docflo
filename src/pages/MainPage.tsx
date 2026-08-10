@@ -44,6 +44,7 @@ export default function MainPage() {
   } = useMainPageData(user?.id);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming'>('today'); // ADDED: Tracks the active tab
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string } | null>(null); // CHANGED: added uhid to type
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
@@ -56,7 +57,10 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const [showManageLocations, setShowManageLocations] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentRow | null>(null);
 
-  const filteredTodaysAppointments = todaysAppointments.filter((appointment) => {
+ // dynamically switch data based on the selected tab
+  const activeAppointments = activeTab === 'today' ? todaysAppointments : upcomingAppointments;
+
+  const filteredActiveAppointments = activeAppointments.filter((appointment) => {
     const name = (appointment.patients?.name ?? '').toLowerCase();
     return name.includes(searchQuery.toLowerCase());
   });
@@ -65,22 +69,22 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const sortByWhenDesc = (a: AppointmentRow, b: AppointmentRow) =>
     new Date(appointmentWhen(b)).getTime() - new Date(appointmentWhen(a)).getTime();
 
-  const sortedTodaysAppointments = [...filteredTodaysAppointments].sort(sortByWhenDesc);
-  const pendingTodaysAppointments = sortedTodaysAppointments.filter((a) => a.completed !== true);
+  const sortedActiveAppointments = [...filteredActiveAppointments].sort(sortByWhenDesc);
+  const pendingActiveAppointments = sortedActiveAppointments.filter((a) => a.completed !== true);
 
-  const hasAnyLocation = filteredTodaysAppointments.some((a) => a.location_id);
+  const hasAnyLocation = filteredActiveAppointments.some((a) => a.location_id);
   const locationGroups = (() => {
     if (!hasAnyLocation) return [];
     const matched = new Set<string>();
     const groups: { key: string; name: string; items: AppointmentRow[] }[] = [];
     locations.forEach((loc) => {
-      const items = filteredTodaysAppointments.filter((a) => a.location_id === loc.id);
+      const items = filteredActiveAppointments.filter((a) => a.location_id === loc.id);
       if (items.length) {
         items.forEach((i) => matched.add(i.id));
         groups.push({ key: loc.id, name: loc.name, items: [...items].sort(sortByWhenDesc) });
       }
     });
-    const others = filteredTodaysAppointments.filter((a) => !matched.has(a.id));
+    const others = filteredActiveAppointments.filter((a) => !matched.has(a.id));
     if (others.length) groups.push({ key: 'other', name: 'Other', items: [...others].sort(sortByWhenDesc) });
     return groups;
   })();

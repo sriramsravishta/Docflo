@@ -7,7 +7,6 @@ interface NavbarProps {
   showBack?: boolean;
   onManageLocations?: () => void;
 }
-}
 
 export default function Navbar({ showBack = false, onManageLocations }: NavbarProps) {
   const { user, signOut } = useAuth();

@@ -907,7 +907,32 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     // Fallback to Auth metadata if the database fetch fails
     const finalDoctorName = fetchedDoctorName || user?.user_metadata?.display_name || user?.user_metadata?.name || '—';
 
-    const htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName);
+    let htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName);
+
+    // Append diet chart image pages if attached
+    const attachedChartNames = (selectedConsult.consult_summary_final as any)?.attached_diet_charts || [];
+    if (attachedChartNames.length > 0) {
+      try {
+        const { data: chartData } = await supabase
+          .from('diet_charts')
+          .select('name, file_urls')
+          .eq('doc_id', user!.id)
+          .in('name', attachedChartNames);
+
+        if (chartData && chartData.length > 0) {
+          for (const chart of chartData) {
+            for (const url of (chart.file_urls || [])) {
+              htmlContent += `<div style="page-break-before: always; text-align: center; padding: 0;">
+                <img src="${url}" style="width: 100%; max-width: 794px;" />
+              </div>`;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching diet charts for PDF:', e);
+      }
+    }
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
     printWindow.document.open();

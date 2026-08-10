@@ -1004,6 +1004,14 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
     }
     return (
       <div className="space-y-4">
+        {pmhEvent && (
+          <div className="bg-blue-50/60 border border-blue-100 rounded-lg px-4 py-3">
+            <p className="text-xs font-semibold text-blue-900/80 uppercase tracking-wide mb-2">
+              Patient Background
+            </p>
+            {renderBulletSummary(pmhEvent.summary)}
+          </div>
+        )}
         {timeline.map((event, index) => (
           <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-0.5">

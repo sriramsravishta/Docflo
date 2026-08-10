@@ -25,7 +25,7 @@ export function formatDateShort(dateString: string): string {
   return date.toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
+    day: '2-digit',
   });
 }
 

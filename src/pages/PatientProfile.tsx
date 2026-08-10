@@ -36,7 +36,10 @@ import {
   searchMedicines,
   updateConsultSummary,
   getAppointmentByConsultId, // CHANGED: added for PDF referred_by lookup
+  getLocations, // CHANGED: for patient locations multi-select
 } from '../lib/database';
+import LocationMultiSelect from '../components/features/LocationMultiSelect';
+import type { LocationRow } from '../types/db';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -128,6 +131,8 @@ export default function PatientProfile() {
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
   const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
+  const [editLocationIds, setEditLocationIds] = useState<string[]>([]); // CHANGED: patient locations
+  const [locations, setLocations] = useState<LocationRow[]>([]); // CHANGED: available locations
 
   useEffect(() => {
     if (patient) {
@@ -139,8 +144,14 @@ export default function PatientProfile() {
         gender: patient.gender,
         uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
       });
+      setEditLocationIds((patient as { location_ids?: string[] | null }).location_ids || []); // CHANGED: populate locations
     }
   }, [patient]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getLocations(user.id).then(setLocations).catch((e) => console.error('Error loading locations:', e)); // CHANGED
+  }, [user?.id]);
 
   const [selectedConsult, setSelectedConsult] = useState<ConsultRow | null>(null);
   const [isEditingConsult, setIsEditingConsult] = useState(false);
@@ -283,6 +294,7 @@ export default function PatientProfile() {
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
         uhid: editForm.uhid || undefined, // CHANGED: save uhid
+        location_ids: editLocationIds, // CHANGED: save patient locations
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -1696,6 +1708,18 @@ else{
               onChange={(e) => setEditForm({ ...editForm, uhid: e.target.value })}
               className="input-field"
               placeholder="e.g., UHID-00123"
+            />
+          </div>
+
+          {/* CHANGED: Added Locations multi-select to edit modal */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Locations <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <LocationMultiSelect
+              locations={locations}
+              selectedIds={editLocationIds}
+              onChange={setEditLocationIds}
             />
           </div>
 

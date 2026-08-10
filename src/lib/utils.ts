@@ -29,6 +29,30 @@ export function formatDateShort(dateString: string): string {
   });
 }
 
+// Short combined date + time, e.g. "08 Aug, 2:30 PM"
+export function formatDateTimeShort(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  const day = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  const time = date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${day}, ${time}`;
+}
+
+// Time only, e.g. "2:30 PM"
+export function formatTimeShort(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  return date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// Convert an ISO timestamp to a value usable by <input type="datetime-local">
+export function toDatetimeLocalValue(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
 export function formatRecordingTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;

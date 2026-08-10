@@ -1,3 +1,13 @@
+export interface LocationRow {
+  id: string;
+  doc_id: string;
+  name: string;
+  address?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PatientRow {
   id: string;
   doc_id: string;
@@ -8,6 +18,7 @@ export interface PatientRow {
   phone: string;
   case?: string | null;
   last_visit_at?: string | null;
+  location_ids?: string[] | null;
   created_at: string;
 }
 
@@ -18,6 +29,8 @@ export interface AppointmentRow {
   queue: number;
   completed: boolean;
   pre_consult_filled: boolean;
+  location_id?: string | null;
+  scheduled_at?: string | null;
   created_at: string;
   patients?: Pick<PatientRow, 'id' | 'name' | 'age' | 'gender' | 'phone' | 'last_visit_at' | 'case'>;
 }

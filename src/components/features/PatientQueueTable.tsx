@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronUp, ChevronDown, Trash2, ChevronRight } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, ChevronRight, CalendarClock } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
+import { formatDateTimeShort, formatTimeShort } from '../../lib/utils';
 
 interface Appointment {
   id: string;
@@ -9,6 +10,9 @@ interface Appointment {
   completed: boolean;
   pre_consult_filled: boolean;
   queue: number;
+  scheduled_at?: string | null;
+  created_at?: string;
+  location_id?: string | null;
   patients?: {
     name: string;
     age: number;
@@ -24,11 +28,14 @@ interface PatientQueueTableProps {
   onMoveUp: (a: Appointment) => void;
   onMoveDown: (a: Appointment) => void;
   onRemove: (a: Appointment) => void;
+  onReschedule?: (a: Appointment) => void;
   showKebabMenu: string | null;
   setShowKebabMenu: (id: string | null) => void;
   formatDate: (s: string) => string;
   showActions?: boolean;
 }
+
+const appointmentWhen = (a: Appointment): string | undefined => a.scheduled_at || a.created_at;
 
 function MobileRow({
   appointment,
@@ -36,6 +43,7 @@ function MobileRow({
   onMoveUp,
   onMoveDown,
   onRemove,
+  onReschedule,
   showKebabMenu,
   setShowKebabMenu,
   formatDate,
@@ -46,6 +54,7 @@ function MobileRow({
   onMoveUp: (a: Appointment) => void;
   onMoveDown: (a: Appointment) => void;
   onRemove: (a: Appointment) => void;
+  onReschedule?: (a: Appointment) => void;
   showKebabMenu: string | null;
   setShowKebabMenu: (id: string | null) => void;
   formatDate: (s: string) => string;
@@ -69,12 +78,14 @@ function MobileRow({
           <ChevronRight
             className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
           />
-          <span className="font-medium text-gray-900 truncate">
-  {p?.name}
-</span>
+          <div className="min-w-0">
+            <span className="font-medium text-gray-900 truncate block">{p?.name}</span>
+            {appointmentWhen(appointment) && (
+              <span className="text-xs text-gray-500">{formatTimeShort(appointmentWhen(appointment)!)}</span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1.5 ml-2 shrink-0">
-          <StatusBadge done={appointment.pre_consult_filled} trueLabel="Pre-consult" falseLabel="Pre-consult" compact />
           <StatusBadge done={appointment.completed} trueLabel="Consult" falseLabel="Consult" compact />
         </div>
       </div>
@@ -82,16 +93,16 @@ function MobileRow({
       {expanded && (
         <div className="border-t border-gray-100 px-4 pb-4 pt-3 space-y-2.5">
           <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Date</span>
+            <span className="text-gray-900">{appointmentWhen(appointment) ? formatDateTimeShort(appointmentWhen(appointment)!) : '—'}</span>
+          </div>
+          <div className="flex justify-between text-sm">
             <span className="text-gray-500">Age & Gender</span>
             <span className="text-gray-900">{p?.age}yrs · {p?.gender}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Last Visit</span>
             <span className="text-gray-900">{p?.last_visit_at ? formatDate(p.last_visit_at) : '—'}</span>
-          </div>
-          <div className="flex justify-between text-sm items-center">
-            <span className="text-gray-500">Pre-Consultation</span>
-            <StatusBadge done={appointment.pre_consult_filled} />
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-gray-500">Consultation</span>
@@ -125,6 +136,17 @@ function MobileRow({
       Delete
     </button>
 
+    {onReschedule && (
+      <button
+        type="button"
+        onClick={() => onReschedule(appointment)}
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+      >
+        <CalendarClock className="w-4 h-4" />
+        Reschedule
+      </button>
+    )}
+
     <button
       type="button"
       onClick={() => navigate(`/patient/${appointment.patient_id}`)}
@@ -156,6 +178,7 @@ export default function PatientQueueTable({
   onMoveUp,
   onMoveDown,
   onRemove,
+  onReschedule,
   showKebabMenu,
   setShowKebabMenu,
   formatDate,
@@ -172,10 +195,10 @@ export default function PatientQueueTable({
         <table className="w-full"> 
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tl-xl">Name</th>
+              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tl-xl">Date</th>
+              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Name</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Age & Gender</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Last Visit</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pre-Consultation</th>
               <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Consultation</th>
 
 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 rounded-tr-xl w-[160px]">
@@ -196,12 +219,14 @@ export default function PatientQueueTable({
   onClick={() => navigate(`/patient/${apt.patient_id}`)}
   className="group hover:bg-gray-50 cursor-pointer transition-colors"
 >
+                  <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                    {appointmentWhen(apt) ? formatDateTimeShort(appointmentWhen(apt)!) : <span className="text-gray-400">—</span>}
+                  </td>
                   <td className="px-4 py-3 font-medium text-gray-900">{p?.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p?.age}yrs · {p?.gender}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {p?.last_visit_at ? formatDate(p.last_visit_at) : <span className="text-gray-400">—</span>}
                   </td>
-                  <td className="px-4 py-3"><StatusBadge done={apt.pre_consult_filled} /></td>
                   <td className="px-4 py-3"><StatusBadge done={apt.completed} /></td>
                   <td className="px-4 py-3 w-[160px]" onClick={(e) => e.stopPropagation()}>
   {canShowActions && (
@@ -236,6 +261,18 @@ export default function PatientQueueTable({
         <span className="sr-only">Move Down</span>
       </button>
 
+      {onReschedule && (
+        <button
+          type="button"
+          title="Reschedule"
+          onClick={(e) => { e.stopPropagation(); onReschedule(apt); }}
+          className="p-1 rounded-md hover:bg-gray-100"
+        >
+          <CalendarClock className="w-4 h-4 text-gray-500" />
+          <span className="sr-only">Reschedule</span>
+        </button>
+      )}
+
       <button
         type="button"
         title="Delete"
@@ -264,6 +301,7 @@ export default function PatientQueueTable({
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
             onRemove={onRemove}
+            onReschedule={onReschedule}
             showKebabMenu={showKebabMenu}
             setShowKebabMenu={setShowKebabMenu}
             formatDate={formatDate}

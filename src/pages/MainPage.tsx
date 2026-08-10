@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Plus, Search, FileText, Mic } from 'lucide-react';
+import { Plus, Search, Mic, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientQueueTable from '../components/features/PatientQueueTable';
 import AllPatientsTable from '../components/features/AllPatientsTable';
+import LocationSelect from '../components/features/LocationSelect';
+import ManageLocationsModal from '../components/features/ManageLocationsModal';
+import RescheduleModal from '../components/features/RescheduleModal';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import { useMainPageData } from '../hooks/useMainPageData';
 import { useAuth } from '../contexts/AuthContext';
 import { getPatientByPhone } from '../lib/database';
+import type { AppointmentRow } from '../types/db';
 
 export default function MainPage() {
   const { user } = useAuth();
@@ -19,6 +23,7 @@ export default function MainPage() {
     loading,
     todaysAppointments,
     allPatients,
+    locations,
     patientsCount,
     prescriptionsCount,
     loadData,
@@ -27,6 +32,10 @@ export default function MainPage() {
     handleConfirmRemove,
     handleCreatePatient,
     handleAddToQueue,
+    handleReschedule,
+    handleCreateLocation,
+    handleUpdateLocation,
+    handleDeleteLocation,
     checkExistingAppointment,
     formError,
     setFormError,
@@ -41,13 +50,39 @@ export default function MainPage() {
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
   const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
+  const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
+  const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time
+  const [showManageLocations, setShowManageLocations] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentRow | null>(null);
 
   const filteredTodaysAppointments = todaysAppointments.filter((appointment) => {
     const name = (appointment.patients?.name ?? '').toLowerCase();
     return name.includes(searchQuery.toLowerCase());
   });
 
-  const pendingTodaysAppointments = filteredTodaysAppointments.filter((a) => a.completed !== true);
+  const appointmentWhen = (a: AppointmentRow) => a.scheduled_at || a.created_at;
+  const sortByWhenDesc = (a: AppointmentRow, b: AppointmentRow) =>
+    new Date(appointmentWhen(b)).getTime() - new Date(appointmentWhen(a)).getTime();
+
+  const sortedTodaysAppointments = [...filteredTodaysAppointments].sort(sortByWhenDesc);
+  const pendingTodaysAppointments = sortedTodaysAppointments.filter((a) => a.completed !== true);
+
+  const hasAnyLocation = filteredTodaysAppointments.some((a) => a.location_id);
+  const locationGroups = (() => {
+    if (!hasAnyLocation) return [];
+    const matched = new Set<string>();
+    const groups: { key: string; name: string; items: AppointmentRow[] }[] = [];
+    locations.forEach((loc) => {
+      const items = filteredTodaysAppointments.filter((a) => a.location_id === loc.id);
+      if (items.length) {
+        items.forEach((i) => matched.add(i.id));
+        groups.push({ key: loc.id, name: loc.name, items: [...items].sort(sortByWhenDesc) });
+      }
+    });
+    const others = filteredTodaysAppointments.filter((a) => !matched.has(a.id));
+    if (others.length) groups.push({ key: 'other', name: 'Other', items: [...others].sort(sortByWhenDesc) });
+    return groups;
+  })();
 
   const filteredAllPatients = allPatients.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -82,6 +117,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     setShowAddPatient(false);
     setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
     setReferredBy(''); // CHANGED: reset referredBy
+    setNewLocationId(''); // CHANGED: reset location
+    setNewScheduledAt(''); // CHANGED: reset date & time
     setExistingPatient(null);
     setFormError('');
   };
@@ -114,7 +151,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
       if (!checkExistingAppointment(existingPatient.id)) {
         // CHANGED: pass uhidToSave only if existing patient has no uhid and user entered one
         const uhidToSave = !existingPatient.uhid && newPatient.uhid ? newPatient.uhid : undefined;
-        const success = await handleAddToQueue(existingPatient, user!.id, referredBy, uhidToSave); // CHANGED: use returned boolean
+        const scheduledIso = newScheduledAt ? new Date(newScheduledAt).toISOString() : undefined;
+        const success = await handleAddToQueue(existingPatient, user!.id, referredBy, uhidToSave, newLocationId || undefined, scheduledIso); // CHANGED: use returned boolean
         if (success) { // CHANGED: check returned value, not stale formError
           handleCloseModal();
           await loadData();
@@ -123,7 +161,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         setFormError('This patient already has an appointment today!');
       }
     } else {
-      const success = await handleCreatePatient(newPatient, user!.id, referredBy); // CHANGED: use returned boolean
+      const scheduledIso = newScheduledAt ? new Date(newScheduledAt).toISOString() : undefined;
+      const success = await handleCreatePatient(newPatient, user!.id, referredBy, newLocationId || undefined, scheduledIso); // CHANGED: use returned boolean
       if (success) { // CHANGED: check returned value, not stale formError
         handleCloseModal();
         await loadData();
@@ -156,14 +195,25 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             
             <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">
               <Plus className="w-5 h-5" />
-              <span>Patient</span>
+              <span>New Appointment</span>
             </button>
           </div>
         </div>
 
         <div className="space-y-10">
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Patient Queue</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Today's Patient Queue</h2>
+              <button
+                type="button"
+                onClick={() => setShowManageLocations(true)}
+                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                title="Manage Locations"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="sr-only">Manage Locations</span>
+              </button>
+            </div>
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">
@@ -180,13 +230,39 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               <div className="flex justify-center py-8"><Spinner size="md" /></div>
             ) : filteredTodaysAppointments.length === 0 ? (
               <EmptyState message="No appointments scheduled for today" />
+            ) : hasAnyLocation ? (
+              <div className="space-y-8">
+                {locationGroups.map((group) => (
+                  <div key={group.key}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-base font-semibold text-gray-900">{group.name}</h3>
+                      <span className="inline-flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">
+                        {group.items.length}
+                      </span>
+                    </div>
+                    <PatientQueueTable
+                      appointments={group.items}
+                      pendingOnly={group.items.filter((a) => a.completed !== true)}
+                      onMoveUp={onMoveUp}
+                      onMoveDown={onMoveDown}
+                      onRemove={handleRemoveClick}
+                      onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
+                      showKebabMenu={showKebabMenu}
+                      setShowKebabMenu={setShowKebabMenu}
+                      formatDate={formatDate}
+                      showActions={true}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
               <PatientQueueTable
-                appointments={filteredTodaysAppointments}
+                appointments={sortedTodaysAppointments}
                 pendingOnly={pendingTodaysAppointments}
                 onMoveUp={onMoveUp}
                 onMoveDown={onMoveDown}
                 onRemove={handleRemoveClick}
+                onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
                 showKebabMenu={showKebabMenu}
                 setShowKebabMenu={setShowKebabMenu}
                 formatDate={formatDate}
@@ -316,6 +392,32 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             />
           </div>
 
+          {/* CHANGED: Added Location field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Location <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <LocationSelect
+              locations={locations}
+              value={newLocationId}
+              onChange={setNewLocationId}
+              onCreate={handleCreateLocation}
+            />
+          </div>
+
+          {/* CHANGED: Added Date & Time field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date &amp; Time <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={newScheduledAt}
+              onChange={(e) => setNewScheduledAt(e.target.value)}
+              className="input-field"
+            />
+          </div>
+
           <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
@@ -346,6 +448,26 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         confirmText="Remove"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      <ManageLocationsModal
+        isOpen={showManageLocations}
+        onClose={() => setShowManageLocations(false)}
+        locations={locations}
+        onCreate={handleCreateLocation}
+        onUpdate={handleUpdateLocation}
+        onDelete={handleDeleteLocation}
+      />
+
+      <RescheduleModal
+        isOpen={!!rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        patientName={rescheduleTarget?.patients?.name}
+        currentValue={rescheduleTarget?.scheduled_at || rescheduleTarget?.created_at}
+        onSubmit={async (iso) => {
+          if (!rescheduleTarget) return false;
+          return await handleReschedule(rescheduleTarget.id, iso);
+        }}
       />
     </div>
   );

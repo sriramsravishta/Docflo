@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { LocationRow } from '../types/db';
 
 // ✅ Helper: get "today" start/end based on your local time (IST)
 function getTodayBoundsISO() {
@@ -133,6 +134,7 @@ export const updatePatient = async (patientId: string, updates: Partial<{
   gender: string;
   last_visit_at: string;
   uhid: string; // CHANGED: added uhid so PatientProfile edit modal can save it
+  location_ids: string[]; // CHANGED: patient locations multi-select
 }>) => {
   const { data, error } = await supabase
     .from('patients')
@@ -539,7 +541,13 @@ export const updateConsultSummary = async (consultId: string, summaryUpdates: an
   return data;
 };
 
-export const createAppointment = async (patientId: string, docId: string, referredBy?: string) => { // CHANGED: added referredBy param
+export const createAppointment = async (
+  patientId: string,
+  docId: string,
+  referredBy?: string,
+  locationId?: string,
+  scheduledAt?: string
+) => { // CHANGED: added referredBy, locationId, scheduledAt params
   // Get next queue number for today
   const { startISO, endISO } = getTodayBoundsISO();
 
@@ -556,16 +564,32 @@ export const createAppointment = async (patientId: string, docId: string, referr
     ? existingAppointments[0].queue + 1 
     : 1;
 
+  const insertData: Record<string, unknown> = {
+    patient_id: patientId,
+    doc_id: docId,
+    queue: nextQueue,
+    pre_consult_filled: false,
+    completed: false,
+    referred_by: referredBy || null, // CHANGED: save referred_by, null if not provided
+    location_id: locationId || null, // CHANGED: save location
+  };
+  if (scheduledAt) insertData.scheduled_at = scheduledAt; // CHANGED: only set when provided, else DB default now()
+
   const { data, error } = await supabase
     .from('appointments')
-    .insert({
-      patient_id: patientId,
-      doc_id: docId,
-      queue: nextQueue,
-      pre_consult_filled: false,
-      completed: false,
-      referred_by: referredBy || null, // CHANGED: save referred_by, null if not provided
-    })
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateAppointmentSchedule = async (appointmentId: string, scheduledAt: string) => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ scheduled_at: scheduledAt })
+    .eq('id', appointmentId)
     .select()
     .single();
 
@@ -585,11 +609,12 @@ export const getTodaysAppointments = async (docId: string) => {
     `)
     .eq('doc_id', docId)
     // ✅ IMPORTANT: DO NOT filter completed here
-    .gte('created_at', startISO)
-.lte('created_at', endISO)
+    // CHANGED: today's list is now driven by scheduled_at (falls back to created_at via DB default)
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
     // ✅ pending first, then completed
     .order('completed', { ascending: true })
-    .order('queue', { ascending: true });
+    .order('scheduled_at', { ascending: false });
 
   if (error) throw error;
   return data || [];
@@ -875,5 +900,75 @@ export const saveDischargeSummaryEdits = async (
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);
+  if (error) throw error;
+};
+
+// --- Locations ---
+
+export const getLocations = async (docId: string): Promise<LocationRow[]> => {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('doc_id', docId)
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as LocationRow[];
+};
+
+export const createLocation = async (docId: string, name: string, address?: string): Promise<LocationRow> => {
+  const { data, error } = await supabase
+    .from('locations')
+    .insert({ doc_id: docId, name, address: address || null })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as LocationRow;
+};
+
+export const updateLocation = async (
+  id: string,
+  updates: Partial<{ name: string; address: string; is_active: boolean }>
+): Promise<LocationRow> => {
+  const { data, error } = await supabase
+    .from('locations')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as LocationRow;
+};
+
+export const deactivateLocation = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('locations')
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+// Append a location to a patient's location_ids array (read-then-write, deduped)
+export const addLocationToPatient = async (patientId: string, locationId: string): Promise<void> => {
+  const { data: patient, error: fetchError } = await supabase
+    .from('patients')
+    .select('location_ids')
+    .eq('id', patientId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+
+  const current: string[] = (patient?.location_ids as string[] | null) || [];
+  if (current.includes(locationId)) return;
+
+  const { error } = await supabase
+    .from('patients')
+    .update({ location_ids: [...current, locationId] })
+    .eq('id', patientId);
+
   if (error) throw error;
 };

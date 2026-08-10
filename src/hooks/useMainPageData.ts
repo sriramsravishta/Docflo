@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
-import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient, getPrescriptionsCount, getPatientsCount } from '../lib/database'; // CHANGED: added updatePatient
-import type { AppointmentRow, PatientRow } from '../types/db';
+import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient, getPrescriptionsCount, getPatientsCount, getLocations, createLocation, updateLocation, deactivateLocation, addLocationToPatient, updateAppointmentSchedule } from '../lib/database'; // CHANGED: added updatePatient + location helpers
+import type { AppointmentRow, PatientRow, LocationRow } from '../types/db';
 
 interface UseMainPageDataReturn {
   loading: boolean;
   todaysAppointments: AppointmentRow[];
   allPatients: PatientRow[];
+  locations: LocationRow[];
   patientsCount: number;
   prescriptionsCount: number;
   loadData: () => Promise<void>;
+  loadLocations: () => Promise<void>;
   handleMoveUp: (appointment: AppointmentRow) => Promise<void>;
   handleMoveDown: (appointment: AppointmentRow) => Promise<void>;
   handleConfirmRemove: (appointment: AppointmentRow) => Promise<void>;
-  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string) => Promise<boolean>; // CHANGED: returns boolean
-  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string, uhidToSave?: string) => Promise<boolean>; // CHANGED: added uhidToSave, returns boolean
+  handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string, locationId?: string, scheduledAt?: string) => Promise<boolean>; // CHANGED: returns boolean
+  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string, uhidToSave?: string, locationId?: string, scheduledAt?: string) => Promise<boolean>; // CHANGED: added uhidToSave, returns boolean
+  handleReschedule: (appointmentId: string, scheduledAt: string) => Promise<boolean>;
+  handleCreateLocation: (name: string) => Promise<LocationRow | null>;
+  handleUpdateLocation: (id: string, name: string) => Promise<boolean>;
+  handleDeleteLocation: (id: string) => Promise<boolean>;
   checkExistingAppointment: (patientId: string) => boolean;
   formError: string;
   setFormError: (e: string) => void;
@@ -27,6 +33,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   const [allPatients, setAllPatients] = useState<PatientRow[]>([]);
   const [patientsCount, setPatientsCount] = useState(0);
   const [prescriptionsCount, setPrescriptionsCount] = useState(0);
+  const [locations, setLocations] = useState<LocationRow[]>([]);
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,20 +41,31 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     if (!userId) return;
     try {
       setLoading(true);
-      const [appointments, patients, rxCount, patientsTotal] = await Promise.all([
+      const [appointments, patients, rxCount, patientsTotal, locs] = await Promise.all([
         getTodaysAppointments(userId),
         getPatients(),
         getPrescriptionsCount(),
         getPatientsCount(),
+        getLocations(userId),
       ]);
       setTodaysAppointments(appointments);
       setAllPatients(patients);
       setPrescriptionsCount(rxCount);
       setPatientsCount(patientsTotal);
+      setLocations(locs);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLocations = async () => {
+    if (!userId) return;
+    try {
+      setLocations(await getLocations(userId));
+    } catch (error) {
+      console.error('Error loading locations:', error);
     }
   };
 
@@ -106,7 +124,9 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   const handleCreatePatient = async (
     data: { phone: string; name: string; age: string; gender: string; uhid: string }, // CHANGED: added uhid
     userId: string,
-    referredBy?: string // CHANGED: added referredBy
+    referredBy?: string, // CHANGED: added referredBy
+    locationId?: string, // CHANGED: added location
+    scheduledAt?: string // CHANGED: added scheduled_at
   ): Promise<boolean> => { // CHANGED: returns boolean
     setFormError('');
     setIsSubmitting(true);
@@ -123,7 +143,10 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         gender: data.gender,
         uhid: data.uhid || undefined, // CHANGED: pass uhid to patient creation
       });
-      await createAppointment(patient.id, userId, referredBy || undefined); // CHANGED: pass referredBy to appointment
+      await createAppointment(patient.id, userId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // CHANGED: pass referredBy, location, scheduled_at
+      if (locationId) {
+        await addLocationToPatient(patient.id, locationId); // CHANGED: accumulate location on patient
+      }
       await loadData();
       return true; // CHANGED
     } catch (error) {
@@ -135,7 +158,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     }
   };
 
-  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string, uhidToSave?: string): Promise<boolean> => { // CHANGED: added uhidToSave, returns boolean
+  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string, uhidToSave?: string, locationId?: string, scheduledAt?: string): Promise<boolean> => { // CHANGED: added uhidToSave, location, scheduled_at, returns boolean
     setFormError('');
     setIsSubmitting(true);
     try {
@@ -146,7 +169,10 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
       if (uhidToSave) {
         await updatePatient(existingPatient.id, { uhid: uhidToSave }); // CHANGED: save uhid if provided
       }
-      await createAppointment(existingPatient.id, doctorId, referredBy || undefined); // FIXED: was patient.id + userId; CHANGED: pass referredBy
+      await createAppointment(existingPatient.id, doctorId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // FIXED: was patient.id + userId; CHANGED: pass referredBy, location, scheduled_at
+      if (locationId) {
+        await addLocationToPatient(existingPatient.id, locationId); // CHANGED: accumulate location on patient
+      }
       await loadData();
       return true; // CHANGED
     } catch (error) {
@@ -158,18 +184,69 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     }
   };
 
+  const handleReschedule = async (appointmentId: string, scheduledAt: string): Promise<boolean> => {
+    try {
+      await updateAppointmentSchedule(appointmentId, scheduledAt);
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      return false;
+    }
+  };
+
+  const handleCreateLocation = async (name: string): Promise<LocationRow | null> => {
+    if (!userId) return null;
+    try {
+      const created = await createLocation(userId, name);
+      await loadLocations();
+      return created;
+    } catch (error) {
+      console.error('Error creating location:', error);
+      return null;
+    }
+  };
+
+  const handleUpdateLocation = async (id: string, name: string): Promise<boolean> => {
+    try {
+      await updateLocation(id, { name });
+      await loadLocations();
+      return true;
+    } catch (error) {
+      console.error('Error updating location:', error);
+      return false;
+    }
+  };
+
+  const handleDeleteLocation = async (id: string): Promise<boolean> => {
+    try {
+      await deactivateLocation(id);
+      await loadLocations();
+      return true;
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      return false;
+    }
+  };
+
   return {
     loading,
     todaysAppointments,
     allPatients,
+    locations,
     patientsCount,
     prescriptionsCount,
     loadData,
+    loadLocations,
     handleMoveUp,
     handleMoveDown,
     handleConfirmRemove,
     handleCreatePatient,
     handleAddToQueue,
+    handleReschedule,
+    handleCreateLocation,
+    handleUpdateLocation,
+    handleDeleteLocation,
     checkExistingAppointment,
     formError,
     setFormError,

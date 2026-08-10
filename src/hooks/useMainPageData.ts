@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { createPatient, getPatients, getTodaysAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient, getPrescriptionsCount, getPatientsCount, getLocations, createLocation, updateLocation, deactivateLocation, addLocationToPatient, updateAppointmentSchedule } from '../lib/database'; // CHANGED: added updatePatient + location helpers
+import { createPatient, getPatients, getTodaysAppointments, getUpcomingAppointments, createAppointment, getPatientByPhone, updateAppointmentQueue, completeAppointment, updatePatient, getPrescriptionsCount, getPatientsCount, getLocations, createLocation, updateLocation, deactivateLocation, addLocationToPatient, updateAppointmentSchedule } from '../lib/database';
 import type { AppointmentRow, PatientRow, LocationRow } from '../types/db';
 
 interface UseMainPageDataReturn {
   loading: boolean;
   todaysAppointments: AppointmentRow[];
+  upcomingAppointments: AppointmentRow[]; // ADDED: return type
   allPatients: PatientRow[];
   locations: LocationRow[];
   patientsCount: number;

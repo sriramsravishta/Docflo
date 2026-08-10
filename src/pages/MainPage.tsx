@@ -22,6 +22,7 @@ export default function MainPage() {
   const {
     loading,
     todaysAppointments,
+    upcomingAppointments = [], // ADDED: Pulling upcoming appointments
     allPatients,
     locations,
     patientsCount,

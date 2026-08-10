@@ -996,9 +996,10 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
   };
 
   const renderTimelineTab = () => {
-    const timeline = (Array.isArray(latestSummary?.summary?.timeline_of_medical_events) ? latestSummary!.summary.timeline_of_medical_events! : [])
-      .filter(e => e.event_type !== 'Past Medical History');
-    if (timeline.length === 0) {
+    const allEvents = Array.isArray(latestSummary?.summary?.timeline_of_medical_events) ? latestSummary!.summary.timeline_of_medical_events! : [];
+    const pmhEvent = allEvents.find(e => e.event_type === 'Past Medical History');
+    const timeline = allEvents.filter(e => e.event_type !== 'Past Medical History');
+    if (timeline.length === 0 && !pmhEvent) {
       return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No timeline events available</p></div>;
     }
     return (

@@ -1106,6 +1106,54 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
           )}
         </div>
       </div>
+      {/* Recording Player Modal */}
+      {showPlayer && consult?.recording_file && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowPlayer(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className="text-sm font-semibold text-slate-800">Consultation Recording</span>
+              </div>
+              <button
+                onClick={() => setShowPlayer(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                aria-label="Close player"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Context line */}
+            <p className="text-xs text-gray-400 mb-4">
+              {props.patient?.name} &nbsp;·&nbsp; {formatDate(consult.created_at)}
+            </p>
+
+            {/* Audio player */}
+            <audio
+              controls
+              className="w-full rounded-lg"
+              style={{ colorScheme: 'light' }}
+              preload="metadata"
+              src={consult.recording_file}
+            >
+              Your browser does not support audio playback.
+            </audio>
+
+            <p className="text-xs text-gray-400 mt-3 text-center">
+              For medico-legal reference only · Docflo
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

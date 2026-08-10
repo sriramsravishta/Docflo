@@ -195,7 +195,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             
             <button onClick={() => navigate('/clinical-summariser')} className="btn-secondary flex items-center space-x-2 shrink-0">
               <Mic className="w-4 h-4" />
-              <span>Clinical Summariser</span>
+              <span>Summariser</span>
             </button> 
             
             <button onClick={() => setShowAddPatient(true)} className="btn-primary flex items-center space-x-2 shrink-0">

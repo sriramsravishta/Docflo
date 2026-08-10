@@ -43,14 +43,16 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     if (!userId) return;
     try {
       setLoading(true);
-      const [appointments, patients, rxCount, patientsTotal, locs] = await Promise.all([
+      const [appointments, upcoming, patients, rxCount, patientsTotal, locs] = await Promise.all([
         getTodaysAppointments(userId),
+        getUpcomingAppointments(userId), // ADDED: Fetch future appointments
         getPatients(),
         getPrescriptionsCount(),
         getPatientsCount(),
         getLocations(userId),
       ]);
       setTodaysAppointments(appointments);
+      setUpcomingAppointments(upcoming); // ADDED: Set the state
       setAllPatients(patients);
       setPrescriptionsCount(rxCount);
       setPatientsCount(patientsTotal);

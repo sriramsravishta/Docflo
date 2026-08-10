@@ -631,8 +631,8 @@ export async function getUpcomingAppointments(userId: string) {
       *,
       patients (*)
     `)
-    .eq('doctor_id', userId)
-    .gte('scheduled_at', tomorrow.toISOString()) // Only fetch dates greater than or equal to tomorrow
+    .eq('doc_id', userId) // FIXED: Changed doctor_id to doc_id to match your database schema
+    .gte('scheduled_at', tomorrow.toISOString()) 
     .order('scheduled_at', { ascending: true });
 
   if (error) {

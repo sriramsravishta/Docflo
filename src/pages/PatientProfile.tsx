@@ -851,6 +851,16 @@ const resetDrafts: Record<string, MedicineDraft> = {};
   }
 }
 
+    // Attached diet charts — note in PDF
+    const attachedCharts = (summary as any)?.attached_diet_charts;
+    if (Array.isArray(attachedCharts) && attachedCharts.length > 0) {
+      content += `
+        <div class="section" style="margin-top: 24px; padding: 12px; border: 1px solid #d1fae5; background: #f0fdf4; border-radius: 8px;">
+          <p style="font-size: 11px; color: #166534; font-weight: 600;">📎 Diet Chart Attached — See following pages</p>
+        </div>
+      `;
+    }
+    
     // CHANGED: Follow-up Recommendations — only if data exists
     if (summary.followup_recommendations) {
       const fu = summary.followup_recommendations;

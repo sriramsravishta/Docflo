@@ -11,7 +11,7 @@ import type {
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return dateString;
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

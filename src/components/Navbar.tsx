@@ -1,13 +1,15 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { User, LogOut, ArrowLeft, Heart } from 'lucide-react';
+import { User, LogOut, ArrowLeft, Heart, Settings } from 'lucide-react';
 
 interface NavbarProps {
   showBack?: boolean;
+  onManageLocations?: () => void;
+}
 }
 
-export default function Navbar({ showBack = false }: NavbarProps) {
+export default function Navbar({ showBack = false, onManageLocations }: NavbarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
@@ -59,6 +61,18 @@ export default function Navbar({ showBack = false }: NavbarProps) {
                   <Heart className="w-4 h-4" />
                   <span>Favourites</span>
                 </button>
+                
+                {/* New Manage Locations Button */}
+                {onManageLocations && (
+                  <button
+                    onClick={() => { setShowMenu(false); onManageLocations(); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-gray-700"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Manage Locations</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-gray-700"

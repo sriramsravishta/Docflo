@@ -801,6 +801,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
   }, [summary]);
 
   const [flagsOpen, setFlagsOpen] = useState(true);
+  const [showPlayer, setShowPlayer] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -819,6 +820,19 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
     <div className="mt-3 flex flex-wrap gap-2 md:hidden">
       {!isEditing ? (
         <>
+          {consult?.recording_file && (
+            <button
+              onClick={() => setShowPlayer(true)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="5" />
+                <path fillOpacity="0.25" d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" />
+              </svg>
+              <span>Listen</span>
+            </button>
+          )}
+
           <button
             onClick={onStartEdit}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -863,6 +877,18 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
     <div className="hidden md:flex items-center gap-2">
       {!isEditing ? (
         <>
+          {consult?.recording_file && (
+            <button
+              onClick={() => setShowPlayer(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="5" />
+                <path fillOpacity="0.25" d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" />
+              </svg>
+              <span>Listen</span>
+            </button>
+          )}
           <button
             onClick={onStartEdit}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"

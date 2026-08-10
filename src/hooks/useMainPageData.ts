@@ -31,6 +31,7 @@ interface UseMainPageDataReturn {
 export function useMainPageData(userId: string | undefined): UseMainPageDataReturn {
   const [loading, setLoading] = useState(true);
   const [todaysAppointments, setTodaysAppointments] = useState<AppointmentRow[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<AppointmentRow[]>([]); // ADDED: state variable
   const [allPatients, setAllPatients] = useState<PatientRow[]>([]);
   const [patientsCount, setPatientsCount] = useState(0);
   const [prescriptionsCount, setPrescriptionsCount] = useState(0);

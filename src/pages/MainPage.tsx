@@ -206,27 +206,54 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         </div>
 
         <div className="space-y-10">
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Today's Patient Queue</h2>
-              
+         <section>
+            {/* TABS NAVIGATION */}
+            <div className="border-b border-gray-200 mb-6 mt-2">
+              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                <button
+                  onClick={() => setActiveTab('today')}
+                  className={`${
+                    activeTab === 'today'
+                      ? 'border-[#024CDB] text-[#024CDB]'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                >
+                  Today ({todaysAppointments.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`${
+                    activeTab === 'upcoming'
+                      ? 'border-[#024CDB] text-[#024CDB]'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                >
+                  Upcoming ({upcomingAppointments.length})
+                </button>
+              </nav>
             </div>
+
+            {/* DYNAMIC ANALYTICS HEADERS */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Patients Today</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.length}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    {activeTab === 'today' ? 'Total Patients Today' : 'Total Upcoming'}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{activeAppointments.length}</p>
                 </div>
                 <div className="flex-1 px-6 py-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consultations Left</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.filter((a) => a.completed !== true).length}</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{activeAppointments.filter((a) => a.completed !== true).length}</p>
                 </div>
               </div>
             </div>
+
+            {/* DYNAMIC LIST */}
             {loading ? (
               <div className="flex justify-center py-8"><Spinner size="md" /></div>
-            ) : filteredTodaysAppointments.length === 0 ? (
-              <EmptyState message="No appointments scheduled for today" />
+            ) : filteredActiveAppointments.length === 0 ? (
+              <EmptyState message={`No appointments scheduled for ${activeTab === 'today' ? 'today' : 'the future'}`} />
             ) : hasAnyLocation ? (
               <div className="space-y-8">
                 {locationGroups.map((group) => (
@@ -254,8 +281,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               </div>
             ) : (
               <PatientQueueTable
-                appointments={sortedTodaysAppointments}
-                pendingOnly={pendingTodaysAppointments}
+                appointments={sortedActiveAppointments}
+                pendingOnly={pendingActiveAppointments}
                 onMoveUp={onMoveUp}
                 onMoveDown={onMoveDown}
                 onRemove={handleRemoveClick}

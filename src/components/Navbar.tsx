@@ -68,7 +68,7 @@ export default function Navbar({ showBack = false, onManageLocations }: NavbarPr
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-gray-700"
                   >
                     <Settings className="w-4 h-4" />
-                    <span>Manage Locations</span>
+                    <span>Locations</span>
                   </button>
                 )}
 

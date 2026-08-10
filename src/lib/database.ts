@@ -620,6 +620,28 @@ export const getTodaysAppointments = async (docId: string) => {
   return data || [];
 };
 
+export async function getUpcomingAppointments(userId: string) {
+  // Get the start of tomorrow to only show future appointments
+  const tomorrow = new Date();
+  tomorrow.setHours(24, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(`
+      *,
+      patients (*)
+    `)
+    .eq('doctor_id', userId)
+    .gte('scheduled_at', tomorrow.toISOString()) // Only fetch dates greater than or equal to tomorrow
+    .order('scheduled_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching upcoming appointments:', error);
+    throw error;
+  }
+  return data;
+}
+
 
 export const updateAppointmentQueue = async (appointmentId: string, newQueue: number) => {
   const { data, error } = await supabase

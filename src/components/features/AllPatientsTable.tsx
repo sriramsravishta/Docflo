@@ -121,7 +121,7 @@ export default function AllPatientsTable({
   return (
     <>
       {/* Filter bar */}
-      <div className="flex items-center justify-end -mt-10 mb-3">
+      <div className="flex items-center justify-end mb-3">
         <div className="flex items-center gap-2">
           {hasActiveFilter && (
             <button

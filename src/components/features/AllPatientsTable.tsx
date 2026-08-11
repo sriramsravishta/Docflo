@@ -120,30 +120,7 @@ export default function AllPatientsTable({
 
   return (
     <>
-      {/* Filter bar */}
-      <div className="flex items-center justify-end mb-3">
-        <div className="flex items-center gap-2">
-          {hasActiveFilter && (
-            <button
-              onClick={clearFilter}
-              className="text-xs text-gray-500 hover:text-gray-700 underline"
-            >
-              Clear filter
-            </button>
-          )}
-          <button
-            onClick={() => setShowFilter(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-              hasActiveFilter
-                ? 'bg-[#024CDB] text-white border-[#024CDB]'
-                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-            Filter
-          </button>
-        </div>
-      </div>
+      
 
       {/* Filter modal */}
       {showFilter && (

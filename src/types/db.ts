@@ -53,7 +53,22 @@ export interface ConsultRow {
   recording_transcript?: string | null;
   consult_summary_ai?: string | null;
   consult_summary_final?: Record<string, unknown> | string | null;
+  type?: 'consultation' | 'ot_note';
+  status?: string;
+  updated_at?: string;
   created_at: string;
+}
+
+export interface OTNoteSummary {
+  procedure_name?: string;
+  indications?: string;
+  anesthesia_type?: string;
+  intraoperative_findings?: string[];
+  procedure_steps?: string[];
+  complications?: string;
+  estimated_blood_loss?: string;
+  specimens_sent?: string;
+  post_op_instructions?: string[];
 }
 
 export interface ConsultMedicineRow {

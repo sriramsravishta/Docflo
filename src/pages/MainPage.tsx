@@ -647,7 +647,12 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 Clear
               </button>
               <button
-                onClick={() => setShowPatientFilter(false)}
+                onClick={() => {
+                  setAppliedFilterDate(patientFilterDate);
+                  setAppliedFilterFrom(patientFilterFrom);
+                  setAppliedFilterTo(patientFilterTo);
+                  setShowPatientFilter(false);
+                }}
                 className="flex-1 btn-primary text-sm"
               >
                 Apply

@@ -205,13 +205,14 @@ export const updatePreConsult = async (id: string, updates: any) => {
   return data;
 };
 
-export const createConsult = async (docId: string, patientId: string, recordingFile: string) => {
+export const createConsult = async (docId: string, patientId: string, recordingFile: string, type: 'consultation' | 'ot_note' = 'consultation') => {
   const { data, error } = await supabase
     .from('consult')
     .insert({
       doc_id: docId,
       patient_id: patientId,
       recording_file: recordingFile,
+      type,
     })
     .select()
     .single();

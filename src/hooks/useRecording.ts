@@ -142,5 +142,10 @@ if (finalChunks.length > 0) {
     }
   };
 
-  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording };
+  const handleStartRecordingWithMode = async (mode: 'consultation' | 'ot_note') => {
+    setRecordingMode(mode);
+    await handleStartRecording();
+  };
+
+  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, recordingMode, handleStartRecordingWithMode };
 }

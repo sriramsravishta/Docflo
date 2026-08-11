@@ -311,52 +311,52 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
            
            {activeTab !== 'summary' && (
-
-            {/* DYNAMIC LIST */}
-            {loading ? (
-              <div className="flex justify-center py-8"><Spinner size="md" /></div>
-            ) : filteredActiveAppointments.length === 0 ? (
-              <EmptyState message={`No appointments scheduled for ${activeTab === 'today' ? 'today' : 'the future'}`} />
-            ) : hasAnyLocation ? (
-              <div className="space-y-8">
-                {locationGroups.map((group) => (
-                  <div key={group.key}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <h3 className="text-base font-semibold text-gray-900">{group.name}</h3>
-                      <span className="inline-flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">
-                        {group.items.length}
-                      </span>
-                    </div>
-                    <PatientQueueTable
-                      appointments={group.items}
-                      pendingOnly={group.items.filter((a) => a.completed !== true)}
-                      onMoveUp={onMoveUp}
-                      onMoveDown={onMoveDown}
-                      onRemove={handleRemoveClick}
-                      onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
-                      showKebabMenu={showKebabMenu}
-                      setShowKebabMenu={setShowKebabMenu}
-                      formatDate={formatDate}
-                      showActions={true}
-                    />
+              <div>
+                {loading ? (
+                  <div className="flex justify-center py-8"><Spinner size="md" /></div>
+                ) : filteredActiveAppointments.length === 0 ? (
+                  <EmptyState message={`No appointments scheduled for ${activeTab === 'today' ? 'today' : 'the future'}`} />
+                ) : hasAnyLocation ? (
+                  <div className="space-y-8">
+                    {locationGroups.map((group) => (
+                      <div key={group.key}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-base font-semibold text-gray-900">{group.name}</h3>
+                          <span className="inline-flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">
+                            {group.items.length}
+                          </span>
+                        </div>
+                        <PatientQueueTable
+                          appointments={group.items}
+                          pendingOnly={group.items.filter((a) => a.completed !== true)}
+                          onMoveUp={onMoveUp}
+                          onMoveDown={onMoveDown}
+                          onRemove={handleRemoveClick}
+                          onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
+                          showKebabMenu={showKebabMenu}
+                          setShowKebabMenu={setShowKebabMenu}
+                          formatDate={formatDate}
+                          showActions={true}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <PatientQueueTable
+                    appointments={sortedActiveAppointments}
+                    pendingOnly={pendingActiveAppointments}
+                    onMoveUp={onMoveUp}
+                    onMoveDown={onMoveDown}
+                    onRemove={handleRemoveClick}
+                    onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
+                    showKebabMenu={showKebabMenu}
+                    setShowKebabMenu={setShowKebabMenu}
+                    formatDate={formatDate}
+                    showActions={true}
+                  />
+                )}
               </div>
-            ) : (
-              <PatientQueueTable
-                appointments={sortedActiveAppointments}
-                pendingOnly={pendingActiveAppointments}
-                onMoveUp={onMoveUp}
-                onMoveDown={onMoveDown}
-                onRemove={handleRemoveClick}
-                onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
-                showKebabMenu={showKebabMenu}
-                setShowKebabMenu={setShowKebabMenu}
-                formatDate={formatDate}
-                showActions={true}
-              />
             )}
-            )} {/* closes activeTab !== 'summary' */}
 
             {activeTab === 'summary' && user?.id && (
               <SummaryTab docId={user.id} />

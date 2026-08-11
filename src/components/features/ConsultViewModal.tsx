@@ -1222,6 +1222,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
               <div className="h-6" />
             </div>
+            )
           ) : (
             <div className="p-6">
               <ProcessingState consult={consult} uiNow={uiNow} onRetryOptimistic={onRetryOptimistic} />

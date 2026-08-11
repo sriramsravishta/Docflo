@@ -183,3 +183,40 @@ export interface InvestigationItem {
   body_part_or_type?: string;
   priority?: string;
 }
+
+export type OutcomeStatus =
+  | 'prescription_only'
+  | 'investigation_ordered'
+  | 'procedure_advised'
+  | 'procedure_agreed'
+  | 'follow_up_scheduled'
+  | 'referred_out';
+
+export type SurgeryStatus = 'pending' | 'scheduled' | 'completed' | 'cancelled';
+
+export interface ConsultOutcomeRow {
+  id: string;
+  consult_id: string;
+  patient_id: string;
+  doc_id: string;
+  outcome_status: OutcomeStatus;
+  action_needed?: string | null;
+  follow_up_date?: string | null;
+  surgery_date?: string | null;
+  surgery_status?: SurgeryStatus | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  consult?: {
+    id: string;
+    created_at: string;
+    consult_summary_final?: Record<string, unknown> | string | null;
+  };
+  patients?: {
+    id: string;
+    name: string;
+    age: number;
+    gender: string;
+    phone: string;
+  };
+}

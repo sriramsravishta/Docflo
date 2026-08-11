@@ -157,7 +157,7 @@ export default function PatientProfileHeader({
               >
                 {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                 <span className="text-sm">{isPaused ? 'Resume' : 'Pause'}</span>
-              </button>
+              </button> 
             </>
           ) : (
             <>

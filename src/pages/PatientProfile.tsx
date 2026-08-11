@@ -1512,6 +1512,62 @@ else{
     );
   };
 
+  const renderOTNotesTab = () => {
+    const otNotes = consultations.filter(c => (c as any).type === 'ot_note');
+    if (otNotes.length === 0) {
+      return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No OT notes recorded</p></div>;
+    }
+    return (
+      <div className="flex flex-wrap gap-3">
+        {otNotes.map((consult) => {
+          const otSummary = getConsultSummary(consult) as any;
+          const procedureName = otSummary?.procedure_name || 'OT Note';
+          return (
+            <div
+              key={consult.id}
+              onClick={() => { handleCancelEdit(); setSelectedConsult(consult); }}
+              className="bg-white border border-purple-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow min-w-[350px] max-w-[500px] flex-1"
+            >
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900">{formatDate(consult.created_at)}</p>
+                  <p className="text-sm text-purple-700 mt-1 font-medium">{procedureName}</p>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                  {isConsultProcessed(consult) ? (
+                    <div className="flex items-center gap-2 text-sm text-purple-600">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-50">✓</span>
+                      <span className="font-medium">Processed</span>
+                    </div>
+                  ) : isConsultError(consult, uiNow) ? (
+                    <div className="flex items-center gap-2 text-sm text-red-600">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-50">!</span>
+                      <span className="font-medium">Error</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-9 h-9">
+                        <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                          <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                          <path className="text-purple-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${getProgressPercent(consult, uiNow)}, 100`} strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{getProgressPercent(consult, uiNow)}%</div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-medium text-gray-700">Processing</p>
+                        <p className="text-[11px] text-gray-500">{getProgressPercent(consult, uiNow)}% completed</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">

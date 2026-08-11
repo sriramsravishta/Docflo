@@ -1458,7 +1458,8 @@ else{
   };
 
   const renderPastSummariesTab = () => {
-    if (consultations.length === 0) {
+    const consultOnly = consultations.filter(c => (c as any).type !== 'ot_note');
+    if (consultOnly.length === 0) {
       return <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg"><p className="text-gray-500">No past consultations available</p></div>;
     }
     return (

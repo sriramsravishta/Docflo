@@ -121,10 +121,9 @@ export default function AllPatientsTable({
   return (
     <>
       {/* Filter bar */}
-      <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">All Patients</h2>
-              <div id="all-patients-filter-anchor" />
-            </div>
+      <div className="flex items-center justify-end mb-3">
+        <div className="flex items-center gap-2">
+          {hasActiveFilter && (
             <button
               onClick={clearFilter}
               className="text-xs text-gray-500 hover:text-gray-700 underline"

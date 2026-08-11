@@ -6,8 +6,6 @@ import { getOutcomes, updateOutcome } from '../../lib/database';
 import Spinner from '../ui/Spinner';
 import type { ConsultOutcomeRow, OutcomeStatus, SurgeryStatus } from '../../types/db';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
 function getTodayBounds() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -28,13 +26,6 @@ function safeGetDiagnosis(row: ConsultOutcomeRow): string {
   } catch {
     return '—';
   }
-}
-
-function formatShortDate(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatTime(iso: string): string {
@@ -70,15 +61,11 @@ const SURGERY_STATUS_LABELS: Record<SurgeryStatus, string> = {
 
 type SubTab = 'all' | 'surgery' | 'investigation_ordered' | 'follow_up_scheduled' | 'prescription_only' | 'referred_out';
 
-// ─── component ──────────────────────────────────────────────────────────────
-
 export default function SummaryTab({ docId }: { docId: string }) {
   const navigate = useNavigate();
   const [outcomes, setOutcomes] = useState<ConsultOutcomeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('all');
-
-  // date filter
   const [showFilter, setShowFilter] = useState(false);
   const [filterMode, setFilterMode] = useState<'today' | 'specific' | 'range'>('today');
   const [filterDate, setFilterDate] = useState('');
@@ -88,8 +75,6 @@ export default function SummaryTab({ docId }: { docId: string }) {
   const [appliedDate, setAppliedDate] = useState('');
   const [appliedFrom, setAppliedFrom] = useState('');
   const [appliedTo, setAppliedTo] = useState('');
-
-  // inline edit saving state
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const fetchOutcomes = useCallback(async () => {
@@ -133,7 +118,6 @@ export default function SummaryTab({ docId }: { docId: string }) {
     fetchOutcomes();
   }, [fetchOutcomes]);
 
-  // realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('consult-outcomes-watch')
@@ -166,26 +150,24 @@ export default function SummaryTab({ docId }: { docId: string }) {
 
   const hasActiveFilter = appliedMode !== 'today';
 
-  // subtab filtering
   const filtered = outcomes.filter((o) => {
     if (activeSubTab === 'all') return true;
     if (activeSubTab === 'surgery') return o.outcome_status === 'procedure_advised' || o.outcome_status === 'procedure_agreed';
     return o.outcome_status === activeSubTab;
   });
 
-  // counts
   const counts = {
     all: outcomes.length,
-    surgery: outcomes.filter(o => o.outcome_status === 'procedure_advised' || o.outcome_status === 'procedure_agreed').length,
-    investigation_ordered: outcomes.filter(o => o.outcome_status === 'investigation_ordered').length,
-    follow_up_scheduled: outcomes.filter(o => o.outcome_status === 'follow_up_scheduled').length,
-    prescription_only: outcomes.filter(o => o.outcome_status === 'prescription_only').length,
-    referred_out: outcomes.filter(o => o.outcome_status === 'referred_out').length,
+    surgery: outcomes.filter((o) => o.outcome_status === 'procedure_advised' || o.outcome_status === 'procedure_agreed').length,
+    investigation_ordered: outcomes.filter((o) => o.outcome_status === 'investigation_ordered').length,
+    follow_up_scheduled: outcomes.filter((o) => o.outcome_status === 'follow_up_scheduled').length,
+    prescription_only: outcomes.filter((o) => o.outcome_status === 'prescription_only').length,
+    referred_out: outcomes.filter((o) => o.outcome_status === 'referred_out').length,
   };
 
   const handleFieldUpdate = async (id: string, field: string, value: unknown) => {
     setSavingId(id);
-    setOutcomes(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o));
+    setOutcomes((prev) => prev.map((o) => (o.id === id ? { ...o, [field]: value } : o)));
     try {
       await updateOutcome(id, { [field]: value } as Parameters<typeof updateOutcome>[1]);
     } catch (e) {
@@ -206,11 +188,10 @@ export default function SummaryTab({ docId }: { docId: string }) {
 
   return (
     <div className="space-y-4">
-
       {/* Sub-tabs + filter row */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
-          {subTabs.map(tab => (
+          {subTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveSubTab(tab.key)}
@@ -316,7 +297,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                           onChange={(e) => handleFieldUpdate(row.id, 'outcome_status', e.target.value)}
                           className={`text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${OUTCOME_PILL[row.outcome_status]}`}
                         >
-                          {(Object.keys(OUTCOME_LABELS) as OutcomeStatus[]).map(s => (
+                          {(Object.keys(OUTCOME_LABELS) as OutcomeStatus[]).map((s) => (
                             <option key={s} value={s}>{OUTCOME_LABELS[s]}</option>
                           ))}
                         </select>
@@ -325,11 +306,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                         <input
                           type="text"
                           defaultValue={row.action_needed || ''}
-                          onBlur={(e) => {
-                            if (e.target.value !== (row.action_needed || '')) {
-                              handleFieldUpdate(row.id, 'action_needed', e.target.value || null);
-                            }
-                          }}
+                          onBlur={(e) => { if (e.target.value !== (row.action_needed || '')) { handleFieldUpdate(row.id, 'action_needed', e.target.value || null); } }}
                           className="text-sm text-gray-700 w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-[#024CDB] focus:outline-none py-0.5 min-w-[120px]"
                           placeholder="—"
                         />
@@ -338,11 +315,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                         <input
                           type="date"
                           defaultValue={row.follow_up_date || ''}
-                          onBlur={(e) => {
-                            if (e.target.value !== (row.follow_up_date || '')) {
-                              handleFieldUpdate(row.id, 'follow_up_date', e.target.value || null);
-                            }
-                          }}
+                          onBlur={(e) => { if (e.target.value !== (row.follow_up_date || '')) { handleFieldUpdate(row.id, 'follow_up_date', e.target.value || null); } }}
                           className="text-sm text-gray-700 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-[#024CDB] focus:outline-none py-0.5"
                         />
                       </td>
@@ -352,11 +325,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                             <input
                               type="date"
                               defaultValue={row.surgery_date || ''}
-                              onBlur={(e) => {
-                                if (e.target.value !== (row.surgery_date || '')) {
-                                  handleFieldUpdate(row.id, 'surgery_date', e.target.value || null);
-                                }
-                              }}
+                              onBlur={(e) => { if (e.target.value !== (row.surgery_date || '')) { handleFieldUpdate(row.id, 'surgery_date', e.target.value || null); } }}
                               className="text-sm text-gray-700 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-[#024CDB] focus:outline-none py-0.5 block"
                             />
                             {row.surgery_date && (
@@ -365,7 +334,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                                 onChange={(e) => handleFieldUpdate(row.id, 'surgery_status', e.target.value)}
                                 className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded px-1 py-0.5 mt-1"
                               >
-                                {(Object.keys(SURGERY_STATUS_LABELS) as SurgeryStatus[]).map(s => (
+                                {(Object.keys(SURGERY_STATUS_LABELS) as SurgeryStatus[]).map((s) => (
                                   <option key={s} value={s}>{SURGERY_STATUS_LABELS[s]}</option>
                                 ))}
                               </select>
@@ -379,11 +348,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                         <input
                           type="text"
                           defaultValue={row.notes || ''}
-                          onBlur={(e) => {
-                            if (e.target.value !== (row.notes || '')) {
-                              handleFieldUpdate(row.id, 'notes', e.target.value || null);
-                            }
-                          }}
+                          onBlur={(e) => { if (e.target.value !== (row.notes || '')) { handleFieldUpdate(row.id, 'notes', e.target.value || null); } }}
                           className="text-sm text-gray-700 w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-[#024CDB] focus:outline-none py-0.5 min-w-[120px]"
                           placeholder="Add notes…"
                         />
@@ -414,7 +379,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                     onChange={(e) => handleFieldUpdate(row.id, 'outcome_status', e.target.value)}
                     className={`text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer shrink-0 ${OUTCOME_PILL[row.outcome_status]}`}
                   >
-                    {(Object.keys(OUTCOME_LABELS) as OutcomeStatus[]).map(s => (
+                    {(Object.keys(OUTCOME_LABELS) as OutcomeStatus[]).map((s) => (
                       <option key={s} value={s}>{OUTCOME_LABELS[s]}</option>
                     ))}
                   </select>
@@ -426,11 +391,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
                     <input
                       type="text"
                       defaultValue={row.action_needed || ''}
-                      onBlur={(e) => {
-                        if (e.target.value !== (row.action_needed || '')) {
-                          handleFieldUpdate(row.id, 'action_needed', e.target.value || null);
-                        }
-                      }}
+                      onBlur={(e) => { if (e.target.value !== (row.action_needed || '')) { handleFieldUpdate(row.id, 'action_needed', e.target.value || null); } }}
                       className="w-full text-sm text-gray-700 border-b border-gray-200 focus:border-[#024CDB] focus:outline-none bg-transparent"
                       placeholder="—"
                     />
@@ -440,5 +401,88 @@ export default function SummaryTab({ docId }: { docId: string }) {
                     <input
                       type="date"
                       defaultValue={row.follow_up_date || ''}
-                      onBlur={(e) => {
-                        if
+                      onBlur={(e) => { if (e.target.value !== (row.follow_up_date || '')) { handleFieldUpdate(row.id, 'follow_up_date', e.target.value || null); } }}
+                      className="w-full text-sm text-gray-700 border-b border-gray-200 focus:border-[#024CDB] focus:outline-none bg-transparent"
+                    />
+                  </div>
+                  {(row.outcome_status === 'procedure_advised' || row.outcome_status === 'procedure_agreed') && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Surgery Date</p>
+                      <input
+                        type="date"
+                        defaultValue={row.surgery_date || ''}
+                        onBlur={(e) => { if (e.target.value !== (row.surgery_date || '')) { handleFieldUpdate(row.id, 'surgery_date', e.target.value || null); } }}
+                        className="w-full text-sm text-gray-700 border-b border-gray-200 focus:border-[#024CDB] focus:outline-none bg-transparent"
+                      />
+                    </div>
+                  )}
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500 mb-0.5">Notes</p>
+                    <input
+                      type="text"
+                      defaultValue={row.notes || ''}
+                      onBlur={(e) => { if (e.target.value !== (row.notes || '')) { handleFieldUpdate(row.id, 'notes', e.target.value || null); } }}
+                      className="w-full text-sm text-gray-700 border-b border-gray-200 focus:border-[#024CDB] focus:outline-none bg-transparent"
+                      placeholder="Add notes…"
+                    />
+                  </div>
+                </div>
+                {savingId === row.id && <p className="text-xs text-[#024CDB]">Saving…</p>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Date filter modal */}
+      {showFilter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setShowFilter(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-gray-900">Filter by Date</h3>
+              <button onClick={() => setShowFilter(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
+              {(['today', 'specific', 'range'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setFilterMode(m)}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${filterMode === m ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  {m === 'today' ? 'Today' : m === 'specific' ? 'Date' : 'Range'}
+                </button>
+              ))}
+            </div>
+            {filterMode === 'specific' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="input-field" />
+              </div>
+            )}
+            {filterMode === 'range' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                  <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                  <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="input-field" />
+                </div>
+              </div>
+            )}
+            {filterMode === 'today' && (
+              <p className="text-sm text-gray-500 text-center py-2">Shows all outcomes from today</p>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button onClick={clearFilter} className="flex-1 btn-secondary text-sm">Clear</button>
+              <button onClick={applyFilter} className="flex-1 btn-primary text-sm">Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

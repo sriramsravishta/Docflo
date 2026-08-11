@@ -22,12 +22,13 @@ export function useRecording(
   patientId: string | undefined,
   userId: string | undefined,
   onRecordingComplete: () => void
-): UseRecordingReturn {
+): UseRecordingReturn & { recordingMode: 'consultation' | 'ot_note'; handleStartRecordingWithMode: (mode: 'consultation' | 'ot_note') => Promise<void> } {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
+  const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
   const clearToast = () => setToast(null);
 
   const handleStartRecording = async () => {

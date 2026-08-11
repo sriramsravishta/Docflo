@@ -1665,6 +1665,12 @@ else{
               {renderPastSummariesTab()}
             </section>
 
+            {/* OT Notes Section */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">OT Notes</h2>
+              {renderOTNotesTab()}
+            </section>
+
             <section>{renderHistoryTab()}</section>
           </div>
         </div>

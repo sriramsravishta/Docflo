@@ -1464,7 +1464,7 @@ else{
     }
     return (
       <div className="flex flex-wrap gap-3">
-        {consultations.map((consult) => (
+        {consultOnly.map((consult) => (
           <div
             key={consult.id}
             onClick={() => {

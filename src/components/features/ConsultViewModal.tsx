@@ -763,6 +763,8 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   } = props;
 
   const summary = getConsultSummary(consult) as ConsultSummary | null;
+  const isOTNote = (consult as any)?.type === 'ot_note';
+  const otSummary = isOTNote ? (summary as any) : null;
 
   // View text
   const viewFindings = useMemo(() => {
@@ -812,7 +814,9 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
   {/* Left: Title + time + (mobile buttons below) */}
   <div className="min-w-0 flex-1">
     <h2 className="text-xl font-semibold text-gray-900">
-      {isEditing ? 'Edit Consultation Summary' : 'Consultation Summary'}
+      {isOTNote
+        ? (isEditing ? 'Edit OT Note' : 'OT Note')
+        : (isEditing ? 'Edit Consultation Summary' : 'Consultation Summary')}
     </h2>
     <p className="text-sm text-gray-600">{formatDate(consult.created_at)}</p>
 

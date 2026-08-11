@@ -45,7 +45,7 @@ export default function MainPage() {
   } = useMainPageData(user?.id);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'today' | 'upcoming'>('today'); // ADDED: Tracks the active tab
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'summary'>('today');
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string } | null>(null); // CHANGED: added uhid to type
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
@@ -280,6 +280,16 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                 >
                   Upcoming ({upcomingAppointments.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('summary')}
+                  className={`${
+                    activeTab === 'summary'
+                      ? 'border-[#024CDB] text-[#024CDB]'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                >
+                  Summary
                 </button>
               </nav>
             </div>

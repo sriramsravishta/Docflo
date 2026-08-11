@@ -121,12 +121,7 @@ export default function AllPatientsTable({
   return (
     <>
       {/* Filter bar */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-500">
-          {hasActiveFilter
-            ? `${sortedPatients.length} patient${sortedPatients.length !== 1 ? 's' : ''} matching filter`
-            : `${patients.length} patient${patients.length !== 1 ? 's' : ''}`}
-        </p>
+      <div className="flex items-center justify-end mb-3">
         <div className="flex items-center gap-2">
           {hasActiveFilter && (
             <button

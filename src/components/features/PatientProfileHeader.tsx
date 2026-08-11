@@ -15,7 +15,9 @@ interface PatientProfileHeaderProps {
   isRecording: boolean;
   isPaused: boolean;
   recordingTime: number;
+  recordingMode?: 'consultation' | 'ot_note';
   onStartRecording: () => void;
+  onStartOTRecording: () => void;
   onEndRecording: () => void;
   onPauseRecording: () => void;
   onEditPatient: () => void;

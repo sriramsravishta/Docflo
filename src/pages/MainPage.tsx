@@ -309,6 +309,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </div>
               </div>
             </div>
+           
+           {activeTab !== 'summary' && (
 
             {/* DYNAMIC LIST */}
             {loading ? (
@@ -353,6 +355,11 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 formatDate={formatDate}
                 showActions={true}
               />
+            )}
+            )} {/* closes activeTab !== 'summary' */}
+
+            {activeTab === 'summary' && user?.id && (
+              <SummaryTab docId={user.id} />
             )}
           </section>
 

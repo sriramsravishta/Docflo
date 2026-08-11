@@ -995,3 +995,49 @@ export const addLocationToPatient = async (patientId: string, locationId: string
 
   if (error) throw error;
 };
+
+import type { ConsultOutcomeRow, OutcomeStatus, SurgeryStatus } from '../types/db';
+
+export const getOutcomes = async (
+  docId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<ConsultOutcomeRow[]> => {
+  let query = supabase
+    .from('consult_outcomes')
+    .select(`
+      *,
+      consult:consult_id (id, created_at, consult_summary_final),
+      patients:patient_id (id, name, age, gender, phone)
+    `)
+    .eq('doc_id', docId)
+    .order('created_at', { ascending: false });
+
+  if (startDate) query = query.gte('created_at', startDate);
+  if (endDate) query = query.lte('created_at', endDate);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []) as ConsultOutcomeRow[];
+};
+
+export const updateOutcome = async (
+  id: string,
+  updates: Partial<{
+    outcome_status: OutcomeStatus;
+    action_needed: string;
+    follow_up_date: string | null;
+    surgery_date: string | null;
+    surgery_status: SurgeryStatus | null;
+    notes: string | null;
+  }>
+): Promise<ConsultOutcomeRow> => {
+  const { data, error } = await supabase
+    .from('consult_outcomes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ConsultOutcomeRow;
+};

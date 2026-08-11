@@ -294,21 +294,20 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               </nav>
             </div>
 
-            {/* DYNAMIC ANALYTICS HEADERS */}
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
-              <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
-                <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {activeTab === 'today' ? 'Total Patients Today' : 'Total Upcoming'}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{activeAppointments.length}</p>
-                </div>
-                <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consultations Left</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{activeAppointments.filter((a) => a.completed !== true).length}</p>
+           {activeTab === 'today' && (
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+                <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+                  <div className="flex-1 px-6 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Patients Today</p>
+                    <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.length}</p>
+                  </div>
+                  <div className="flex-1 px-6 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consultations Left</p>
+                    <p className="mt-1 text-2xl font-semibold text-gray-900">{todaysAppointments.filter((a) => a.completed !== true).length}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
            
            {activeTab !== 'summary' && (
               <div>

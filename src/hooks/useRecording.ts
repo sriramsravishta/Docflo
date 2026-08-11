@@ -116,7 +116,7 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '');
+      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode);
       await updateConsult(consult.id, {
         recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
         consult_summary_ai: '',

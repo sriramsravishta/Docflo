@@ -581,7 +581,14 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Filter Patients by Visit Date</h3>
+           <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-gray-900">Filter Patients by Visit Date</h3>
+              <button onClick={() => setShowPatientFilter(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
               <button
                 onClick={() => { setPatientFilterMode('single'); setPatientFilterFrom(''); setPatientFilterTo(''); }}

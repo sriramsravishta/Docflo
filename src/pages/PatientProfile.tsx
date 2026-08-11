@@ -1545,7 +1545,9 @@ else{
           isRecording={isRecording}
           isPaused={isPaused}
           recordingTime={recordingTime}
-          onStartRecording={handleStartRecording}
+          recordingMode={recordingMode}
+          onStartRecording={() => handleStartRecordingWithMode('consultation')}
+          onStartOTRecording={() => handleStartRecordingWithMode('ot_note')}
           onEndRecording={handleEndRecording}
           onPauseRecording={handlePauseRecording}
           onEditPatient={() => setShowEditModal(true)}

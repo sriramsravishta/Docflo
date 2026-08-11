@@ -940,6 +940,108 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
           {summary ? (
+            isOTNote ? (
+              /* ── OT NOTE VIEW ── */
+              <div className="px-6 py-6 space-y-6">
+                {otSummary?.procedure_name === 'ROUTING_ERROR' && (
+                  <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                    <p className="text-sm font-medium text-amber-800">This recording was routed as an OT Note but appears to be a consultation. Please re-record using the Record button.</p>
+                  </div>
+                )}
+                <SectionCard title="Procedure">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText(editedConsult?.procedure_name) : (otSummary?.procedure_name || 'No procedure recorded')}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, procedure_name: v })}
+                    emptyText="No procedure recorded"
+                  />
+                </SectionCard>
+                <SectionCard title="Indications">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText(editedConsult?.indications) : (otSummary?.indications || 'No indications recorded')}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, indications: v })}
+                    emptyText="No indications recorded"
+                  />
+                </SectionCard>
+                {(isEditing || otSummary?.anesthesia_type) && (
+                  <SectionCard title="Anesthesia">
+                    <SyncedAutoBox
+                      isEditing={isEditing}
+                      text={isEditing ? toEditText(editedConsult?.anesthesia_type) : (otSummary?.anesthesia_type || '')}
+                      onChange={(v) => setEditedConsult({ ...editedConsult, anesthesia_type: v })}
+                      emptyText="Not specified"
+                    />
+                  </SectionCard>
+                )}
+                <SectionCard title="Intraoperative Findings">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText(editedConsult?.intraoperative_findings) : toPlainText(otSummary?.intraoperative_findings, 'No findings recorded')}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, intraoperative_findings: v })}
+                    emptyText="No findings recorded"
+                  />
+                </SectionCard>
+                <SectionCard title="Procedure Steps">
+                  <div className="px-3 py-2">
+                    {isEditing ? (
+                      <SyncedAutoBox
+                        isEditing={true}
+                        text={toEditText(editedConsult?.procedure_steps)}
+                        onChange={(v) => setEditedConsult({ ...editedConsult, procedure_steps: v })}
+                        emptyText="No steps recorded"
+                      />
+                    ) : (
+                      <ol className="list-decimal list-inside space-y-1 text-gray-700 text-[16px]">
+                        {(otSummary?.procedure_steps || []).map((step: string, i: number) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                        {(!otSummary?.procedure_steps || otSummary.procedure_steps.length === 0) && (
+                          <p className="text-gray-400">No steps recorded</p>
+                        )}
+                      </ol>
+                    )}
+                  </div>
+                </SectionCard>
+                <SectionCard title="Complications">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText(editedConsult?.complications) : (otSummary?.complications || 'None. Procedure was uneventful.')}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, complications: v })}
+                    emptyText="None. Procedure was uneventful."
+                  />
+                </SectionCard>
+                {(isEditing || otSummary?.estimated_blood_loss) && (
+                  <SectionCard title="Estimated Blood Loss">
+                    <SyncedAutoBox
+                      isEditing={isEditing}
+                      text={isEditing ? toEditText(editedConsult?.estimated_blood_loss) : (otSummary?.estimated_blood_loss || '')}
+                      onChange={(v) => setEditedConsult({ ...editedConsult, estimated_blood_loss: v })}
+                      emptyText="Not specified"
+                    />
+                  </SectionCard>
+                )}
+                {(isEditing || otSummary?.specimens_sent) && (
+                  <SectionCard title="Specimens Sent">
+                    <SyncedAutoBox
+                      isEditing={isEditing}
+                      text={isEditing ? toEditText(editedConsult?.specimens_sent) : (otSummary?.specimens_sent || '')}
+                      onChange={(v) => setEditedConsult({ ...editedConsult, specimens_sent: v })}
+                      emptyText="None"
+                    />
+                  </SectionCard>
+                )}
+                <SectionCard title="Post-op Instructions">
+                  <SyncedAutoBox
+                    isEditing={isEditing}
+                    text={isEditing ? toEditText(editedConsult?.post_op_instructions) : toPlainText(otSummary?.post_op_instructions, 'No instructions recorded')}
+                    onChange={(v) => setEditedConsult({ ...editedConsult, post_op_instructions: v })}
+                    emptyText="No instructions recorded"
+                  />
+                </SectionCard>
+                <div className="h-6" />
+              </div>
+            ) : (
             <div className="px-6 py-6 space-y-6">
               <SectionCard title="Diagnosis">
                 <SyncedAutoBox

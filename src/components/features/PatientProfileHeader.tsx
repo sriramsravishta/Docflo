@@ -134,44 +134,48 @@ export default function PatientProfileHeader({
           </button>
         </div>
 
-        {/* Row 2 on mobile: Start/Stop + Pause (Pause only shown when recording)
-            When Pause is absent, Start fills full width on mobile */}
+        {/* Row 2 on mobile: Recording buttons */}
         <div className="flex gap-3">
-          <button
-            onClick={isRecording ? onEndRecording : onStartRecording}
-            className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium sm:min-w-[150px] ${
-              isRecording ? 'flex-1 sm:flex-none' : 'w-full sm:w-auto'
-            } ${
-              isRecording
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
-            }`}
-          >
-            {isRecording ? (
-              <>
+          {isRecording ? (
+            <>
+              <button
+                onClick={onEndRecording}
+                className="flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-red-600 hover:bg-red-700 text-white"
+              >
                 <Square className="w-4 h-4" />
-                <span className="text-sm font-medium">{fmt(recordingTime)}</span>
-              </>
-            ) : (
-              <>
+                <span className="text-sm font-medium">
+                  {fmt(recordingTime)} {recordingMode === 'ot_note' ? '(OT)' : ''}
+                </span>
+              </button>
+              <button
+                onClick={onPauseRecording}
+                className={`flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium ${
+                  isPaused
+                    ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                }`}
+              >
+                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                <span className="text-sm">{isPaused ? 'Resume' : 'Pause'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onStartRecording}
+                className="flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-[#024CDB] hover:bg-[#023BA3] text-white"
+              >
                 <Mic className="w-4 h-4" />
-                <span className="text-sm font-medium">Start</span>
-              </>
-            )}
-          </button>
-
-          {isRecording && (
-            <button
-              onClick={onPauseRecording}
-              className={`flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium ${
-                isPaused
-                  ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-              }`}
-            >
-              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              <span className="text-sm">{isPaused ? 'Resume' : 'Pause'}</span>
-            </button>
+                <span className="text-sm font-medium">Record</span>
+              </button>
+              <button
+                onClick={onStartOTRecording}
+                className="flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Scissors className="w-4 h-4" />
+                <span className="text-sm font-medium">OT Note</span>
+              </button>
+            </>
           )}
         </div>
 

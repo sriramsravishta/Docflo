@@ -398,8 +398,14 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                   </p>
                 </div>
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prescriptions Created</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{prescriptionsCount}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    {hasActivePatientFilter ? 'Prescriptions (Filtered)' : 'Prescriptions Created'}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                    {hasActivePatientFilter
+                      ? filteredAllPatients.filter((p) => p.last_visit_at).length
+                      : prescriptionsCount}
+                  </p>
                 </div>
               </div>
             </div>

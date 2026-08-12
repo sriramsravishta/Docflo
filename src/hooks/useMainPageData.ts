@@ -126,7 +126,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   };
 
   const handleCreatePatient = async (
-    data: { phone: string; name: string; age: string; gender: string; uhid: string }, // CHANGED: added uhid
+    data: { phone: string; name: string; age: string; gender: string; uhid: string; address: string },
     userId: string,
     referredBy?: string, // CHANGED: added referredBy
     locationId?: string, // CHANGED: added location

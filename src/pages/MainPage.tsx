@@ -390,8 +390,12 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Number of Patients</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{patientsCount}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    {hasActivePatientFilter ? 'Patients (Filtered)' : 'Number of Patients'}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                    {hasActivePatientFilter ? filteredAllPatients.length : patientsCount}
+                  </p>
                 </div>
                 <div className="flex-1 px-6 py-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prescriptions Created</p>

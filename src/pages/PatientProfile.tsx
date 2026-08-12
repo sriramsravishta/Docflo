@@ -294,8 +294,9 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
-        uhid: editForm.uhid || undefined, // CHANGED: save uhid
-        location_ids: editLocationIds, // CHANGED: save patient locations
+        uhid: editForm.uhid || undefined,
+        address: editForm.address || undefined,
+        location_ids: editLocationIds,
       });
       setShowEditModal(false);
       await loadPatientData();

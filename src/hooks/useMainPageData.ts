@@ -145,7 +145,8 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         age: parseInt(data.age),
         phone: data.phone,
         gender: data.gender,
-        uhid: data.uhid || undefined, // CHANGED: pass uhid to patient creation
+        uhid: data.uhid || undefined,
+        address: data.address || undefined,
       });
       await createAppointment(patient.id, userId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // CHANGED: pass referredBy, location, scheduled_at
       if (locationId) {

@@ -29,6 +29,7 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewerDoc, setViewerDoc] = useState<{ url: string, name: string, type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = async () => {
@@ -66,7 +67,8 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
     setLoadingId(doc.id);
     try {
       const url = await getSignedDocumentUrl(doc.file_url);
-      window.open(url, '_blank');
+      // NEW: Instead of window.open, we save it to state to open the modal
+      setViewerDoc({ url, name: doc.file_name, type: doc.file_type || '' });
     } catch (e) {
       console.error('Error opening document:', e);
       alert('Failed to open document');

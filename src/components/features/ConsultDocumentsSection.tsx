@@ -168,6 +168,13 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
             ))}
           </div>
         )}
+        <DocumentViewerModal
+          isOpen={!!viewerDoc}
+          onClose={() => setViewerDoc(null)}
+          url={viewerDoc?.url || null}
+          fileName={viewerDoc?.name || ''}
+          fileType={viewerDoc?.type || ''}
+        />
       </div>
     </div>
   );

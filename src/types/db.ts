@@ -17,6 +17,7 @@ export interface PatientRow {
   gender: 'Male' | 'Female' | 'Other';
   phone: string;
   case?: string | null;
+  address?: string | null;
   last_visit_at?: string | null;
   location_ids?: string[] | null;
   created_at: string;

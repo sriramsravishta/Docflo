@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { LocationRow } from '../types/db';
+import type { LocationRow, ConsultDocumentRow } from '../types/db';
 
 // ✅ Helper: get "today" start/end based on your local time (IST)
 function getTodayBoundsISO() {

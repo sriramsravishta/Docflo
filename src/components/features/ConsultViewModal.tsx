@@ -1197,6 +1197,10 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 />
               </SectionCard>
 
+{props.userId && (
+                <ConsultDocumentsSection consultId={consult.id} docId={props.userId} />
+              )}
+              
               {/* Flags at the bottom */}
               {flags.length > 0 && (
                 <div className="border border-red-200 bg-red-50 rounded-lg overflow-hidden">

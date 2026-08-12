@@ -131,10 +131,11 @@ export const updatePatient = async (patientId: string, updates: Partial<{
   age: number;
   phone: string;
   case: string;
+  address: string;
   gender: string;
   last_visit_at: string;
-  uhid: string; // CHANGED: added uhid so PatientProfile edit modal can save it
-  location_ids: string[]; // CHANGED: patient locations multi-select
+  uhid: string;
+  location_ids: string[];
 }>) => {
   const { data, error } = await supabase
     .from('patients')

@@ -1764,6 +1764,19 @@ else{
             <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={editForm.address}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              className="input-field"
+              placeholder="e.g., Banjara Hills, Hyderabad"
+            />
+          </div>
+
           {/* CHANGED: Added UHID field to edit modal */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

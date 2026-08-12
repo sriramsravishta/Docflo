@@ -142,7 +142,8 @@ export default function PatientProfile() {
         phone: patient.phone,
         case: patient.case || '',
         gender: patient.gender,
-        uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
+        uhid: patient.uhid || '',
+        address: (patient as any).address || '',
       });
       setEditLocationIds((patient as { location_ids?: string[] | null }).location_ids || []); // CHANGED: populate locations
     }

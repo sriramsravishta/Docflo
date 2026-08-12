@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import DocumentViewerModal from './DocumentViewerModal';
-import { Upload, FileText, Trash2, Download, Loader2 } from 'lucide-react';
+import ConfirmationModal from '../ConfirmationModal';
+import { Upload, Trash2, Loader2 } from 'lucide-react';
 import { getConsultDocuments, uploadConsultDocument, getSignedDocumentUrl, deleteConsultDocument } from '../../lib/database';
 import type { ConsultDocumentRow } from '../../types/db';
 
@@ -29,7 +30,12 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  
   const [viewerDoc, setViewerDoc] = useState<{ url: string, name: string, type: string } | null>(null);
+  
+  // NEW: State to track which document we are about to delete
+  const [docToDelete, setDocToDelete] = useState<ConsultDocumentRow | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = async () => {
@@ -67,7 +73,6 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
     setLoadingId(doc.id);
     try {
       const url = await getSignedDocumentUrl(doc.file_url);
-      // NEW: Instead of window.open, we save it to state to open the modal
       setViewerDoc({ url, name: doc.file_name, type: doc.file_type || '' });
     } catch (e) {
       console.error('Error opening document:', e);
@@ -77,17 +82,19 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
     }
   };
 
-  const handleDelete = async (doc: ConsultDocumentRow) => {
-    if (!confirm(`Delete ${doc.file_name}?`)) return;
-    setDeletingId(doc.id);
+  // NEW: Custom delete function that triggers after the modal is confirmed
+  const confirmDelete = async () => {
+    if (!docToDelete) return;
+    setDeletingId(docToDelete.id);
     try {
-      await deleteConsultDocument(doc.id, doc.file_url);
+      await deleteConsultDocument(docToDelete.id, docToDelete.file_url);
       await load();
     } catch (e) {
       console.error('Error deleting document:', e);
       alert('Failed to delete');
     } finally {
       setDeletingId(null);
+      setDocToDelete(null); // Closes the confirmation modal
     }
   };
 
@@ -129,9 +136,11 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
         ) : (
           <div className="space-y-2">
             {documents.map((doc) => (
+              // NEW: The entire card is now clickable (cursor-pointer)
               <div
                 key={doc.id}
-                className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                onClick={() => handleView(doc)}
+                className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <span className="text-2xl shrink-0">{getFileIcon(doc.file_type)}</span>
                 <div className="flex-1 min-w-0">
@@ -140,20 +149,18 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
                     {formatFileSize(doc.file_size_bytes)} · {new Date(doc.uploaded_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
+                
+                {/* Shows a spinner on the right side if the document is currently loading to view */}
+                {loadingId === doc.id && (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400 mr-2" />
+                )}
+
+                {/* NEW: e.stopPropagation() prevents the card click from firing when clicking delete */}
                 <button
-                  onClick={() => handleView(doc)}
-                  disabled={loadingId === doc.id}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
-                  title="View"
-                >
-                  {loadingId === doc.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
-                  ) : (
-                    <Download className="w-4 h-4 text-gray-500" />
-                  )}
-                </button>
-                <button
-                  onClick={() => handleDelete(doc)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDocToDelete(doc);
+                  }}
                   disabled={deletingId === doc.id}
                   className="p-2 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                   title="Delete"
@@ -168,12 +175,25 @@ export default function ConsultDocumentsSection({ consultId, docId }: Props) {
             ))}
           </div>
         )}
+        
         <DocumentViewerModal
           isOpen={!!viewerDoc}
           onClose={() => setViewerDoc(null)}
           url={viewerDoc?.url || null}
           fileName={viewerDoc?.name || ''}
           fileType={viewerDoc?.type || ''}
+        />
+
+        {/* NEW: The Custom Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={!!docToDelete}
+          onClose={() => setDocToDelete(null)}
+          onConfirm={confirmDelete}
+          title="Delete Document"
+          message={`Are you sure you want to delete "${docToDelete?.file_name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
         />
       </div>
     </div>

@@ -1040,6 +1040,10 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     emptyText="No instructions recorded"
                   />
                 </SectionCard>
+                {props.userId && (
+                  <ConsultDocumentsSection consultId={consult.id} docId={props.userId} />
+                )}
+                <div className="h-6" />
                 <div className="h-6" />
               </div>
             ) : (

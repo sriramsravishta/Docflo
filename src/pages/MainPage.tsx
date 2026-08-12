@@ -493,6 +493,21 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
+         {/* Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={newPatient.address}
+              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+              className={`input-field ${existingPatient && existingPatient.address ? 'bg-gray-50' : ''}`}
+              readOnly={!!(existingPatient && (existingPatient as any).address)}
+              placeholder="e.g., Banjara Hills, Hyderabad"
+            />
+          </div>
+
           {/* Group 3: Clinical Identifiers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>

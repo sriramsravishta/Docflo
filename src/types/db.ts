@@ -221,3 +221,14 @@ export interface ConsultOutcomeRow {
     phone: string;
   };
 }
+
+export interface ConsultDocumentRow {
+  id: string;
+  consult_id: string;
+  doc_id: string;
+  file_url: string;
+  file_name: string;
+  file_type?: string | null;
+  file_size_bytes?: number | null;
+  uploaded_at: string;
+}

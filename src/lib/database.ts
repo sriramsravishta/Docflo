@@ -1043,3 +1043,67 @@ export const updateOutcome = async (
   if (error) throw error;
   return data as ConsultOutcomeRow;
 };
+
+// --- Consult Documents ---
+
+export const getConsultDocuments = async (consultId: string): Promise<ConsultDocumentRow[]> => {
+  const { data, error } = await supabase
+    .from('consult_documents')
+    .select('*')
+    .eq('consult_id', consultId)
+    .order('uploaded_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as ConsultDocumentRow[];
+};
+
+export const uploadConsultDocument = async (
+  docId: string,
+  consultId: string,
+  file: File
+): Promise<ConsultDocumentRow> => {
+  const timestamp = Date.now();
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `${docId}/${consultId}/${timestamp}-${sanitizedName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('consult-documents')
+    .upload(storagePath, file, {
+      contentType: file.type || 'application/octet-stream',
+      upsert: false,
+    });
+  if (uploadError) throw uploadError;
+
+  const { data: signed, error: signedError } = await supabase.storage
+    .from('consult-documents')
+    .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
+  if (signedError) throw signedError;
+
+  const { data, error } = await supabase
+    .from('consult_documents')
+    .insert({
+      consult_id: consultId,
+      doc_id: docId,
+      file_url: storagePath, // store the path, sign on read
+      file_name: file.name,
+      file_type: file.type || null,
+      file_size_bytes: file.size,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ConsultDocumentRow;
+};
+
+export const getSignedDocumentUrl = async (storagePath: string): Promise<string> => {
+  const { data, error } = await supabase.storage
+    .from('consult-documents')
+    .createSignedUrl(storagePath, 60 * 60); // 1 hour
+  if (error) throw error;
+  return data.signedUrl;
+};
+
+export const deleteConsultDocument = async (id: string, storagePath: string): Promise<void> => {
+  await supabase.storage.from('consult-documents').remove([storagePath]);
+  const { error } = await supabase.from('consult_documents').delete().eq('id', id);
+  if (error) throw error;
+};

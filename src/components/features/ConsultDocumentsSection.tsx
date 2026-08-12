@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import DocumentViewerModal from './DocumentViewerModal';
 import { Upload, FileText, Trash2, Download, Loader2 } from 'lucide-react';
 import { getConsultDocuments, uploadConsultDocument, getSignedDocumentUrl, deleteConsultDocument } from '../../lib/database';
 import type { ConsultDocumentRow } from '../../types/db';

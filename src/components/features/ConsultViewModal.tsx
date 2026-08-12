@@ -14,6 +14,7 @@ import {
 import { CreditCard as Edit } from 'lucide-react';
 
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
+import ConsultDocumentsSection from './ConsultDocumentsSection';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 
 import {

@@ -361,36 +361,27 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           <section>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-lg font-semibold text-gray-900">All Patients</h2>
-              <div className="flex items-center gap-2 flex-wrap">
-                {(hasActivePatientFilter || selectedDiagnoses.length > 0) && (
+              <div className="flex items-center gap-2">
+                {hasActiveFilters && (
                   <button
-                    onClick={() => { clearPatientFilter(); setSelectedDiagnoses([]); }}
+                    onClick={clearAllFilters}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
                     Clear all
                   </button>
                 )}
                 <button
-                  onClick={() => setShowDiagnosisFilter(true)}
+                  onClick={() => setShowFilters(true)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-                    selectedDiagnoses.length > 0
+                    hasActiveFilters
                       ? 'bg-[#024CDB] text-white border-[#024CDB]'
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <Filter className="w-4 h-4" />
-                  {selectedDiagnoses.length > 0 ? `Diagnosis (${selectedDiagnoses.length})` : 'Diagnosis'}
-                </button>
-                <button
-                  onClick={() => setShowPatientFilter(true)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-                    hasActivePatientFilter
-                      ? 'bg-[#024CDB] text-white border-[#024CDB]'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <Filter className="w-4 h-4" />
-                  Date
+                  {hasActiveFilters
+                    ? `Filters (${(appliedFilters.dateMode !== 'none' ? 1 : 0) + appliedFilters.diagnoses.length})`
+                    : 'Filter'}
                 </button>
               </div>
             </div>
@@ -424,10 +415,10 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </div>
                 <div className="flex-1 px-6 py-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {hasActivePatientFilter ? 'Prescriptions (Filtered)' : 'Prescriptions Created'}
+                    {hasActiveFilters ? 'Prescriptions (Filtered)' : 'Prescriptions Created'}
                   </p>
                   <p className="mt-1 text-2xl font-semibold text-gray-900">
-                    {hasActivePatientFilter
+                    {hasActiveFilters
                       ? filteredAllPatients.filter((p) => p.last_visit_at).length
                       : prescriptionsCount}
                   </p>

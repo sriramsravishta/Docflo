@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPatientByPhone } from '../lib/database';
 import type { AppointmentRow } from '../types/db';
 import SummaryTab from '../components/features/SummaryTab';
+import DiagnosisFilterModal from '../components/features/DiagnosisFilterModal';
 
 export default function MainPage() {
   const { user } = useAuth();

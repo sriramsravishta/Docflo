@@ -1130,3 +1130,81 @@ export const getAllCanonicalDiagnoses = async (docId: string): Promise<{ canonic
     .map(([canonical, count]) => ({ canonical, count }))
     .sort((a, b) => b.count - a.count);
 };
+
+// Recompute a patient's diagnoses array from all their consults
+// Called after any consult summary edit
+export const recomputePatientDiagnoses = async (patientId: string, docId: string): Promise<void> => {
+  // 1. Get all consults for this patient (consultation type only)
+  const { data: consults, error: cErr } = await supabase
+    .from('consult')
+    .select('id, consult_summary_final, type')
+    .eq('patient_id', patientId)
+    .eq('doc_id', docId);
+  if (cErr) throw cErr;
+
+  // 2. Extract all diagnosis strings
+  const allDiagnoses = new Set<string>();
+  (consults || []).forEach((c) => {
+    if (c.type === 'ot_note') return;
+    try {
+      const summary = typeof c.consult_summary_final === 'string'
+        ? JSON.parse(c.consult_summary_final)
+        : c.consult_summary_final;
+      const diag = summary?.diagnosis;
+      if (typeof diag === 'string' && diag.trim()) {
+        allDiagnoses.add(diag.trim());
+      } else if (diag && typeof diag === 'object') {
+        (Array.isArray(diag.provisional) ? diag.provisional : [])
+          .map((s: unknown) => String(s).trim())
+          .filter(Boolean)
+          .forEach((d: string) => allDiagnoses.add(d));
+      }
+    } catch (e) {}
+  });
+
+  const originalArr = Array.from(allDiagnoses);
+
+  // 3. Get patient's current canonical list — reuse existing canonical mappings
+  const { data: patient, error: pErr } = await supabase
+    .from('patients')
+    .select('diagnoses, diagnoses_canonical')
+    .eq('id', patientId)
+    .single();
+  if (pErr) throw pErr;
+
+  const existingOriginal: string[] = patient?.diagnoses || [];
+  const existingCanonical: string[] = patient?.diagnoses_canonical || [];
+
+  // Build a map from original → canonical using existing mappings
+  const originalToCanonical: Record<string, string> = {};
+  existingOriginal.forEach((orig, idx) => {
+    originalToCanonical[orig] = existingCanonical[idx];
+  });
+
+  // For unknown originals, they'll be missing canonical — we lose them here
+  // (n8n handles canonicalization for new consults; on edits we preserve what we know)
+  const finalOriginal: string[] = [];
+  const finalCanonical: string[] = [];
+  const seen = new Set<string>();
+
+  originalArr.forEach((orig) => {
+    const canon = originalToCanonical[orig];
+    if (canon && !seen.has(canon)) {
+      seen.add(canon);
+      finalOriginal.push(orig);
+      finalCanonical.push(canon);
+    } else if (!canon) {
+      // Unknown original — keep it but use itself as canonical for now
+      if (!seen.has(orig)) {
+        seen.add(orig);
+        finalOriginal.push(orig);
+        finalCanonical.push(orig);
+      }
+    }
+  });
+
+  await supabase
+    .from('patients')
+    .update({ diagnoses: finalOriginal, diagnoses_canonical: finalCanonical })
+    .eq('id', patientId);
+};

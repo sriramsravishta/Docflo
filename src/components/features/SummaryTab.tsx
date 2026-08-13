@@ -67,7 +67,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('all');
   const [showFilter, setShowFilter] = useState(false);
-  const [filterMode, setFilterMode] = useState<'today' | 'specific' | 'range'>('today');
+  const [filterMode, setFilterMode] = useState<'today' | 'specific' | 'range'>('specific');
   const [filterDate, setFilterDate] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');

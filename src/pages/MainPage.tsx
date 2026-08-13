@@ -103,6 +103,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const [appliedFilterDate, setAppliedFilterDate] = useState('');
   const [appliedFilterFrom, setAppliedFilterFrom] = useState('');
   const [appliedFilterTo, setAppliedFilterTo] = useState('');
+  const [showDiagnosisFilter, setShowDiagnosisFilter] = useState(false);
+  const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
 
   const isPatientInFilter = (dateStr?: string): boolean => {
     if (!dateStr) return false;

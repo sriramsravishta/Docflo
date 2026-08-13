@@ -29,7 +29,14 @@ export function useRecording(
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
-  const clearToast = () => setToast(null);
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const handleStartRecording = async () => {
     try {

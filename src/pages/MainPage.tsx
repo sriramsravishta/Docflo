@@ -406,6 +406,24 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </button>
               </div>
             </div>
+            {selectedDiagnoses.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {selectedDiagnoses.map((d) => (
+                  <span
+                    key={d}
+                    className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200"
+                  >
+                    {d}
+                    <button
+                      onClick={() => setSelectedDiagnoses((prev) => prev.filter((x) => x !== d))}
+                      className="hover:text-blue-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">

@@ -454,6 +454,14 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       const { id: _id, ...payload } = toSave;
       await updateConsultSummary(selectedConsult.id, payload);
       await saveMedicineDraftsToDB();
+      // Recompute patient diagnoses after edit
+      if (patientId && user?.id) {
+        try {
+          await recomputePatientDiagnoses(patientId, user.id);
+        } catch (e) {
+          console.error('Failed to recompute diagnoses:', e);
+        }
+      }
       const { consultsData } = await loadPatientData();
       const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);
       if (updated) setSelectedConsult(updated);

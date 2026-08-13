@@ -473,9 +473,6 @@ export default function SummaryTab({ docId }: { docId: string }) {
                 </div>
               </div>
             )}
-            {filterMode === 'today' && (
-              <p className="text-sm text-gray-500 text-center py-2">Shows all outcomes from today</p>
-            )}
             <div className="flex gap-3 mt-6">
               <button onClick={clearFilter} className="flex-1 btn-secondary text-sm">Clear</button>
               <button onClick={applyFilter} className="flex-1 btn-primary text-sm">Apply</button>

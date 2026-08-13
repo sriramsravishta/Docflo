@@ -740,6 +740,15 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </div>
         </div>
       )}
+      {user?.id && (
+        <DiagnosisFilterModal
+          isOpen={showDiagnosisFilter}
+          onClose={() => setShowDiagnosisFilter(false)}
+          docId={user.id}
+          selected={selectedDiagnoses}
+          onApply={setSelectedDiagnoses}
+        />
+      )}
     </div>
   );
 }

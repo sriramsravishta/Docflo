@@ -131,11 +131,11 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   const filteredAllPatients = allPatients
     .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((p) => !hasActivePatientFilter || isPatientInFilter(p.last_visit_at))
+    .filter((p) => isPatientInDateFilter(p.last_visit_at))
     .filter((p) => {
-      if (selectedDiagnoses.length === 0) return true;
+      if (appliedFilters.diagnoses.length === 0) return true;
       const patientDiags = (p as any).diagnoses_canonical || [];
-      return selectedDiagnoses.some((d) => patientDiags.includes(d));
+      return appliedFilters.diagnoses.some((d) => patientDiags.includes(d));
     });
 
   const formatDate = (dateString: string) => {

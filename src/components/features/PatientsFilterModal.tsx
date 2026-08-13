@@ -184,8 +184,8 @@ export default function PatientsFilterModal({ isOpen, onClose, docId, applied, o
             </>
           ) : (
             <>
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-4">
-                {(['none', 'specific', 'range'] as const).map((m) => (
+             <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-4">
+                {(['specific', 'range'] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => setDateMode(m)}
@@ -195,7 +195,7 @@ export default function PatientsFilterModal({ isOpen, onClose, docId, applied, o
                         : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {m === 'none' ? 'Any date' : m === 'specific' ? 'Specific' : 'Range'}
+                    {m === 'specific' ? 'Specific Date' : 'Date Range'}
                   </button>
                 ))}
               </div>

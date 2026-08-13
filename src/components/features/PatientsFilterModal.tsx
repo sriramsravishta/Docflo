@@ -32,7 +32,7 @@ export default function PatientsFilterModal({ isOpen, onClose, docId, applied, o
 
   useEffect(() => {
     if (!isOpen) return;
-    setDateMode(applied.dateMode);
+    setDateMode(applied.dateMode === 'none' ? 'specific' : applied.dateMode);
     setDate(applied.date);
     setFrom(applied.from);
     setTo(applied.to);
@@ -235,11 +235,7 @@ export default function PatientsFilterModal({ isOpen, onClose, docId, applied, o
                 </div>
               )}
 
-              {dateMode === 'none' && (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No date filter applied. All patients shown regardless of visit date.
-                </p>
-              )}
+            
             </>
           )}
         </div>

@@ -1672,7 +1672,7 @@ else{
 
           <div className="p-6 space-y-8">
             {processingPreConsults.length > 0 && (
-              <section ref={preConsultSectionRef}>
+              <section ref={preConsultSectionRef} className="hidden">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Pre-Consultation Processing</h2>
                 <div className="space-y-3">
                   {processingPreConsults.map((preConsult) => {

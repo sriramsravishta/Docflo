@@ -20,6 +20,8 @@ export interface PatientRow {
   address?: string | null;
   last_visit_at?: string | null;
   location_ids?: string[] | null;
+  diagnoses?: string[] | null;
+  diagnoses_canonical?: string[] | null;
   created_at: string;
 }
 

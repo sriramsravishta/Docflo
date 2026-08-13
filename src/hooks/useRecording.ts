@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 
@@ -45,9 +45,9 @@ export function useRecording(
   setRecordingTime((prev) => {
     const next = prev + 1;
 
-    if (next >= 1200) {
+    if (next >= 3000) {
       handleEndRecording();
-      setToast({ message: 'Recording limit per session is 20 minutes. Recording stopped automatically.', type: 'info' });
+      setToast({ message: 'Recording limit per session is 50 minutes. Recording stopped automatically.', type: 'info' });
       return prev;
     }
 

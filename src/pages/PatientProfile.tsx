@@ -35,8 +35,9 @@ import {
   deleteConsultMedicine,
   searchMedicines,
   updateConsultSummary,
-  getAppointmentByConsultId, // CHANGED: added for PDF referred_by lookup
-  getLocations, // CHANGED: for patient locations multi-select
+  getAppointmentByConsultId,
+  getLocations,
+  recomputePatientDiagnoses,
 } from '../lib/database';
 import LocationMultiSelect from '../components/features/LocationMultiSelect';
 import type { LocationRow } from '../types/db';

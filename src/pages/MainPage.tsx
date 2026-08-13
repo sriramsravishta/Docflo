@@ -371,17 +371,28 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </section>
 
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-lg font-semibold text-gray-900">All Patients</h2>
-              <div className="flex items-center gap-2">
-                {hasActivePatientFilter && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {(hasActivePatientFilter || selectedDiagnoses.length > 0) && (
                   <button
-                    onClick={clearPatientFilter}
+                    onClick={() => { clearPatientFilter(); setSelectedDiagnoses([]); }}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
-                    Clear filter
+                    Clear all
                   </button>
                 )}
+                <button
+                  onClick={() => setShowDiagnosisFilter(true)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                    selectedDiagnoses.length > 0
+                      ? 'bg-[#024CDB] text-white border-[#024CDB]'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <Filter className="w-4 h-4" />
+                  {selectedDiagnoses.length > 0 ? `Diagnosis (${selectedDiagnoses.length})` : 'Diagnosis'}
+                </button>
                 <button
                   onClick={() => setShowPatientFilter(true)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
@@ -391,7 +402,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                   }`}
                 >
                   <Filter className="w-4 h-4" />
-                  Filter
+                  Date
                 </button>
               </div>
             </div>

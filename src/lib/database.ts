@@ -1045,7 +1045,7 @@ export const updateOutcome = async (
 import type { ConsultEditRow } from '../types/db';
 
 // Voice Edit — webhook URL
-const VOICE_EDIT_WEBHOOK_URL = 'YOUR_N8N_VOICE_EDIT_WEBHOOK_URL_HERE';
+const VOICE_EDIT_WEBHOOK_URL = 'https://atblink.app.n8n.cloud/webhook/voice-edit-consult';
 
 export const createConsultEdit = async (
   consultId: string,

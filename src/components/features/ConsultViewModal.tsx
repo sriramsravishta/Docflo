@@ -340,13 +340,19 @@ function SectionCard({
   right,
   children,
   tone = 'default',
+  highlighted = false,
 }: {
   title: string;
   right?: React.ReactNode;
   children: React.ReactNode;
   tone?: 'default' | 'danger';
+  highlighted?: boolean;
 }) {
-  const toneClass = tone === 'danger' ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white';
+  const toneClass = highlighted 
+    ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-200'
+    : tone === 'danger' 
+      ? 'border-red-200 bg-red-50' 
+      : 'border-gray-200 bg-white';
 
   return (
     <div className={`border rounded-lg ${toneClass} overflow-hidden`}>

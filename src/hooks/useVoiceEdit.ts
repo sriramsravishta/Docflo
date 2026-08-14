@@ -214,14 +214,16 @@ export function useVoiceEdit(
     }
   };
 
-    return {
+      return {
     isRecording,
+    isPaused,
     recordingTime,
     editStatus,
     changedFields,
     lastEditId: currentEditIdRef.current,
     startEditRecording,
     stopEditRecording,
+    pauseEditRecording,
     cancelEditRecording,
     dismissEdit,
   };

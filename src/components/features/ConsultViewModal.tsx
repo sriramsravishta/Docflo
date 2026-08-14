@@ -816,9 +816,46 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
   const [flagsOpen, setFlagsOpen] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
-  const voiceEdit = useVoiceEdit(consult.id, props.userId);
+    const voiceEdit = useVoiceEdit(consult.id, props.userId);
+  const [undoing, setUndoing] = useState(false);
   const isHighlighted = (fieldName: string): boolean => {
     return voiceEdit.editStatus === 'ready' && voiceEdit.changedFields.includes(fieldName);
+  };
+
+  const handleUndoEdit = async () => {
+    if (!voiceEdit.lastEditId) return;
+    setUndoing(true);
+    try {
+      const { data: editRow } = await supabase
+        .from('consult_edits')
+        .select('summary_before')
+        .eq('id', voiceEdit.lastEditId)
+        .single();
+      if (editRow?.summary_before) {
+        await supabase
+          .from('consult')
+          .update({ consult_summary_final: JSON.stringify(editRow.summary_before) })
+          .eq('id', consult.id);
+        // Log the undo as its own edit
+        await supabase.from('consult_edits').insert({
+          consult_id: consult.id,
+          doc_id: props.userId || '',
+          source: 'manual_edit',
+          status: 'completed',
+          changed_fields: voiceEdit.changedFields,
+          summary_before: null,
+          summary_after: editRow.summary_before,
+        });
+        voiceEdit.dismissEdit();
+      } else {
+        alert('Undo data not available for this edit.');
+      }
+    } catch (e) {
+      console.error('Undo failed:', e);
+      alert('Failed to undo. Please try again.');
+    } finally {
+      setUndoing(false);
+    }
   };
 
   

@@ -816,6 +816,10 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
   const [showEditBar, setShowEditBar] = useState(false);
   const [editStatus, setEditStatus] = useState<'idle' | 'processing' | 'ready' | 'failed'>('idle');
 
+  const isHighlighted = (fieldName: string): boolean => {
+    return editStatus === 'ready' && changedFields.includes(fieldName);
+  };
+
   const voiceEdit = useVoiceEdit(consult.id, props.userId);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

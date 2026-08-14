@@ -45,6 +45,7 @@ export default function PatientProfileHeader({
   onStartOTRecording,
   onEndRecording,
   onPauseRecording,
+  onCancelRecording,
   onEditPatient,
   onAddVitals,
   onUploadDocuments, 

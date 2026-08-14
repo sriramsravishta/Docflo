@@ -851,6 +851,30 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
             <span>Edit</span>
           </button>
 
+          {!isEditing && (
+            <button
+              onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                voiceEdit.isRecording
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+              }`}
+              title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
+            >
+              {voiceEdit.isRecording ? (
+                <>
+                  <Square className="w-4 h-4" />
+                  <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4" />
+                  <span>Voice Edit</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onDownloadPDF}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"

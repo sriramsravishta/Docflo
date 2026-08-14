@@ -820,6 +820,16 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
     return editStatus === 'ready' && changedFields.includes(fieldName);
   };
 
+  useEffect(() => {
+    if (editStatus !== 'ready') return;
+    const t = setTimeout(() => {
+      setShowEditBar(false);
+      setChangedFields([]);
+      setEditStatus('idle');
+    }, 30000);
+    return () => clearTimeout(t);
+  }, [editStatus]);
+
   const voiceEdit = useVoiceEdit(consult.id, props.userId);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

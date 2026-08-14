@@ -156,9 +156,15 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         if (patient) {
           setExistingPatient(patient);
           setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
+          // Autofill location from patient profile — use first location_ids entry
+          const patientLocations = (patient as any).location_ids || [];
+          if (patientLocations.length > 0 && !newLocationId) {
+            setNewLocationId(patientLocations[0]);
+          }
         } else {
           setExistingPatient(null);
           setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });
+          setNewLocationId('');
         }
       } catch (error) {
         console.error('Error checking patient:', error);

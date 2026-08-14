@@ -1210,7 +1210,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
               </SectionCard>
 
               
-<SectionCard title="Treatment Suggested">
+<SectionCard title="Treatment Suggested" highlighted={isHighlighted('treatment_suggested')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedTreatmentText : viewTreatment}
@@ -1236,7 +1236,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                 );
               })()}
               
-              <SectionCard title="Follow-up Recommendations">
+              <SectionCard title="Follow-up Recommendations" highlighted={isHighlighted('followup_recommendations')}>
               
                 <SyncedAutoBox
                   isEditing={isEditing}

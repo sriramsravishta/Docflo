@@ -1247,7 +1247,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
               </SectionCard>
 
               {/* ✅ Key Personal Insights (view + editable) */}
-              <SectionCard title="Key Personal Insights">
+              <SectionCard title="Key Personal Insights" highlighted={isHighlighted('key_personal_insights')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText(editedConsult?.key_personal_insights) : viewKeyInsights}

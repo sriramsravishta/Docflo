@@ -1,4 +1,4 @@
-import { Mic, Square, Play, Pause, Plus, Upload, User, Phone, Calendar, FileText, Scissors } from 'lucide-react';
+import { Mic, Square, Play, Pause, Plus, Upload, User, Phone, Calendar, FileText, Scissors, XCircle } from 'lucide-react';
 import InfoPill from '../ui/InfoPill';
 
 interface Patient {

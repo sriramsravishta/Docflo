@@ -948,36 +948,38 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             <span>Edit</span>
           </button>
 
-{!isEditing && (
-            <button
-              onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
-                voiceEdit.isRecording
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
-              }`}
-              title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
-            >
-                            {voiceEdit.isRecording ? (
-                <>
-                  <Square className="w-4 h-4" />
-                  <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4" />
-                  <span>Voice Edit</span>
-                </>
-              )}
-            </button>
-            {voiceEdit.isRecording && (
+          {!isEditing && (
+            <>
               <button
-                onClick={voiceEdit.cancelEditRecording}
-                className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                  voiceEdit.isRecording
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                }`}
+                title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
               >
-                Cancel
+                {voiceEdit.isRecording ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    <span>Voice Edit</span>
+                  </>
+                )}
               </button>
-            )}
+              {voiceEdit.isRecording && (
+                <button
+                  onClick={voiceEdit.cancelEditRecording}
+                  className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </>
           )}
           
           <button

@@ -67,7 +67,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('all');
   const [showFilter, setShowFilter] = useState(false);
-  const [filterMode, setFilterMode] = useState<'today' | 'specific' | 'range'>('specific');
+  const [filterMode, setFilterMode] = useState<'today' | 'specific' | 'range'>('today');
   const [filterDate, setFilterDate] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
@@ -445,15 +445,15 @@ export default function SummaryTab({ docId }: { docId: string }) {
               </button>
             </div>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
-              {(['specific', 'range'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setFilterMode(m)}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${filterMode === m ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-              >
-                {m === 'specific' ? 'Specific Date' : 'Date Range'}
-              </button>
-            ))}
+              {(['today', 'specific', 'range'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setFilterMode(m)}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${filterMode === m ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  {m === 'today' ? 'Today' : m === 'specific' ? 'Date' : 'Range'}
+                </button>
+              ))}
             </div>
             {filterMode === 'specific' && (
               <div>
@@ -472,6 +472,9 @@ export default function SummaryTab({ docId }: { docId: string }) {
                   <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="input-field" />
                 </div>
               </div>
+            )}
+            {filterMode === 'today' && (
+              <p className="text-sm text-gray-500 text-center py-2">Shows all outcomes from today</p>
             )}
             <div className="flex gap-3 mt-6">
               <button onClick={clearFilter} className="flex-1 btn-secondary text-sm">Clear</button>

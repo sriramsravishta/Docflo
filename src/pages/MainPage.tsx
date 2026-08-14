@@ -16,7 +16,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPatientByPhone } from '../lib/database';
 import type { AppointmentRow } from '../types/db';
 import SummaryTab from '../components/features/SummaryTab';
-import PatientsFilterModal, { AppliedFilters } from '../components/features/PatientsFilterModal';
 
 export default function MainPage() {
   const { user } = useAuth();
@@ -52,7 +51,7 @@ export default function MainPage() {
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });// CHANGED: added uhid
+  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
   const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
   const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time
@@ -74,18 +73,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const sortedActiveAppointments = [...filteredActiveAppointments].sort(sortByWhenDesc);
   const pendingActiveAppointments = sortedActiveAppointments.filter((a) => a.completed !== true);
 
-  const hasAnyLocation = filteredActiveAppointments.some(
-    (a) => Array.isArray((a.patients as any)?.location_ids) && (a.patients as any).location_ids.length > 0
-  );
+  const hasAnyLocation = filteredActiveAppointments.some((a) => a.location_id);
   const locationGroups = (() => {
     if (!hasAnyLocation) return [];
     const matched = new Set<string>();
     const groups: { key: string; name: string; items: AppointmentRow[] }[] = [];
     locations.forEach((loc) => {
-      const items = filteredActiveAppointments.filter((a) => {
-        const patientLocationIds: string[] = (a.patients as any)?.location_ids || [];
-        return patientLocationIds.includes(loc.id);
-      });
+      const items = filteredActiveAppointments.filter((a) => a.location_id === loc.id);
       if (items.length) {
         items.forEach((i) => matched.add(i.id));
         groups.push({ key: loc.id, name: loc.name, items: [...items].sort(sortByWhenDesc) });
@@ -96,28 +90,31 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return groups;
   })();
 
-  const [showFilters, setShowFilters] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
-    dateMode: 'none',
-    date: '',
-    from: '',
-    to: '',
-    diagnoses: [],
-  });
+  const [showPatientFilter, setShowPatientFilter] = useState(false);
+  const [patientFilterMode, setPatientFilterMode] = useState<'single' | 'range'>('single');
   
-  const isPatientInDateFilter = (dateStr?: string): boolean => {
-    if (appliedFilters.dateMode === 'none') return true;
+  // These track what you are selecting in the pop-up
+  const [patientFilterDate, setPatientFilterDate] = useState('');
+  const [patientFilterFrom, setPatientFilterFrom] = useState('');
+  const [patientFilterTo, setPatientFilterTo] = useState('');
+
+  // These track what is ACTUALLY applied to the table
+  const [appliedFilterDate, setAppliedFilterDate] = useState('');
+  const [appliedFilterFrom, setAppliedFilterFrom] = useState('');
+  const [appliedFilterTo, setAppliedFilterTo] = useState('');
+
+  const isPatientInFilter = (dateStr?: string): boolean => {
     if (!dateStr) return false;
     const d = new Date(dateStr);
     d.setHours(0, 0, 0, 0);
-    if (appliedFilters.dateMode === 'specific' && appliedFilters.date) {
-      const target = new Date(appliedFilters.date);
+    if (patientFilterMode === 'single' && appliedFilterDate) {
+      const target = new Date(appliedFilterDate);
       target.setHours(0, 0, 0, 0);
       return d.getTime() === target.getTime();
     }
-    if (appliedFilters.dateMode === 'range') {
-      const from = appliedFilters.from ? new Date(appliedFilters.from) : null;
-      const to = appliedFilters.to ? new Date(appliedFilters.to) : null;
+    if (patientFilterMode === 'range' && (appliedFilterFrom || appliedFilterTo)) {
+      const from = appliedFilterFrom ? new Date(appliedFilterFrom) : null;
+      const to = appliedFilterTo ? new Date(appliedFilterTo) : null;
       if (from) from.setHours(0, 0, 0, 0);
       if (to) to.setHours(23, 59, 59, 999);
       if (from && d < from) return false;
@@ -127,21 +124,23 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return true;
   };
 
-  const hasActiveFilters =
-    appliedFilters.dateMode !== 'none' || appliedFilters.diagnoses.length > 0;
+  const hasActivePatientFilter =
+    (patientFilterMode === 'single' && appliedFilterDate !== '') ||
+    (patientFilterMode === 'range' && (appliedFilterFrom !== '' || appliedFilterTo !== ''));
 
-  const clearAllFilters = () => {
-    setAppliedFilters({ dateMode: 'none', date: '', from: '', to: '', diagnoses: [] });
+  const clearPatientFilter = () => {
+    setPatientFilterDate('');
+    setPatientFilterFrom('');
+    setPatientFilterTo('');
+    setAppliedFilterDate('');
+    setAppliedFilterFrom('');
+    setAppliedFilterTo('');
+    setShowPatientFilter(false);
   };
 
   const filteredAllPatients = allPatients
     .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((p) => isPatientInDateFilter(p.last_visit_at))
-    .filter((p) => {
-      if (appliedFilters.diagnoses.length === 0) return true;
-      const patientDiags = (p as any).diagnoses_canonical || [];
-      return appliedFilters.diagnoses.some((d) => patientDiags.includes(d));
-    });
+    .filter((p) => !hasActivePatientFilter || isPatientInFilter(p.last_visit_at));
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -155,16 +154,10 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         const patient = await getPatientByPhone(phone, user!.id);
         if (patient) {
           setExistingPatient(patient);
-          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
-          // Autofill location from patient profile — use first location_ids entry
-          const patientLocations = (patient as any).location_ids || [];
-          if (patientLocations.length > 0 && !newLocationId) {
-            setNewLocationId(patientLocations[0]);
-          }
+          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '' }); // CHANGED: auto-fill uhid
         } else {
           setExistingPatient(null);
-          setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });
-          setNewLocationId('');
+          setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
         }
       } catch (error) {
         console.error('Error checking patient:', error);
@@ -176,7 +169,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   const handleCloseModal = () => {
     setShowAddPatient(false);
-    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
     setReferredBy(''); // CHANGED: reset referredBy
     setNewLocationId(''); // CHANGED: reset location
     setNewScheduledAt(''); // CHANGED: reset date & time
@@ -370,94 +363,39 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </section>
 
           <section>
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">All Patients</h2>
               <div className="flex items-center gap-2">
-                {hasActiveFilters && (
+                {hasActivePatientFilter && (
                   <button
-                    onClick={clearAllFilters}
+                    onClick={clearPatientFilter}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
-                    Clear all
+                    Clear filter
                   </button>
                 )}
                 <button
-                  onClick={() => setShowFilters(true)}
+                  onClick={() => setShowPatientFilter(true)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-                    hasActiveFilters
+                    hasActivePatientFilter
                       ? 'bg-[#024CDB] text-white border-[#024CDB]'
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <Filter className="w-4 h-4" />
-                  {hasActiveFilters
-                    ? `Filters (${(appliedFilters.dateMode !== 'none' ? 1 : 0) + appliedFilters.diagnoses.length})`
-                    : 'Filter'}
+                  Filter
                 </button>
               </div>
             </div>
-            {(appliedFilters.diagnoses.length > 0 || appliedFilters.dateMode !== 'none') && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {appliedFilters.dateMode === 'specific' && appliedFilters.date && (
-                  <span className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
-                    Date: {new Date(appliedFilters.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    <button
-                      onClick={() => setAppliedFilters({ ...appliedFilters, dateMode: 'none', date: '' })}
-                      className="hover:text-blue-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {appliedFilters.dateMode === 'range' && (appliedFilters.from || appliedFilters.to) && (
-                  <span className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
-                    Range: {appliedFilters.from || '...'} to {appliedFilters.to || '...'}
-                    <button
-                      onClick={() => setAppliedFilters({ ...appliedFilters, dateMode: 'none', from: '', to: '' })}
-                      className="hover:text-blue-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {appliedFilters.diagnoses.map((d) => (
-                  <span
-                    key={d}
-                    className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200"
-                  >
-                    {d}
-                    <button
-                      onClick={() => setAppliedFilters({
-                        ...appliedFilters,
-                        diagnoses: appliedFilters.diagnoses.filter((x) => x !== d),
-                      })}
-                      className="hover:text-blue-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {hasActiveFilters ? 'Patients (Filtered)' : 'Number of Patients'}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
-                    {hasActiveFilters ? filteredAllPatients.length : patientsCount}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Number of Patients</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{patientsCount}</p>
                 </div>
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {hasActiveFilters ? 'Prescriptions (Filtered)' : 'Prescriptions Created'}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
-                    {hasActiveFilters
-                      ? filteredAllPatients.filter((p) => p.last_visit_at).length
-                      : prescriptionsCount}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prescriptions Created</p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">{prescriptionsCount}</p>
                 </div>
               </div>
             </div>
@@ -545,21 +483,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
-         {/* Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={newPatient.address}
-              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-              className={`input-field ${existingPatient && existingPatient.address ? 'bg-gray-50' : ''}`}
-              readOnly={!!(existingPatient && (existingPatient as any).address)}
-              placeholder="e.g., Banjara Hills, Hyderabad"
-            />
-          </div>
-
           {/* Group 3: Clinical Identifiers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
@@ -599,9 +522,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 onChange={setNewLocationId}
                 onCreate={handleCreateLocation}
               />
-              {existingPatient && newLocationId && (
-                <p className="text-xs text-green-600 mt-1">Location auto-filled from patient profile</p>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -669,15 +589,94 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         }}
       />
 
-      
-      {user?.id && (
-        <PatientsFilterModal
-          isOpen={showFilters}
-          onClose={() => setShowFilters(false)}
-          docId={user.id}
-          applied={appliedFilters}
-          onApply={setAppliedFilters}
-        />
+      {showPatientFilter && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setShowPatientFilter(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+           <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-gray-900">Filter Patients by Visit Date</h3>
+              <button onClick={() => setShowPatientFilter(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
+              <button
+                onClick={() => { setPatientFilterMode('single'); setPatientFilterFrom(''); setPatientFilterTo(''); }}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  patientFilterMode === 'single' ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Specific Date
+              </button>
+              <button
+                onClick={() => { setPatientFilterMode('range'); setPatientFilterDate(''); }}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  patientFilterMode === 'range' ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Date Range
+              </button>
+            </div>
+            {patientFilterMode === 'single' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Visit Date</label>
+                <input
+                  type="date"
+                  value={patientFilterDate}
+                  onChange={(e) => setPatientFilterDate(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                  <input
+                    type="date"
+                    value={patientFilterFrom}
+                    onChange={(e) => setPatientFilterFrom(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                  <input
+                    type="date"
+                    value={patientFilterTo}
+                    onChange={(e) => setPatientFilterTo(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={clearPatientFilter}
+                className="flex-1 btn-secondary text-sm"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => {
+                  setAppliedFilterDate(patientFilterDate);
+                  setAppliedFilterFrom(patientFilterFrom);
+                  setAppliedFilterTo(patientFilterTo);
+                  setShowPatientFilter(false);
+                }}
+                className="flex-1 btn-primary text-sm"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -17,11 +17,8 @@ export interface PatientRow {
   gender: 'Male' | 'Female' | 'Other';
   phone: string;
   case?: string | null;
-  address?: string | null;
   last_visit_at?: string | null;
   location_ids?: string[] | null;
-  diagnoses?: string[] | null;
-  diagnoses_canonical?: string[] | null;
   created_at: string;
 }
 
@@ -222,15 +219,4 @@ export interface ConsultOutcomeRow {
     gender: string;
     phone: string;
   };
-}
-
-export interface ConsultDocumentRow {
-  id: string;
-  consult_id: string;
-  doc_id: string;
-  file_url: string;
-  file_name: string;
-  file_type?: string | null;
-  file_size_bytes?: number | null;
-  uploaded_at: string;
 }

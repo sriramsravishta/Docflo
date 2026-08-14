@@ -126,7 +126,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
   };
 
   const handleCreatePatient = async (
-    data: { phone: string; name: string; age: string; gender: string; uhid: string; address: string },
+    data: { phone: string; name: string; age: string; gender: string; uhid: string }, // CHANGED: added uhid
     userId: string,
     referredBy?: string, // CHANGED: added referredBy
     locationId?: string, // CHANGED: added location
@@ -145,8 +145,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         age: parseInt(data.age),
         phone: data.phone,
         gender: data.gender,
-        uhid: data.uhid || undefined,
-        address: data.address || undefined,
+        uhid: data.uhid || undefined, // CHANGED: pass uhid to patient creation
       });
       await createAppointment(patient.id, userId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // CHANGED: pass referredBy, location, scheduled_at
       if (locationId) {

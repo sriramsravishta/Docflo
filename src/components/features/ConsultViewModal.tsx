@@ -14,7 +14,6 @@ import {
 import { CreditCard as Edit } from 'lucide-react';
 
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
-import ConsultDocumentsSection from './ConsultDocumentsSection';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 
 import {
@@ -1040,10 +1039,6 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     emptyText="No instructions recorded"
                   />
                 </SectionCard>
-                {props.userId && (
-                  <ConsultDocumentsSection consultId={consult.id} docId={props.userId} />
-                )}
-                <div className="h-6" />
                 <div className="h-6" />
               </div>
             ) : (
@@ -1197,10 +1192,6 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 />
               </SectionCard>
 
-{props.userId && (
-                <ConsultDocumentsSection consultId={consult.id} docId={props.userId} />
-              )}
-              
               {/* Flags at the bottom */}
               {flags.length > 0 && (
                 <div className="border border-red-200 bg-red-50 rounded-lg overflow-hidden">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 
@@ -30,14 +30,6 @@ export function useRecording(
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
   const clearToast = () => setToast(null);
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
 
   const handleStartRecording = async () => {
     try {
@@ -53,9 +45,9 @@ export function useRecording(
   setRecordingTime((prev) => {
     const next = prev + 1;
 
-    if (next >= 3000) {
+    if (next >= 1200) {
       handleEndRecording();
-      setToast({ message: 'Recording limit per session is 50 minutes. Recording stopped automatically.', type: 'info' });
+      setToast({ message: 'Recording limit per session is 20 minutes. Recording stopped automatically.', type: 'info' });
       return prev;
     }
 

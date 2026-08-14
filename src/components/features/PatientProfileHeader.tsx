@@ -127,7 +127,7 @@ export default function PatientProfileHeader({
 
           <button
             onClick={onUploadDocuments}
-            className="hidden btn-secondary flex items-center justify-center gap-2 py-2.5 px-4 flex-1 sm:flex-none sm:min-w-[150px]"
+            className="btn-secondary flex items-center justify-center gap-2 py-2.5 px-4 flex-1 sm:flex-none sm:min-w-[150px]"
           >
             <Upload className="w-4 h-4" />
             <span className="text-sm font-medium">Upload</span>

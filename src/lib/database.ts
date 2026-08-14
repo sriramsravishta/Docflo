@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { LocationRow, ConsultDocumentRow } from '../types/db';
+import type { LocationRow } from '../types/db';
 
 // ✅ Helper: get "today" start/end based on your local time (IST)
 function getTodayBoundsISO() {
@@ -28,9 +28,9 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
     .select('id, completed')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
-    .gte('scheduled_at', startISO)
-    .lte('scheduled_at', endISO)
-    .order('scheduled_at', { ascending: false })
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -57,8 +57,7 @@ export const createPatient = async (patientData: {
   phone: string;
   case?: string;
   gender: string;
-  uhid?: string;
-  address?: string;
+  uhid?: string; // CHANGED: added uhid as optional field
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -132,11 +131,10 @@ export const updatePatient = async (patientId: string, updates: Partial<{
   age: number;
   phone: string;
   case: string;
-  address: string;
   gender: string;
   last_visit_at: string;
-  uhid: string;
-  location_ids: string[];
+  uhid: string; // CHANGED: added uhid so PatientProfile edit modal can save it
+  location_ids: string[]; // CHANGED: patient locations multi-select
 }>) => {
   const { data, error } = await supabase
     .from('patients')
@@ -608,7 +606,7 @@ export const getTodaysAppointments = async (docId: string) => {
     .from('appointments')
     .select(`
       *,
-      patients (id, name, age, gender, phone, last_visit_at, location_ids)
+      patients (id, name, age, gender, phone, last_visit_at)
     `)
     .eq('doc_id', docId)
     // ✅ IMPORTANT: DO NOT filter completed here
@@ -704,9 +702,9 @@ export const updateAppointmentConsultId = async (patientId: string, docId: strin
     .select('id')
     .eq('patient_id', patientId)
     .eq('doc_id', docId)
-    .gte('scheduled_at', startISO)
-    .lte('scheduled_at', endISO)
-    .order('scheduled_at', { ascending: false })
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -1042,169 +1040,4 @@ export const updateOutcome = async (
     .single();
   if (error) throw error;
   return data as ConsultOutcomeRow;
-};
-
-// --- Consult Documents ---
-
-export const getConsultDocuments = async (consultId: string): Promise<ConsultDocumentRow[]> => {
-  const { data, error } = await supabase
-    .from('consult_documents')
-    .select('*')
-    .eq('consult_id', consultId)
-    .order('uploaded_at', { ascending: false });
-  if (error) throw error;
-  return (data || []) as ConsultDocumentRow[];
-};
-
-export const uploadConsultDocument = async (
-  docId: string,
-  consultId: string,
-  file: File
-): Promise<ConsultDocumentRow> => {
-  const timestamp = Date.now();
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const storagePath = `${docId}/${consultId}/${timestamp}-${sanitizedName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('consult-documents')
-    .upload(storagePath, file, {
-      contentType: file.type || 'application/octet-stream',
-      upsert: false,
-    });
-  if (uploadError) throw uploadError;
-
-  const { data: signed, error: signedError } = await supabase.storage
-    .from('consult-documents')
-    .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
-  if (signedError) throw signedError;
-
-  const { data, error } = await supabase
-    .from('consult_documents')
-    .insert({
-      consult_id: consultId,
-      doc_id: docId,
-      file_url: storagePath, // store the path, sign on read
-      file_name: file.name,
-      file_type: file.type || null,
-      file_size_bytes: file.size,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as ConsultDocumentRow;
-};
-
-export const getSignedDocumentUrl = async (storagePath: string): Promise<string> => {
-  const { data, error } = await supabase.storage
-    .from('consult-documents')
-    .createSignedUrl(storagePath, 60 * 60); // 1 hour
-  if (error) throw error;
-  return data.signedUrl;
-};
-
-export const deleteConsultDocument = async (id: string, storagePath: string): Promise<void> => {
-  await supabase.storage.from('consult-documents').remove([storagePath]);
-  const { error } = await supabase.from('consult_documents').delete().eq('id', id);
-  if (error) throw error;
-};
-
-// --- Diagnosis Filter Support ---
-
-export const getAllCanonicalDiagnoses = async (docId: string): Promise<{ canonical: string; count: number }[]> => {
-  // Get all patients' canonical diagnoses arrays, aggregate counts
-  const { data, error } = await supabase
-    .from('patients')
-    .select('diagnoses_canonical')
-    .eq('doc_id', docId);
-  if (error) throw error;
-
-  const counts: Record<string, number> = {};
-  (data || []).forEach((p) => {
-    const arr = Array.isArray(p.diagnoses_canonical) ? p.diagnoses_canonical : [];
-    arr.forEach((d: string) => {
-      counts[d] = (counts[d] || 0) + 1;
-    });
-  });
-
-  return Object.entries(counts)
-    .map(([canonical, count]) => ({ canonical, count }))
-    .sort((a, b) => b.count - a.count);
-};
-
-// Recompute a patient's diagnoses array from all their consults
-// Called after any consult summary edit
-export const recomputePatientDiagnoses = async (patientId: string, docId: string): Promise<void> => {
-  // 1. Get all consults for this patient (consultation type only)
-  const { data: consults, error: cErr } = await supabase
-    .from('consult')
-    .select('id, consult_summary_final, type')
-    .eq('patient_id', patientId)
-    .eq('doc_id', docId);
-  if (cErr) throw cErr;
-
-  // 2. Extract all diagnosis strings
-  const allDiagnoses = new Set<string>();
-  (consults || []).forEach((c) => {
-    if (c.type === 'ot_note') return;
-    try {
-      const summary = typeof c.consult_summary_final === 'string'
-        ? JSON.parse(c.consult_summary_final)
-        : c.consult_summary_final;
-      const diag = summary?.diagnosis;
-      if (typeof diag === 'string' && diag.trim()) {
-        allDiagnoses.add(diag.trim());
-      } else if (diag && typeof diag === 'object') {
-        (Array.isArray(diag.provisional) ? diag.provisional : [])
-          .map((s: unknown) => String(s).trim())
-          .filter(Boolean)
-          .forEach((d: string) => allDiagnoses.add(d));
-      }
-    } catch (e) {}
-  });
-
-  const originalArr = Array.from(allDiagnoses);
-
-  // 3. Get patient's current canonical list — reuse existing canonical mappings
-  const { data: patient, error: pErr } = await supabase
-    .from('patients')
-    .select('diagnoses, diagnoses_canonical')
-    .eq('id', patientId)
-    .single();
-  if (pErr) throw pErr;
-
-  const existingOriginal: string[] = patient?.diagnoses || [];
-  const existingCanonical: string[] = patient?.diagnoses_canonical || [];
-
-  // Build a map from original → canonical using existing mappings
-  const originalToCanonical: Record<string, string> = {};
-  existingOriginal.forEach((orig, idx) => {
-    originalToCanonical[orig] = existingCanonical[idx];
-  });
-
-  // For unknown originals, they'll be missing canonical — we lose them here
-  // (n8n handles canonicalization for new consults; on edits we preserve what we know)
-  const finalOriginal: string[] = [];
-  const finalCanonical: string[] = [];
-  const seen = new Set<string>();
-
-  originalArr.forEach((orig) => {
-    const canon = originalToCanonical[orig];
-    if (canon && !seen.has(canon)) {
-      seen.add(canon);
-      finalOriginal.push(orig);
-      finalCanonical.push(canon);
-    } else if (!canon) {
-      // Unknown original — keep it but use itself as canonical for now
-      if (!seen.has(orig)) {
-        seen.add(orig);
-        finalOriginal.push(orig);
-        finalCanonical.push(orig);
-      }
-    }
-  });
-
-  await supabase
-    .from('patients')
-    .update({ diagnoses: finalOriginal, diagnoses_canonical: finalCanonical })
-    .eq('id', patientId);
 };

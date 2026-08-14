@@ -35,9 +35,8 @@ import {
   deleteConsultMedicine,
   searchMedicines,
   updateConsultSummary,
-  getAppointmentByConsultId,
-  getLocations,
-  recomputePatientDiagnoses,
+  getAppointmentByConsultId, // CHANGED: added for PDF referred_by lookup
+  getLocations, // CHANGED: for patient locations multi-select
 } from '../lib/database';
 import LocationMultiSelect from '../components/features/LocationMultiSelect';
 import type { LocationRow } from '../types/db';
@@ -131,7 +130,7 @@ export default function PatientProfile() {
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
-  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
   const [editLocationIds, setEditLocationIds] = useState<string[]>([]); // CHANGED: patient locations
   const [locations, setLocations] = useState<LocationRow[]>([]); // CHANGED: available locations
 
@@ -143,8 +142,7 @@ export default function PatientProfile() {
         phone: patient.phone,
         case: patient.case || '',
         gender: patient.gender,
-        uhid: patient.uhid || '',
-        address: (patient as any).address || '',
+        uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
       });
       setEditLocationIds((patient as { location_ids?: string[] | null }).location_ids || []); // CHANGED: populate locations
     }
@@ -295,9 +293,8 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
-        uhid: editForm.uhid || undefined,
-        address: editForm.address || undefined,
-        location_ids: editLocationIds,
+        uhid: editForm.uhid || undefined, // CHANGED: save uhid
+        location_ids: editLocationIds, // CHANGED: save patient locations
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -455,14 +452,6 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       const { id: _id, ...payload } = toSave;
       await updateConsultSummary(selectedConsult.id, payload);
       await saveMedicineDraftsToDB();
-      // Recompute patient diagnoses after edit
-      if (patientId && user?.id) {
-        try {
-          await recomputePatientDiagnoses(patientId, user.id);
-        } catch (e) {
-          console.error('Failed to recompute diagnoses:', e);
-        }
-      }
       const { consultsData } = await loadPatientData();
       const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);
       if (updated) setSelectedConsult(updated);
@@ -1681,7 +1670,7 @@ else{
 
           <div className="p-6 space-y-8">
             {processingPreConsults.length > 0 && (
-              <section ref={preConsultSectionRef} className="hidden">
+              <section ref={preConsultSectionRef}>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Pre-Consultation Processing</h2>
                 <div className="space-y-3">
                   {processingPreConsults.map((preConsult) => {
@@ -1771,19 +1760,6 @@ else{
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
             <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.address}
-              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-              className="input-field"
-              placeholder="e.g., Banjara Hills, Hyderabad"
-            />
           </div>
 
           {/* CHANGED: Added UHID field to edit modal */}

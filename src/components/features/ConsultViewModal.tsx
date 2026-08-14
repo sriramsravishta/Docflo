@@ -1107,7 +1107,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
               </div>
             ) : (
             <div className="px-6 py-6 space-y-6">
-              <SectionCard title="Diagnosis">
+              <SectionCard title="Diagnosis" highlighted={isHighlighted('diagnosis')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedDiagnosisText : viewDiagnosis}

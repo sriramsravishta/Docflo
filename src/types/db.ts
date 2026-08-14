@@ -220,3 +220,16 @@ export interface ConsultOutcomeRow {
     phone: string;
   };
 }
+
+export interface ConsultEditRow {
+  id: string;
+  consult_id: string;
+  doc_id: string;
+  recording_file?: string | null;
+  transcript?: string | null;
+  status: 'processing' | 'completed' | 'failed';
+  changed_fields?: string[] | null;
+  error_message?: string | null;
+  created_at: string;
+  updated_at: string;
+}

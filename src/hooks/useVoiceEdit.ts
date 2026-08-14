@@ -1,14 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConsultEdit, triggerVoiceEdit } from '../lib/database';
 
 interface UseVoiceEditReturn {
   isRecording: boolean;
   recordingTime: number;
+  editStatus: 'idle' | 'processing' | 'ready' | 'failed';
+  changedFields: string[];
   startEditRecording: () => Promise<void>;
   stopEditRecording: () => Promise<void>;
   cancelEditRecording: () => void;
-  currentEditId: string | null;
+  dismissEdit: () => void;
 }
 
 export function useVoiceEdit(
@@ -17,10 +19,66 @@ export function useVoiceEdit(
 ): UseVoiceEditReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [currentEditId, setCurrentEditId] = useState<string | null>(null);
+  const [editStatus, setEditStatus] = useState<'idle' | 'processing' | 'ready' | 'failed'>('idle');
+  const [changedFields, setChangedFields] = useState<string[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
+  const currentEditIdRef = useRef<string | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // Start polling consult_edits for status changes
+  const startPolling = useCallback((editId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollCountRef.current = 0;
+
+    pollRef.current = setInterval(async () => {
+      pollCountRef.current += 1;
+
+      // Timeout after 40 polls (2 minutes) — something went wrong
+      if (pollCountRef.current > 40) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = null;
+        setEditStatus('failed');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('consult_edits')
+          .select('status, changed_fields, error_message')
+          .eq('id', editId)
+          .single();
+
+        if (error || !data) return; // keep polling
+
+        if (data.status === 'completed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setChangedFields(data.changed_fields || []);
+          setEditStatus('ready');
+        } else if (data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setEditStatus('failed');
+          console.error('Voice edit failed:', data.error_message);
+        }
+        // else status === 'processing' → keep polling
+      } catch (e) {
+        console.error('Poll error:', e);
+        // Don't stop polling on transient errors
+      }
+    }, 3000);
+  }, []);
 
   const startEditRecording = async () => {
     try {
@@ -36,6 +94,8 @@ export function useVoiceEdit(
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
       setRecordingTime(0);
+      setEditStatus('idle');
+      setChangedFields([]);
       intervalRef.current = setInterval(() => {
         setRecordingTime((t) => {
           if (t >= 90) {
@@ -76,6 +136,9 @@ export function useVoiceEdit(
             return;
           }
 
+          // Set processing IMMEDIATELY so UI reacts
+          setEditStatus('processing');
+
           const fileName = `edit-${consultId}-${Date.now()}.webm`;
           const { data: upload, error: uploadErr } = await supabase.storage
             .from('consultation-recordings')
@@ -88,10 +151,14 @@ export function useVoiceEdit(
             .getPublicUrl(upload.path);
 
           const edit = await createConsultEdit(consultId, docId, urlData.publicUrl);
-          setCurrentEditId(edit.id);
+          currentEditIdRef.current = edit.id;
           triggerVoiceEdit(edit.id, consultId, urlData.publicUrl);
+
+          // Start polling for completion
+          startPolling(edit.id);
         } catch (e) {
           console.error('Voice edit upload/trigger failed:', e);
+          setEditStatus('failed');
         } finally {
           resolve();
         }
@@ -116,12 +183,23 @@ export function useVoiceEdit(
     chunksRef.current = [];
   };
 
+  const dismissEdit = () => {
+    setEditStatus('idle');
+    setChangedFields([]);
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
   return {
     isRecording,
     recordingTime,
+    editStatus,
+    changedFields,
     startEditRecording,
     stopEditRecording,
     cancelEditRecording,
-    currentEditId,
+    dismissEdit,
   };
 }

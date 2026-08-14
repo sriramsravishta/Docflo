@@ -188,6 +188,23 @@ export function useVoiceEdit(
     chunksRef.current = [];
   };
 
+    const pauseEditRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    if (isPaused) {
+      mediaRecorderRef.current.resume();
+      intervalRef.current = setInterval(() => {
+        setRecordingTime((t) => {
+          if (t >= 90) { stopEditRecording(); return t; }
+          return t + 1;
+        });
+      }, 1000);
+    } else {
+      mediaRecorderRef.current.pause();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+    setIsPaused(!isPaused);
+  };
+
   const dismissEdit = () => {
     setEditStatus('idle');
     setChangedFields([]);

@@ -1294,6 +1294,52 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
           )}
         </div>
       </div>
+
+{/* Voice edit status bar */}
+      {editStatus === 'processing' && !showEditBar && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-purple-200 px-4 py-2 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+          <span className="text-sm text-gray-700">Applying edits…</span>
+        </div>
+      )}
+
+      {editStatus === 'ready' && showEditBar && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-blue-300 px-4 py-2 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-sm text-gray-700">
+            {changedFields.length === 0
+              ? 'No changes applied'
+              : `${changedFields.length} field${changedFields.length > 1 ? 's' : ''} updated`}
+          </span>
+          <button
+            onClick={() => {
+              setShowEditBar(false);
+              setChangedFields([]);
+              setEditStatus('idle');
+            }}
+            className="text-sm font-medium text-[#024CDB] hover:underline"
+          >
+            Got it
+          </button>
+        </div>
+      )}
+
+      {editStatus === 'failed' && showEditBar && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-red-300 px-4 py-2 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="text-sm text-gray-700">Voice edit failed. Please try again.</span>
+          <button
+            onClick={() => {
+              setShowEditBar(false);
+              setEditStatus('idle');
+            }}
+            className="text-sm font-medium text-red-600 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       {/* Recording Player Modal */}
       {showPlayer && consult?.recording_file && (
         <div

@@ -1368,7 +1368,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
       </div>
 
       {/* Voice edit status bar */}
-      {voiceEdit.editStatus === 'ready' && (
+            {voiceEdit.editStatus === 'ready' && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-blue-300 px-4 py-2 flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
           <span className="text-sm text-gray-700">
@@ -1376,6 +1376,14 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               ? 'No changes applied'
               : `${voiceEdit.changedFields.length} field${voiceEdit.changedFields.length > 1 ? 's' : ''} updated`}
           </span>
+          <button
+            onClick={handleUndoEdit}
+            disabled={undoing}
+            className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
+          >
+            {undoing ? 'Undoing…' : 'Undo'}
+          </button>
+          <span className="text-gray-300">|</span>
           <button
             onClick={voiceEdit.dismissEdit}
             className="text-sm font-medium text-[#024CDB] hover:underline"

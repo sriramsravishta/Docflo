@@ -1012,7 +1012,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     <p className="text-sm font-medium text-amber-800">This recording was routed as an OT Note but appears to be a consultation. Please re-record using the Record button.</p>
                   </div>
                 )}
-                <SectionCard title="Procedure">
+                <SectionCard title="Procedure" highlighted={isHighlighted('procedure_name')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.procedure_name) : (otSummary?.procedure_name || 'No procedure recorded')}
@@ -1020,7 +1020,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     emptyText="No procedure recorded"
                   />
                 </SectionCard>
-                <SectionCard title="Indications">
+                <SectionCard title="Indications" highlighted={isHighlighted('indications')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.indications) : (otSummary?.indications || 'No indications recorded')}
@@ -1029,7 +1029,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                   />
                 </SectionCard>
                 {(isEditing || otSummary?.anesthesia_type) && (
-                  <SectionCard title="Anesthesia">
+                  <SectionCard title="Anesthesia" highlighted={isHighlighted('anesthesia_type')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.anesthesia_type) : (otSummary?.anesthesia_type || '')}
@@ -1038,7 +1038,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     />
                   </SectionCard>
                 )}
-                <SectionCard title="Intraoperative Findings">
+                <SectionCard title="Intraoperative Findings" highlighted={isHighlighted('intraoperative_findings')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.intraoperative_findings) : toPlainText(otSummary?.intraoperative_findings, 'No findings recorded')}
@@ -1046,7 +1046,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     emptyText="No findings recorded"
                   />
                 </SectionCard>
-                <SectionCard title="Procedure Steps">
+                <SectionCard title="Procedure Steps" highlighted={isHighlighted('procedure_steps')}>
                   <div className="px-3 py-2">
                     {isEditing ? (
                       <SyncedAutoBox
@@ -1067,7 +1067,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     )}
                   </div>
                 </SectionCard>
-                <SectionCard title="Complications">
+               <SectionCard title="Complications" highlighted={isHighlighted('complications')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.complications) : (otSummary?.complications || 'None. Procedure was uneventful.')}
@@ -1076,7 +1076,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                   />
                 </SectionCard>
                 {(isEditing || otSummary?.estimated_blood_loss) && (
-                  <SectionCard title="Estimated Blood Loss">
+                  <SectionCard title="Estimated Blood Loss" highlighted={isHighlighted('estimated_blood_loss')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.estimated_blood_loss) : (otSummary?.estimated_blood_loss || '')}
@@ -1086,7 +1086,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                   </SectionCard>
                 )}
                 {(isEditing || otSummary?.specimens_sent) && (
-                  <SectionCard title="Specimens Sent">
+                  <SectionCard title="Specimens Sent" highlighted={isHighlighted('specimens_sent')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.specimens_sent) : (otSummary?.specimens_sent || '')}
@@ -1095,7 +1095,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                     />
                   </SectionCard>
                 )}
-                <SectionCard title="Post-op Instructions">
+                <SectionCard title="Post-op Instructions" highlighted={isHighlighted('post_op_instructions')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.post_op_instructions) : toPlainText(otSummary?.post_op_instructions, 'No instructions recorded')}

@@ -1134,7 +1134,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
                 />
               </SectionCard>
 
-              <SectionCard title="Past Medical History">
+              <SectionCard title="Past Medical History" highlighted={isHighlighted('past_medical_history')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText((editedConsult as any)?.past_medical_history) : viewPMH}
@@ -1144,7 +1144,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
               </SectionCard>
 
               {(isEditing || hasFindings) && (
-                <SectionCard title="Examination & Findings">
+                <SectionCard title="Examination & Findings" highlighted={isHighlighted('examination_findings')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText((editedConsult as any)?.examination_findings) : viewFindings}
@@ -1200,7 +1200,7 @@ const [changedFields, setChangedFields] = useState<string[]>([]);
               </SectionCard>
 
 
-              <SectionCard title="Investigations">
+              <SectionCard title="Investigations" highlighted={isHighlighted('investigations')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedInvestigationsText : viewInvestigations}

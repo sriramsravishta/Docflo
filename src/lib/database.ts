@@ -1041,3 +1041,47 @@ export const updateOutcome = async (
   if (error) throw error;
   return data as ConsultOutcomeRow;
 };
+
+import type { ConsultEditRow } from '../types/db';
+
+// Voice Edit — webhook URL
+const VOICE_EDIT_WEBHOOK_URL = 'YOUR_N8N_VOICE_EDIT_WEBHOOK_URL_HERE';
+
+export const createConsultEdit = async (
+  consultId: string,
+  docId: string,
+  recordingFileUrl: string
+): Promise<ConsultEditRow> => {
+  const { data, error } = await supabase
+    .from('consult_edits')
+    .insert({
+      consult_id: consultId,
+      doc_id: docId,
+      recording_file: recordingFileUrl,
+      status: 'processing',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ConsultEditRow;
+};
+
+export const triggerVoiceEdit = async (
+  editId: string,
+  consultId: string,
+  recordingUrl: string
+): Promise<void> => {
+  try {
+    await fetch(VOICE_EDIT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        edit_id: editId,
+        consult_id: consultId,
+        recording_url: recordingUrl,
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to trigger voice edit workflow:', e);
+  }
+};

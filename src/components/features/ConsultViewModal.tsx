@@ -1030,7 +1030,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   <div className="w-2 h-2 rounded-full bg-purple-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
                 </div>
                 <span className="text-sm font-medium text-gray-700">Applying voice edits…</span>
-                <span className="text-xs text-gray-400">Usually takes 30–60 seconds</span>
+                <span className="text-xs text-gray-400">Usually takes 10–20 seconds</span>
               </div>
             </div>
           )}

@@ -135,7 +135,7 @@ export default function PatientProfileHeader({
         </div>
 
         {/* Row 2 on mobile: Recording buttons */}
-        <div className="flex gap-3">
+                <div className="flex gap-3">
           {isRecording ? (
             <>
               <button
@@ -157,6 +157,13 @@ export default function PatientProfileHeader({
               >
                 {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                 <span className="text-sm">{isPaused ? 'Resume' : 'Pause'}</span>
+              </button>
+              <button
+                onClick={onCancelRecording}
+                className="flex-1 sm:flex-none sm:min-w-[120px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-gray-100 hover:bg-gray-200 text-gray-600"
+              >
+                <XCircle className="w-4 h-4" />
+                <span className="text-sm">Cancel</span>
               </button>
             </>
           ) : (

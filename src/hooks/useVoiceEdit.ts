@@ -20,7 +20,8 @@ export function useVoiceEdit(
   consultId: string | undefined,
   docId: string | undefined
 ): UseVoiceEditReturn {
-  const [isRecording, setIsRecording] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [editStatus, setEditStatus] = useState<'idle' | 'processing' | 'ready' | 'failed'>('idle');
   const [changedFields, setChangedFields] = useState<string[]>([]);

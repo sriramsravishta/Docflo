@@ -74,13 +74,18 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const sortedActiveAppointments = [...filteredActiveAppointments].sort(sortByWhenDesc);
   const pendingActiveAppointments = sortedActiveAppointments.filter((a) => a.completed !== true);
 
-  const hasAnyLocation = filteredActiveAppointments.some((a) => a.location_id);
+  const hasAnyLocation = filteredActiveAppointments.some(
+    (a) => Array.isArray((a.patients as any)?.location_ids) && (a.patients as any).location_ids.length > 0
+  );
   const locationGroups = (() => {
     if (!hasAnyLocation) return [];
     const matched = new Set<string>();
     const groups: { key: string; name: string; items: AppointmentRow[] }[] = [];
     locations.forEach((loc) => {
-      const items = filteredActiveAppointments.filter((a) => a.location_id === loc.id);
+      const items = filteredActiveAppointments.filter((a) => {
+        const patientLocationIds: string[] = (a.patients as any)?.location_ids || [];
+        return patientLocationIds.includes(loc.id);
+      });
       if (items.length) {
         items.forEach((i) => matched.add(i.id));
         groups.push({ key: loc.id, name: loc.name, items: [...items].sort(sortByWhenDesc) });

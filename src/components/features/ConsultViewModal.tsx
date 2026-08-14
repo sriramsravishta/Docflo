@@ -1014,8 +1014,22 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+                {/* Body */}
+        <div className="flex-1 overflow-y-auto relative">
+          {/* Voice edit processing overlay */}
+          {voiceEdit.editStatus === 'processing' && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 px-6 py-4 bg-white rounded-xl shadow-lg border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 rounded-full bg-purple-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
+                <span className="text-sm font-medium text-gray-700">Applying voice edits…</span>
+                <span className="text-xs text-gray-400">Usually takes 30–60 seconds</span>
+              </div>
+            </div>
+          )}
           {summary ? (
             isOTNote ? (
               /* ── OT NOTE VIEW ── */

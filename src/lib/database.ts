@@ -28,9 +28,9 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
     .select('id, completed')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 

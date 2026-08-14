@@ -812,11 +812,12 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
   const [flagsOpen, setFlagsOpen] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const voiceEdit = useVoiceEdit(consult.id, props.userId);
   const isHighlighted = (fieldName: string): boolean => {
     return voiceEdit.editStatus === 'ready' && voiceEdit.changedFields.includes(fieldName);
   };
 
-  const voiceEdit = useVoiceEdit(consult.id, props.userId);
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col overflow-hidden">

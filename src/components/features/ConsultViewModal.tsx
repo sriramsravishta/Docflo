@@ -812,23 +812,9 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
   const [flagsOpen, setFlagsOpen] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
-const [changedFields, setChangedFields] = useState<string[]>([]);
-  const [showEditBar, setShowEditBar] = useState(false);
-  const [editStatus, setEditStatus] = useState<'idle' | 'processing' | 'ready' | 'failed'>('idle');
-
   const isHighlighted = (fieldName: string): boolean => {
-    return editStatus === 'ready' && changedFields.includes(fieldName);
+    return voiceEdit.editStatus === 'ready' && voiceEdit.changedFields.includes(fieldName);
   };
-
-  useEffect(() => {
-    if (editStatus !== 'ready') return;
-    const t = setTimeout(() => {
-      setShowEditBar(false);
-      setChangedFields([]);
-      setEditStatus('idle');
-    }, 30000);
-    return () => clearTimeout(t);
-  }, [editStatus]);
 
   const voiceEdit = useVoiceEdit(consult.id, props.userId);
   return (

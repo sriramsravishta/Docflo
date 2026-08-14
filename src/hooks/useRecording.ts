@@ -161,5 +161,5 @@ if (finalChunks.length > 0) {
     await handleStartRecording();
   };
 
-  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, recordingMode, handleStartRecordingWithMode };
+    return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode };
 }

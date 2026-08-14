@@ -1597,7 +1597,7 @@ else{
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <PatientProfileHeader
+                <PatientProfileHeader
           patient={patient}
           isRecording={isRecording}
           isPaused={isPaused}
@@ -1607,6 +1607,7 @@ else{
           onStartOTRecording={() => handleStartRecordingWithMode('ot_note')}
           onEndRecording={handleEndRecording}
           onPauseRecording={handlePauseRecording}
+          onCancelRecording={handleCancelRecording}
           onEditPatient={() => setShowEditModal(true)}
           onAddVitals={() => setShowVitalsModal(true)}
           onUploadDocuments={() => setShowDocumentUpload(true)}

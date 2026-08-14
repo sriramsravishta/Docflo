@@ -599,6 +599,9 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 onChange={setNewLocationId}
                 onCreate={handleCreateLocation}
               />
+              {existingPatient && newLocationId && (
+                <p className="text-xs text-green-600 mt-1">Location auto-filled from patient profile</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

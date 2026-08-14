@@ -16,6 +16,7 @@ interface UseRecordingReturn {
   handleStartRecording: () => Promise<void>;
   handlePauseRecording: () => void;
   handleEndRecording: () => Promise<void>;
+  handleCancelRecording: () => void;
 }
 
 export function useRecording(

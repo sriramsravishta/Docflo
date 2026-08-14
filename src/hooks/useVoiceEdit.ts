@@ -98,6 +98,7 @@ export function useVoiceEdit(
       recorder.start();
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
+      setIsPaused(false);
       setRecordingTime(0);
       setEditStatus('idle');
       setChangedFields([]);

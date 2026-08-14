@@ -229,9 +229,13 @@ function investigationsToText(investigations: unknown) {
     if (ordered.length) {
       lines.push('Ordered Investigations:');
       ordered.forEach((o) => {
-        const name = o?.name ? String(o.name) : '-';
-        const body = o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
-        const pr = o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+        // 1. Check if 'o' is just a string first, otherwise look for o.name
+        const name = typeof o === 'string' ? o : (o?.name ? String(o.name) : '-');
+        
+        // 2. Only check for body and priority if 'o' is actually an object
+        const body = typeof o === 'object' && o !== null && o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
+        const pr = typeof o === 'object' && o !== null && o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+        
         lines.push(`- ${name}${body}${pr}`);
       });
       lines.push('');

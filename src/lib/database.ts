@@ -704,9 +704,9 @@ export const updateAppointmentConsultId = async (patientId: string, docId: strin
     .select('id')
     .eq('patient_id', patientId)
     .eq('doc_id', docId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 

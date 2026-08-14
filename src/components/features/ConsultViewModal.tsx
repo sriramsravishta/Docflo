@@ -868,7 +868,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               }`}
               title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
             >
-              {voiceEdit.isRecording ? (
+                            {voiceEdit.isRecording ? (
                 <>
                   <Square className="w-4 h-4" />
                   <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
@@ -880,6 +880,14 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 </>
               )}
             </button>
+            {voiceEdit.isRecording && (
+              <button
+                onClick={voiceEdit.cancelEditRecording}
+                className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           )}
 
           <button

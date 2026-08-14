@@ -61,7 +61,8 @@ export function useVoiceEdit(
 
         if (error || !data) return; // keep polling
 
-        if (data.status === 'completed') {
+               const hasChanges = Array.isArray(data.changed_fields) && data.changed_fields.length > 0;
+        if (data.status === 'completed' || (data.status === 'failed' && hasChanges)) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setChangedFields(data.changed_fields || []);

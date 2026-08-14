@@ -12,7 +12,9 @@ import {
   History,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
-
+import { Mic, Square } from 'lucide-react';
+import { useVoiceEdit } from '../../hooks/useVoiceEdit';
+import { supabase } from '../../lib/supabase';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 

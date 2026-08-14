@@ -143,6 +143,19 @@ if (finalChunks.length > 0) {
     }
   };
 
+    const handleCancelRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
+    clearInterval(win.recordingInterval);
+    setIsRecording(false);
+    setIsPaused(false);
+    setRecordingTime(0);
+    setMediaRecorder(null);
+    setToast({ message: 'Recording cancelled', type: 'info' });
+  };
+
   const handleStartRecordingWithMode = async (mode: 'consultation' | 'ot_note') => {
     setRecordingMode(mode);
     await handleStartRecording();

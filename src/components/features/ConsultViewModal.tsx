@@ -843,7 +843,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="5" /> 
+                <circle cx="12" cy="12" r="5" />
                 <path fillOpacity="0.25" d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" />
               </svg>
               <span>Listen</span>

@@ -19,7 +19,7 @@ interface PatientProfileHeaderProps {
   onStartRecording: () => void;
   onStartOTRecording: () => void;
   onEndRecording: () => void;
-    onPauseRecording: () => void;
+  onPauseRecording: () => void;
   onCancelRecording: () => void;
   onEditPatient: () => void;
   onAddVitals: () => void;

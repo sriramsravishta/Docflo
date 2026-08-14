@@ -4,12 +4,14 @@ import { createConsultEdit, triggerVoiceEdit } from '../lib/database';
 
 interface UseVoiceEditReturn {
   isRecording: boolean;
+  isPaused: boolean;
   recordingTime: number;
   editStatus: 'idle' | 'processing' | 'ready' | 'failed';
   changedFields: string[];
   lastEditId: string | null;
   startEditRecording: () => Promise<void>;
   stopEditRecording: () => Promise<void>;
+  pauseEditRecording: () => void;
   cancelEditRecording: () => void;
   dismissEdit: () => void;
 }

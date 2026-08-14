@@ -899,7 +899,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             <span>Edit</span>
           </button>
 
-                    {!isEditing && (
+                              {!isEditing && (
             <>
               <button
                 onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
@@ -923,12 +923,24 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 )}
               </button>
               {voiceEdit.isRecording && (
-                <button
-                  onClick={voiceEdit.cancelEditRecording}
-                  className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
-                >
-                  Cancel
-                </button>
+                <>
+                  <button
+                    onClick={voiceEdit.pauseEditRecording}
+                    className={`px-2 py-1.5 rounded text-sm transition-colors ${
+                      voiceEdit.isPaused
+                        ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    {voiceEdit.isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={voiceEdit.cancelEditRecording}
+                    className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
               )}
             </>
           )}
@@ -989,7 +1001,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             <span>Edit</span>
           </button>
 
-          {!isEditing && (
+                   {!isEditing && (
             <>
               <button
                 onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
@@ -1013,12 +1025,24 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 )}
               </button>
               {voiceEdit.isRecording && (
-                <button
-                  onClick={voiceEdit.cancelEditRecording}
-                  className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
-                >
-                  Cancel
-                </button>
+                <>
+                  <button
+                    onClick={voiceEdit.pauseEditRecording}
+                    className={`px-2 py-1.5 rounded text-sm transition-colors ${
+                      voiceEdit.isPaused
+                        ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    {voiceEdit.isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={voiceEdit.cancelEditRecording}
+                    className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
               )}
             </>
           )}

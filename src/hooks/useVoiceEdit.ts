@@ -7,6 +7,7 @@ interface UseVoiceEditReturn {
   recordingTime: number;
   editStatus: 'idle' | 'processing' | 'ready' | 'failed';
   changedFields: string[];
+  lastEditId: string | null;
   startEditRecording: () => Promise<void>;
   stopEditRecording: () => Promise<void>;
   cancelEditRecording: () => void;

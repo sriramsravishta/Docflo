@@ -22,17 +22,33 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
 ): Promise<boolean> {
   const { startISO, endISO } = getTodayBoundsISO();
 
-  // ✅ Fetch ONLY today's appointment for this patient + doctor
-  const { data: row, error: fetchError } = await supabase
+  // Try scheduled_at first (handles future-dated appointments)
+  let { data: row, error: fetchError } = await supabase
     .from('appointments')
     .select('id, completed')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Fallback: if no match on scheduled_at, try created_at (for appointments without scheduled_at)
+  if (!row) {
+    const fallback = await supabase
+      .from('appointments')
+      .select('id, completed')
+      .eq('patient_id', patientId)
+      .eq('doc_id', doctorId)
+      .gte('created_at', startISO)
+      .lte('created_at', endISO)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    row = fallback.data;
+    fetchError = fallback.error;
+  }
 
   if (fetchError) throw fetchError;
 

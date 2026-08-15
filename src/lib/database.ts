@@ -713,19 +713,36 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
 export const updateAppointmentConsultId = async (patientId: string, docId: string, consultId: string) => {
   const { startISO, endISO } = getTodayBoundsISO();
 
-  const { data: row, error: fetchError } = await supabase
+  // Try scheduled_at first (handles future-dated appointments)
+  let { data: row, error: fetchError } = await supabase
     .from('appointments')
     .select('id')
     .eq('patient_id', patientId)
     .eq('doc_id', docId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  // Fallback: try created_at for appointments without scheduled_at
+  if (!row) {
+    const fallback = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('patient_id', patientId)
+      .eq('doc_id', docId)
+      .gte('created_at', startISO)
+      .lte('created_at', endISO)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    row = fallback.data;
+    fetchError = fallback.error;
+  }
+
   if (fetchError) throw fetchError;
-  if (!row?.id) return null; // no appointment today, skip silently
+  if (!row?.id) return null;
 
   const { data, error: updateError } = await supabase
     .from('appointments')

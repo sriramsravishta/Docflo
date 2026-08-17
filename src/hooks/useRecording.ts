@@ -101,6 +101,7 @@ export function useRecording(
 
   const handleEndRecording = async () => {
     if (!mediaRecorder) return;
+    releaseWakeLock();
     setIsRecording(false);
     const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
     clearInterval(win.recordingInterval);

@@ -1790,6 +1790,19 @@ else{
             />
           </div>
 
+                    <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <textarea
+              value={editForm.address}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              className="input-field min-h-[80px] resize-y"
+              placeholder="Full address"
+              rows={3}
+            />
+          </div>
+
           <div className="flex space-x-3 justify-end pt-4">
             <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary">Save Changes</button>

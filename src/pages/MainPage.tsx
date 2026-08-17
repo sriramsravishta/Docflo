@@ -47,7 +47,7 @@ export default function MainPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'summary'>('today');
   const [showAddPatient, setShowAddPatient] = useState(false);
-  const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string } | null>(null); // CHANGED: added uhid to type
+ const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string; address?: string } | null>(null);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);

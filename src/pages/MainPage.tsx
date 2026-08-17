@@ -158,6 +158,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         } else {
           setExistingPatient(null);
                     setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });
+        }
       } catch (error) {
         console.error('Error checking patient:', error);
       }

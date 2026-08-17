@@ -143,6 +143,7 @@ export default function PatientProfile() {
         case: patient.case || '',
         gender: patient.gender,
         uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
+        address: patient.address || '',
       });
       setEditLocationIds((patient as { location_ids?: string[] | null }).location_ids || []); // CHANGED: populate locations
     }
@@ -285,7 +286,7 @@ export default function PatientProfile() {
     } catch (error) { console.error('Error loading consult medicines:', error); }
   };
  
-  const handleEditPatient = async () => {
+    const handleEditPatient = async () => {
     try {
       await updatePatient(patientId!, {
         name: editForm.name,
@@ -293,8 +294,9 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
-        uhid: editForm.uhid || undefined, // CHANGED: save uhid
-        location_ids: editLocationIds, // CHANGED: save patient locations
+        uhid: editForm.uhid || undefined,
+        address: editForm.address || undefined,
+        location_ids: editLocationIds,
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -1773,6 +1775,19 @@ else{
               onChange={(e) => setEditForm({ ...editForm, uhid: e.target.value })}
               className="input-field"
               placeholder="e.g., UHID-00123"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={editForm.address}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              className="input-field"
+              placeholder="Full address"
             />
           </div>
 

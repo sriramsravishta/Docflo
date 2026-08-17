@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 

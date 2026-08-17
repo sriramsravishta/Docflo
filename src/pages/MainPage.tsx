@@ -510,6 +510,20 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
+                   {/* Group 5: Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <textarea
+              value={newPatient.address}
+              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+              className="input-field min-h-[80px] resize-y"
+              placeholder="Full address"
+              rows={3}
+            />
+          </div>
+
           {/* Group 4: Appointment Logistics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>

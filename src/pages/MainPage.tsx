@@ -154,7 +154,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         const patient = await getPatientByPhone(phone, user!.id);
         if (patient) {
           setExistingPatient(patient);
-          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '' }); // CHANGED: auto-fill uhid
+          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
         } else {
           setExistingPatient(null);
           setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid

@@ -157,7 +157,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
         } else {
           setExistingPatient(null);
-          setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
+          setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
         }
       } catch (error) {
         console.error('Error checking patient:', error);

@@ -518,7 +518,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             <textarea
               value={newPatient.address}
               onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-              className="input-field min-h-[80px] resize-y"
+              className="input-field min-h-[40px] resize-y"
               placeholder="Full address"
               rows={3}
             />

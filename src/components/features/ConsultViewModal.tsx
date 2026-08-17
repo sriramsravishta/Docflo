@@ -12,7 +12,9 @@ import {
   History,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
-
+import { Mic, Square } from 'lucide-react';
+import { useVoiceEdit } from '../../hooks/useVoiceEdit';
+import { supabase } from '../../lib/supabase';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 
@@ -227,9 +229,13 @@ function investigationsToText(investigations: unknown) {
     if (ordered.length) {
       lines.push('Ordered Investigations:');
       ordered.forEach((o) => {
-        const name = o?.name ? String(o.name) : '-';
-        const body = o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
-        const pr = o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+        // 1. Check if 'o' is just a string first, otherwise look for o.name
+        const name = typeof o === 'string' ? o : (o?.name ? String(o.name) : '-');
+        
+        // 2. Only check for body and priority if 'o' is actually an object
+        const body = typeof o === 'object' && o !== null && o?.body_part_or_type ? ` — ${String(o.body_part_or_type)}` : '';
+        const pr = typeof o === 'object' && o !== null && o?.priority ? ` (Priority: ${String(o.priority)})` : '';
+        
         lines.push(`- ${name}${body}${pr}`);
       });
       lines.push('');
@@ -338,13 +344,19 @@ function SectionCard({
   right,
   children,
   tone = 'default',
+  highlighted = false,
 }: {
   title: string;
   right?: React.ReactNode;
   children: React.ReactNode;
   tone?: 'default' | 'danger';
+  highlighted?: boolean;
 }) {
-  const toneClass = tone === 'danger' ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white';
+  const toneClass = highlighted 
+    ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-200'
+    : tone === 'danger' 
+      ? 'border-red-200 bg-red-50' 
+      : 'border-gray-200 bg-white';
 
   return (
     <div className={`border rounded-lg ${toneClass} overflow-hidden`}>
@@ -804,7 +816,49 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
   const [flagsOpen, setFlagsOpen] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+    const voiceEdit = useVoiceEdit(consult.id, props.userId);
+  const [undoing, setUndoing] = useState(false);
+  const isHighlighted = (fieldName: string): boolean => {
+    return voiceEdit.editStatus === 'ready' && voiceEdit.changedFields.includes(fieldName);
+  };
 
+  const handleUndoEdit = async () => {
+    if (!voiceEdit.lastEditId) return;
+    setUndoing(true);
+    try {
+      const { data: editRow } = await supabase
+        .from('consult_edits')
+        .select('summary_before')
+        .eq('id', voiceEdit.lastEditId)
+        .single();
+      if (editRow?.summary_before) {
+        await supabase
+          .from('consult')
+          .update({ consult_summary_final: JSON.stringify(editRow.summary_before) })
+          .eq('id', consult.id);
+        // Log the undo as its own edit
+        await supabase.from('consult_edits').insert({
+          consult_id: consult.id,
+          doc_id: props.userId || '',
+          source: 'manual_edit',
+          status: 'completed',
+          changed_fields: voiceEdit.changedFields,
+          summary_before: null,
+          summary_after: editRow.summary_before,
+        });
+        voiceEdit.dismissEdit();
+      } else {
+        alert('Undo data not available for this edit.');
+      }
+    } catch (e) {
+      console.error('Undo failed:', e);
+      alert('Failed to undo. Please try again.');
+    } finally {
+      setUndoing(false);
+    }
+  };
+
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -844,6 +898,52 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             <Edit className="w-4 h-4" />
             <span>Edit</span>
           </button>
+
+                              {!isEditing && (
+            <>
+              <button
+                onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                  voiceEdit.isRecording
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                }`}
+                title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
+              >
+                {voiceEdit.isRecording ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    <span>Voice Edit</span>
+                  </>
+                )}
+              </button>
+              {voiceEdit.isRecording && (
+                <>
+                  <button
+                    onClick={voiceEdit.pauseEditRecording}
+                    className={`px-2 py-1.5 rounded text-sm transition-colors ${
+                      voiceEdit.isPaused
+                        ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    {voiceEdit.isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={voiceEdit.cancelEditRecording}
+                    className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </>
+          )}
 
           <button
             onClick={onDownloadPDF}
@@ -901,6 +1001,52 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             <span>Edit</span>
           </button>
 
+                   {!isEditing && (
+            <>
+              <button
+                onClick={voiceEdit.isRecording ? voiceEdit.stopEditRecording : voiceEdit.startEditRecording}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                  voiceEdit.isRecording
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                }`}
+                title={voiceEdit.isRecording ? 'Stop and apply edits' : 'Voice edit'}
+              >
+                {voiceEdit.isRecording ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    <span>{Math.floor(voiceEdit.recordingTime / 60)}:{(voiceEdit.recordingTime % 60).toString().padStart(2, '0')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    <span>Voice Edit</span>
+                  </>
+                )}
+              </button>
+              {voiceEdit.isRecording && (
+                <>
+                  <button
+                    onClick={voiceEdit.pauseEditRecording}
+                    className={`px-2 py-1.5 rounded text-sm transition-colors ${
+                      voiceEdit.isPaused
+                        ? 'bg-[#024CDB] hover:bg-[#023BA3] text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    {voiceEdit.isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={voiceEdit.cancelEditRecording}
+                    className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </>
+          )}
+          
           <button
             onClick={onDownloadPDF}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -937,8 +1083,24 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+                {/* Body */}
+        <div className="flex-1 overflow-y-auto relative">
+          {/* Voice edit processing overlay */}
+                    {voiceEdit.editStatus === 'processing' && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4 px-8 py-6 bg-white rounded-2xl shadow-xl border border-purple-100">
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 rounded-full border-4 border-purple-100" />
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin" />
+                  <Mic className="absolute inset-0 m-auto w-5 h-5 text-purple-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-800">Applying voice edits…</p>
+                  <p className="text-xs text-gray-400 mt-1">Usually takes 10–20 seconds</p>
+                </div>
+              </div>
+            </div>
+          )}
           {summary ? (
             isOTNote ? (
               /* ── OT NOTE VIEW ── */
@@ -948,7 +1110,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     <p className="text-sm font-medium text-amber-800">This recording was routed as an OT Note but appears to be a consultation. Please re-record using the Record button.</p>
                   </div>
                 )}
-                <SectionCard title="Procedure">
+                <SectionCard title="Procedure" highlighted={isHighlighted('procedure_name')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.procedure_name) : (otSummary?.procedure_name || 'No procedure recorded')}
@@ -956,7 +1118,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     emptyText="No procedure recorded"
                   />
                 </SectionCard>
-                <SectionCard title="Indications">
+                <SectionCard title="Indications" highlighted={isHighlighted('indications')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.indications) : (otSummary?.indications || 'No indications recorded')}
@@ -965,7 +1127,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   />
                 </SectionCard>
                 {(isEditing || otSummary?.anesthesia_type) && (
-                  <SectionCard title="Anesthesia">
+                  <SectionCard title="Anesthesia" highlighted={isHighlighted('anesthesia_type')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.anesthesia_type) : (otSummary?.anesthesia_type || '')}
@@ -974,7 +1136,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     />
                   </SectionCard>
                 )}
-                <SectionCard title="Intraoperative Findings">
+                <SectionCard title="Intraoperative Findings" highlighted={isHighlighted('intraoperative_findings')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.intraoperative_findings) : toPlainText(otSummary?.intraoperative_findings, 'No findings recorded')}
@@ -982,7 +1144,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     emptyText="No findings recorded"
                   />
                 </SectionCard>
-                <SectionCard title="Procedure Steps">
+                <SectionCard title="Procedure Steps" highlighted={isHighlighted('procedure_steps')}>
                   <div className="px-3 py-2">
                     {isEditing ? (
                       <SyncedAutoBox
@@ -1003,7 +1165,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     )}
                   </div>
                 </SectionCard>
-                <SectionCard title="Complications">
+               <SectionCard title="Complications" highlighted={isHighlighted('complications')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.complications) : (otSummary?.complications || 'None. Procedure was uneventful.')}
@@ -1012,7 +1174,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   />
                 </SectionCard>
                 {(isEditing || otSummary?.estimated_blood_loss) && (
-                  <SectionCard title="Estimated Blood Loss">
+                  <SectionCard title="Estimated Blood Loss" highlighted={isHighlighted('estimated_blood_loss')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.estimated_blood_loss) : (otSummary?.estimated_blood_loss || '')}
@@ -1022,7 +1184,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   </SectionCard>
                 )}
                 {(isEditing || otSummary?.specimens_sent) && (
-                  <SectionCard title="Specimens Sent">
+                  <SectionCard title="Specimens Sent" highlighted={isHighlighted('specimens_sent')}>
                     <SyncedAutoBox
                       isEditing={isEditing}
                       text={isEditing ? toEditText(editedConsult?.specimens_sent) : (otSummary?.specimens_sent || '')}
@@ -1031,7 +1193,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     />
                   </SectionCard>
                 )}
-                <SectionCard title="Post-op Instructions">
+                <SectionCard title="Post-op Instructions" highlighted={isHighlighted('post_op_instructions')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText(editedConsult?.post_op_instructions) : toPlainText(otSummary?.post_op_instructions, 'No instructions recorded')}
@@ -1043,7 +1205,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               </div>
             ) : (
             <div className="px-6 py-6 space-y-6">
-              <SectionCard title="Diagnosis">
+              <SectionCard title="Diagnosis" highlighted={isHighlighted('diagnosis')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedDiagnosisText : viewDiagnosis}
@@ -1052,7 +1214,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 />
               </SectionCard>
 
-              <SectionCard title="Chief Complaints">
+              <SectionCard title="Chief Complaints" highlighted={isHighlighted('chief_complaints')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText(editedConsult?.chief_complaints) : viewChief}
@@ -1061,7 +1223,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 />
               </SectionCard>
 
-              <SectionCard title="History of Present Illness">
+              <SectionCard title="History of Present Illness" highlighted={isHighlighted('history')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText(editedConsult?.history) : viewHistory}
@@ -1070,7 +1232,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 />
               </SectionCard>
 
-              <SectionCard title="Past Medical History">
+              <SectionCard title="Past Medical History" highlighted={isHighlighted('past_medical_history')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText((editedConsult as any)?.past_medical_history) : viewPMH}
@@ -1080,7 +1242,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               </SectionCard>
 
               {(isEditing || hasFindings) && (
-                <SectionCard title="Examination & Findings">
+                <SectionCard title="Examination & Findings" highlighted={isHighlighted('examination_findings')}>
                   <SyncedAutoBox
                     isEditing={isEditing}
                     text={isEditing ? toEditText((editedConsult as any)?.examination_findings) : viewFindings}
@@ -1136,7 +1298,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               </SectionCard>
 
 
-              <SectionCard title="Investigations">
+              <SectionCard title="Investigations" highlighted={isHighlighted('investigations')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedInvestigationsText : viewInvestigations}
@@ -1146,7 +1308,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               </SectionCard>
 
               
-<SectionCard title="Treatment Suggested">
+<SectionCard title="Treatment Suggested" highlighted={isHighlighted('treatment_suggested')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? editedTreatmentText : viewTreatment}
@@ -1172,7 +1334,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 );
               })()}
               
-              <SectionCard title="Follow-up Recommendations">
+              <SectionCard title="Follow-up Recommendations" highlighted={isHighlighted('followup_recommendations')}>
               
                 <SyncedAutoBox
                   isEditing={isEditing}
@@ -1183,7 +1345,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               </SectionCard>
 
               {/* ✅ Key Personal Insights (view + editable) */}
-              <SectionCard title="Key Personal Insights">
+              <SectionCard title="Key Personal Insights" highlighted={isHighlighted('key_personal_insights')}>
                 <SyncedAutoBox
                   isEditing={isEditing}
                   text={isEditing ? toEditText(editedConsult?.key_personal_insights) : viewKeyInsights}
@@ -1230,6 +1392,46 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
           )}
         </div>
       </div>
+
+      {/* Voice edit status bar */}
+            {voiceEdit.editStatus === 'ready' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-blue-300 px-4 py-2 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-sm text-gray-700">
+            {voiceEdit.changedFields.length === 0
+              ? 'No changes applied'
+              : `${voiceEdit.changedFields.length} field${voiceEdit.changedFields.length > 1 ? 's' : ''} updated`}
+          </span>
+          <button
+            onClick={handleUndoEdit}
+            disabled={undoing}
+            className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
+          >
+            {undoing ? 'Undoing…' : 'Undo'}
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={voiceEdit.dismissEdit}
+            className="text-sm font-medium text-[#024CDB] hover:underline"
+          >
+            Got it
+          </button>
+        </div>
+      )}
+
+      {voiceEdit.editStatus === 'failed' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-white rounded-full shadow-lg border border-red-300 px-4 py-2 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="text-sm text-gray-700">Voice edit failed. Please try again.</span>
+          <button
+            onClick={voiceEdit.dismissEdit}
+            className="text-sm font-medium text-red-600 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       {/* Recording Player Modal */}
       {showPlayer && consult?.recording_file && (
         <div

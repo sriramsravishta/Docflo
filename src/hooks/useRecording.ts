@@ -16,6 +16,7 @@ interface UseRecordingReturn {
   handleStartRecording: () => Promise<void>;
   handlePauseRecording: () => void;
   handleEndRecording: () => Promise<void>;
+  handleCancelRecording: () => void;
 }
 
 export function useRecording(
@@ -142,10 +143,23 @@ if (finalChunks.length > 0) {
     }
   };
 
+    const handleCancelRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
+    clearInterval(win.recordingInterval);
+    setIsRecording(false);
+    setIsPaused(false);
+    setRecordingTime(0);
+    setMediaRecorder(null);
+    setToast({ message: 'Recording cancelled', type: 'info' });
+  };
+
   const handleStartRecordingWithMode = async (mode: 'consultation' | 'ot_note') => {
     setRecordingMode(mode);
     await handleStartRecording();
   };
 
-  return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, recordingMode, handleStartRecordingWithMode };
+    return { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode };
 }

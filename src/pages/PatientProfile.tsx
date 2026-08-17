@@ -111,7 +111,7 @@ export default function PatientProfile() {
     preConsultSectionRef,
   } = usePatientData(patientId, user?.id);
 
-  const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, recordingMode, handleStartRecordingWithMode } =
+    const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
     useRecording(patientId, user?.id, async () => { await loadPatientData(); });
 
   const [uiNow, setUiNow] = useState(Date.now());
@@ -130,7 +130,7 @@ export default function PatientProfile() {
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
-  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
   const [editLocationIds, setEditLocationIds] = useState<string[]>([]); // CHANGED: patient locations
   const [locations, setLocations] = useState<LocationRow[]>([]); // CHANGED: available locations
 
@@ -1599,7 +1599,7 @@ else{
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-        <PatientProfileHeader
+                <PatientProfileHeader
           patient={patient}
           isRecording={isRecording}
           isPaused={isPaused}
@@ -1609,6 +1609,7 @@ else{
           onStartOTRecording={() => handleStartRecordingWithMode('ot_note')}
           onEndRecording={handleEndRecording}
           onPauseRecording={handlePauseRecording}
+          onCancelRecording={handleCancelRecording}
           onEditPatient={() => setShowEditModal(true)}
           onAddVitals={() => setShowVitalsModal(true)}
           onUploadDocuments={() => setShowDocumentUpload(true)}
@@ -1778,19 +1779,6 @@ else{
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.address}
-              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-              className="input-field"
-              placeholder="Full address"
-            />
-          </div>
-
           {/* CHANGED: Added Locations multi-select to edit modal */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1800,6 +1788,19 @@ else{
               locations={locations}
               selectedIds={editLocationIds}
               onChange={setEditLocationIds}
+            />
+          </div>
+
+                   <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={editForm.address}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              className="input-field"
+              placeholder="Full address"
             />
           </div>
 

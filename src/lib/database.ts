@@ -22,17 +22,33 @@ export async function completeTodaysAppointmentByPatientAndDoctor(
 ): Promise<boolean> {
   const { startISO, endISO } = getTodayBoundsISO();
 
-  // ✅ Fetch ONLY today's appointment for this patient + doctor
-  const { data: row, error: fetchError } = await supabase
+  // Try scheduled_at first (handles future-dated appointments)
+  let { data: row, error: fetchError } = await supabase
     .from('appointments')
     .select('id, completed')
     .eq('patient_id', patientId)
     .eq('doc_id', doctorId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Fallback: if no match on scheduled_at, try created_at (for appointments without scheduled_at)
+  if (!row) {
+    const fallback = await supabase
+      .from('appointments')
+      .select('id, completed')
+      .eq('patient_id', patientId)
+      .eq('doc_id', doctorId)
+      .gte('created_at', startISO)
+      .lte('created_at', endISO)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    row = fallback.data;
+    fetchError = fallback.error;
+  }
 
   if (fetchError) throw fetchError;
 
@@ -698,19 +714,36 @@ export const getPatientByPhone = async (phone: string, docId: string) => {
 export const updateAppointmentConsultId = async (patientId: string, docId: string, consultId: string) => {
   const { startISO, endISO } = getTodayBoundsISO();
 
-  const { data: row, error: fetchError } = await supabase
+  // Try scheduled_at first (handles future-dated appointments)
+  let { data: row, error: fetchError } = await supabase
     .from('appointments')
     .select('id')
     .eq('patient_id', patientId)
     .eq('doc_id', docId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
+    .gte('scheduled_at', startISO)
+    .lte('scheduled_at', endISO)
+    .order('scheduled_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  // Fallback: try created_at for appointments without scheduled_at
+  if (!row) {
+    const fallback = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('patient_id', patientId)
+      .eq('doc_id', docId)
+      .gte('created_at', startISO)
+      .lte('created_at', endISO)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    row = fallback.data;
+    fetchError = fallback.error;
+  }
+
   if (fetchError) throw fetchError;
-  if (!row?.id) return null; // no appointment today, skip silently
+  if (!row?.id) return null;
 
   const { data, error: updateError } = await supabase
     .from('appointments')
@@ -1041,4 +1074,48 @@ export const updateOutcome = async (
     .single();
   if (error) throw error;
   return data as ConsultOutcomeRow;
+};
+
+import type { ConsultEditRow } from '../types/db';
+
+// Voice Edit — webhook URL
+const VOICE_EDIT_WEBHOOK_URL = 'https://atblink.app.n8n.cloud/webhook/voice-edit-consult';
+
+export const createConsultEdit = async (
+  consultId: string,
+  docId: string,
+  recordingFileUrl: string
+): Promise<ConsultEditRow> => {
+  const { data, error } = await supabase
+    .from('consult_edits')
+    .insert({
+      consult_id: consultId,
+      doc_id: docId,
+      recording_file: recordingFileUrl,
+      status: 'processing',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ConsultEditRow;
+};
+
+export const triggerVoiceEdit = async (
+  editId: string,
+  consultId: string,
+  recordingUrl: string
+): Promise<void> => {
+  try {
+    await fetch(VOICE_EDIT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        edit_id: editId,
+        consult_id: consultId,
+        recording_url: recordingUrl,
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to trigger voice edit workflow:', e);
+  }
 };

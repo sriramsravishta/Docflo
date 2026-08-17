@@ -47,11 +47,11 @@ export default function MainPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'summary'>('today');
   const [showAddPatient, setShowAddPatient] = useState(false);
-  const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string; address?: string } | null>(null);
+ const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string; address?: string } | null>(null);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
+  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
   const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
   const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time
@@ -157,7 +157,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
         } else {
           setExistingPatient(null);
-          setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });
+          setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
         }
       } catch (error) {
         console.error('Error checking patient:', error);
@@ -169,7 +169,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   const handleCloseModal = () => {
     setShowAddPatient(false);
-    const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
     setReferredBy(''); // CHANGED: reset referredBy
     setNewLocationId(''); // CHANGED: reset location
     setNewScheduledAt(''); // CHANGED: reset date & time
@@ -510,6 +510,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
+            
+
           {/* Group 4: Appointment Logistics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
@@ -536,7 +538,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
-         {/* Group 5: Address */}
+   {/* Group 5: Address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Address <span className="text-gray-400 text-xs">(optional)</span>
@@ -549,7 +551,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               placeholder="Full address"
             />
           </div>
-
+         
           {/* Actions */}
           <div className="flex space-x-3 justify-end pt-4 mt-2 border-t border-gray-100">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>

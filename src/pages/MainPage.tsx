@@ -51,7 +51,7 @@ export default function MainPage() {
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
+  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
   const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
   const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time
@@ -169,7 +169,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   const handleCloseModal = () => {
     setShowAddPatient(false);
-    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
+    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
     setReferredBy(''); // CHANGED: reset referredBy
     setNewLocationId(''); // CHANGED: reset location
     setNewScheduledAt(''); // CHANGED: reset date & time
@@ -537,19 +537,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </div>
 
           {/* Actions */}
-                    {/* Group 5: Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <textarea
-              value={newPatient.address}
-              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-              className="input-field min-h-[80px] resize-y"
-              placeholder="Full address"
-              rows={3}
-            />
-          </div>
+          <div className="flex space-x-3 justify-end pt-4 mt-2 border-t border-gray-100">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>

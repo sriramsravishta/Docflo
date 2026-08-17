@@ -55,38 +55,6 @@ export default function FavouriteMedicineModal({
   const timeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!voiceEdit.currentEditId) return;
-    setEditStatus('processing');
-    const channel = supabase
-      .channel(`edit-watch-${voiceEdit.currentEditId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'consult_edits',
-          filter: `id=eq.${voiceEdit.currentEditId}`,
-        },
-        (payload) => {
-          const updated = payload.new as any;
-          if (updated.status === 'completed') {
-            const fields = Array.isArray(updated.changed_fields) ? updated.changed_fields : [];
-            setChangedFields(fields);
-            setShowEditBar(true);
-            setEditStatus('ready');
-          } else if (updated.status === 'failed') {
-            setEditStatus('failed');
-            setShowEditBar(true);
-          }
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [voiceEdit.currentEditId]);
-
-  useEffect(() => {
     if (initial) {
       setForm({
         name: initial.name || '',

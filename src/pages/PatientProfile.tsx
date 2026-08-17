@@ -111,7 +111,7 @@ export default function PatientProfile() {
     preConsultSectionRef,
   } = usePatientData(patientId, user?.id);
 
-    const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
+  const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, recordingMode, handleStartRecordingWithMode } =
     useRecording(patientId, user?.id, async () => { await loadPatientData(); });
 
   const [uiNow, setUiNow] = useState(Date.now());
@@ -130,7 +130,7 @@ export default function PatientProfile() {
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
-  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
   const [editLocationIds, setEditLocationIds] = useState<string[]>([]); // CHANGED: patient locations
   const [locations, setLocations] = useState<LocationRow[]>([]); // CHANGED: available locations
 
@@ -143,7 +143,6 @@ export default function PatientProfile() {
         case: patient.case || '',
         gender: patient.gender,
         uhid: patient.uhid || '', // CHANGED: populate uhid from patient data
-        address: patient.address || '',
       });
       setEditLocationIds((patient as { location_ids?: string[] | null }).location_ids || []); // CHANGED: populate locations
     }
@@ -286,7 +285,7 @@ export default function PatientProfile() {
     } catch (error) { console.error('Error loading consult medicines:', error); }
   };
  
-    const handleEditPatient = async () => {
+  const handleEditPatient = async () => {
     try {
       await updatePatient(patientId!, {
         name: editForm.name,
@@ -294,9 +293,8 @@ export default function PatientProfile() {
         phone: editForm.phone,
         case: editForm.case || undefined,
         gender: editForm.gender as 'Male' | 'Female' | 'Other',
-        uhid: editForm.uhid || undefined,
-        address: editForm.address || undefined,
-        location_ids: editLocationIds,
+        uhid: editForm.uhid || undefined, // CHANGED: save uhid
+        location_ids: editLocationIds, // CHANGED: save patient locations
       });
       setShowEditModal(false);
       await loadPatientData();
@@ -1599,7 +1597,7 @@ else{
       <Navbar showBack />
 
       <div className="w-full px-4 py-6 xl:px-[160px]">
-                <PatientProfileHeader
+        <PatientProfileHeader
           patient={patient}
           isRecording={isRecording}
           isPaused={isPaused}
@@ -1609,7 +1607,6 @@ else{
           onStartOTRecording={() => handleStartRecordingWithMode('ot_note')}
           onEndRecording={handleEndRecording}
           onPauseRecording={handlePauseRecording}
-          onCancelRecording={handleCancelRecording}
           onEditPatient={() => setShowEditModal(true)}
           onAddVitals={() => setShowVitalsModal(true)}
           onUploadDocuments={() => setShowDocumentUpload(true)}
@@ -1788,19 +1785,6 @@ else{
               locations={locations}
               selectedIds={editLocationIds}
               onChange={setEditLocationIds}
-            />
-          </div>
-
-                   <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.address}
-              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-              className="input-field"
-              placeholder="Full address"
             />
           </div>
 

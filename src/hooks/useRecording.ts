@@ -61,6 +61,7 @@ export function useRecording(
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);
+      await acquireWakeLock();
 
       const interval = setInterval(() => {
   setRecordingTime((prev) => {

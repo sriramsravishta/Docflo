@@ -130,7 +130,7 @@ export default function PatientProfile() {
   const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
-  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid field
+  const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
   const [editLocationIds, setEditLocationIds] = useState<string[]>([]); // CHANGED: patient locations
   const [locations, setLocations] = useState<LocationRow[]>([]); // CHANGED: available locations
 

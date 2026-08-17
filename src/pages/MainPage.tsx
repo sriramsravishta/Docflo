@@ -536,6 +536,20 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
+         {/* Group 5: Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={newPatient.address}
+              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+              className="input-field"
+              placeholder="Full address"
+            />
+          </div>
+
           {/* Actions */}
           <div className="flex space-x-3 justify-end pt-4 mt-2 border-t border-gray-100">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>

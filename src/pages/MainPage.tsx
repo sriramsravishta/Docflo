@@ -169,7 +169,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   const handleCloseModal = () => {
     setShowAddPatient(false);
-    setNewPatient({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: reset uhid
+    const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
     setReferredBy(''); // CHANGED: reset referredBy
     setNewLocationId(''); // CHANGED: reset location
     setNewScheduledAt(''); // CHANGED: reset date & time

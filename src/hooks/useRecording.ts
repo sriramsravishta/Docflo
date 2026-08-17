@@ -166,6 +166,7 @@ if (finalChunks.length > 0) {
   };
 
     const handleCancelRecording = () => {
+          releaseWakeLock();
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }

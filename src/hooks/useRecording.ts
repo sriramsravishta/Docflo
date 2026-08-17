@@ -30,6 +30,26 @@ export function useRecording(
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
+    const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const acquireWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('Wake lock acquired — screen will stay on');
+      }
+    } catch (e) {
+      console.log('Wake lock not available:', e);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+      console.log('Wake lock released');
+    }
+  };
   const clearToast = () => setToast(null);
 
   const handleStartRecording = async () => {

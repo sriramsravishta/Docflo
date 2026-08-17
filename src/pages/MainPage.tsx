@@ -51,7 +51,7 @@ export default function MainPage() {
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [appointmentToRemove, setAppointmentToRemove] = useState<{ id: string; patients?: { name?: string } } | null>(null);
   const [showKebabMenu, setShowKebabMenu] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '' }); // CHANGED: added uhid
+  const [newPatient, setNewPatient] = useState({ phone: '', name: '', age: '', gender: 'Male', uhid: '', address: '' });
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
   const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
   const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time

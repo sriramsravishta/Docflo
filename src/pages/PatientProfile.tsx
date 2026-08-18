@@ -1767,6 +1767,20 @@ else{
 
             <section>{renderHistoryTab()}</section>
           </div>
+            </>
+          )}
+          
+          {/* ─── INPATIENT TAB ─── */}
+          {activeProfileTab === 'inpatient' && (
+            <InpatientTab
+              patientId={patientId!}
+              userId={user?.id}
+              patient={patient}
+              admissionData={admissionData}
+              formatDate={formatDateShort}
+            />
+          )}
+
         </div>
       </div>
 

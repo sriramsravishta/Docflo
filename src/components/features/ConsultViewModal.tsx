@@ -1254,8 +1254,9 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 </SectionCard>
               )}
 
-              <SectionCard
+                            <SectionCard
                 title="Current Medications"
+                highlighted={isHighlighted('medications')}
                 right={
                   isEditing ? (
                     <div className="flex items-center gap-2">

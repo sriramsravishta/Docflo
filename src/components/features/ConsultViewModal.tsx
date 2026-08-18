@@ -818,7 +818,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
 
   const [flagsOpen, setFlagsOpen] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
-    const voiceEdit = useVoiceEdit(consult.id, props.userId, onRefreshConsult);
+    const voiceEdit = useVoiceEdit(consult.id, props.userId, props.onRefreshConsult);
   const [undoing, setUndoing] = useState(false);
   const isHighlighted = (fieldName: string): boolean => {
     return voiceEdit.editStatus === 'ready' && voiceEdit.changedFields.includes(fieldName);

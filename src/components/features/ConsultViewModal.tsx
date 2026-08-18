@@ -1087,7 +1087,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
         <div className="flex-1 overflow-y-auto relative">
           {/* Voice edit processing overlay */}
                     {voiceEdit.editStatus === 'processing' && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex items-center justify-center">
+            <div className="sticky top-0 left-0 right-0 bg-white/70 backdrop-blur-[2px] z-10 flex items-center justify-center py-8">
               <div className="flex flex-col items-center gap-4 px-8 py-6 bg-white rounded-2xl shadow-xl border border-purple-100">
                 <div className="relative w-12 h-12">
                   <div className="absolute inset-0 rounded-full border-4 border-purple-100" />

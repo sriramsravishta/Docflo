@@ -1847,7 +1847,7 @@ else{
     onSendWhatsApp={handleSendWhatsApp}
     formatDate={formatDate}
     uiNow={uiNow}
-
+onRefreshMedicines={() => selectedConsult && loadConsultMedicines(selectedConsult.id)}
     // --- NEW: edit-mode toggle + actions (UI only, logic already exists) ---
     isEditing={isEditingConsult}
     onStartEdit={handleEditConsult}

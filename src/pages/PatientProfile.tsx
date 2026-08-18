@@ -25,6 +25,8 @@ import Spinner from '../components/ui/Spinner';
 import Toast from '../components/ui/Toast';
 import { usePatientData } from '../hooks/usePatientData';
 import { useRecording } from '../hooks/useRecording';
+import InpatientTab from '../components/features/InpatientTab';
+import { useAdmissionData } from '../hooks/useAdmissionData';
 import {
   updatePatient,
   createPreConsult,

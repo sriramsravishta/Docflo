@@ -1619,8 +1619,39 @@ else{
           formatDate={formatDateShort}
         />
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {todaysVitals.length > 0 && (
+        {/* ─── OPD / IPD Tab Switcher ─── */}
+        <div className="flex border-b border-gray-200 bg-white px-4 sticky top-0 z-20 rounded-t-lg">
+          <button
+            onClick={() => setActiveProfileTab('outpatient')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeProfileTab === 'outpatient'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Outpatient
+          </button>
+          <button
+            onClick={() => setActiveProfileTab('inpatient')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeProfileTab === 'inpatient'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Inpatient
+            {admissionData?.activeAdmission && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                Active
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 border-t-0">
+          {activeProfileTab === 'outpatient' && (
+            <>
+              {todaysVitals.length > 0 && (
             <div className="mb-0">
               <div className="p-6">
                 <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2></div>

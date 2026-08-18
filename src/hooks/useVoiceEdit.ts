@@ -18,7 +18,8 @@ interface UseVoiceEditReturn {
 
 export function useVoiceEdit(
   consultId: string | undefined,
-  docId: string | undefined
+  docId: string | undefined,
+  onEditComplete?: () => void
 ): UseVoiceEditReturn {
     const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -66,11 +67,12 @@ export function useVoiceEdit(
         if (error || !data) return; // keep polling
 
                const hasChanges = Array.isArray(data.changed_fields) && data.changed_fields.length > 0;
-        if (data.status === 'completed' || (data.status === 'failed' && hasChanges)) {
+               if (data.status === 'completed' || (data.status === 'failed' && hasChanges)) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setChangedFields(data.changed_fields || []);
           setEditStatus('ready');
+          onEditComplete?.();
         } else if (data.status === 'failed') {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
@@ -83,7 +85,7 @@ export function useVoiceEdit(
         // Don't stop polling on transient errors
       }
     }, 3000);
-  }, []);
+    }, [onEditComplete]);
 
   const startEditRecording = async () => {
     try {

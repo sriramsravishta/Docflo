@@ -233,3 +233,91 @@ export interface ConsultEditRow {
   created_at: string;
   updated_at: string;
 }
+
+// ============================================
+// IPD (Inpatient) Types
+// ============================================
+
+export interface AdmissionRow {
+  id: string;
+  patient_id: string;
+  doc_id: string;
+  org_id?: string;
+  admission_type: 'inpatient' | 'daycare';
+  status: 'admitted' | 'discharged' | 'lama';
+  admission_date: string;
+  discharge_date: string | null;
+  admitting_diagnosis: string;
+  final_diagnosis: string;
+  ward_bed: string;
+  discharge_summary: DischargeSummaryData | Record<string, never>;
+  ds_status: 'not_started' | 'generating' | 'generated' | 'finalized';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IPDNoteRow {
+  id: string;
+  admission_id: string;
+  author_id: string;
+  note_type: 'admission_note' | 'progress_note' | 'procedure_note' | 'pre_discharge';
+  day_number: number;
+  recording_url: string | null;
+  transcript: string | null;
+  structured_summary: IPDNoteSummary | Record<string, never>;
+  status: 'processing' | 'success' | 'failed';
+  n8n_execution_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IPDNoteSection {
+  heading: string;
+  content: string;
+}
+
+export interface IPDNoteSummary {
+  note_title: string;
+  sections: IPDNoteSection[];
+  flags?: string[];
+}
+
+export interface DischargeSummaryData {
+  patient_details?: {
+    name?: string;
+    age?: string;
+    gender?: string;
+    uhid?: string;
+    admission_date?: string;
+    discharge_date?: string;
+    ward?: string;
+    bed_number?: string;
+  };
+  consultant_doctors?: string[];
+  diagnosis?: {
+    primary?: string;
+    secondary?: string[];
+  };
+  chief_complaints?: string[];
+  history_of_present_illness?: string;
+  history_past_personal_family?: string;
+  patient_course_in_hospital?: string;
+  discharge_medications?: {
+    drug_name: string;
+    generic_name?: string;
+    strength?: string;
+    dosage?: string;
+    frequency?: string;
+    route?: string;
+    relationship_with_meal?: string;
+    duration?: string;
+    comment?: string;
+  }[];
+  special_instructions?: {
+    diet?: string;
+    post_discharge_investigations?: string;
+    follow_up?: string;
+    emergency_care?: string;
+  };
+  condition_at_discharge?: string;
+}

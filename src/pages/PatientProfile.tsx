@@ -1848,6 +1848,18 @@ else{
     formatDate={formatDate}
     uiNow={uiNow}
 onRefreshMedicines={() => selectedConsult && loadConsultMedicines(selectedConsult.id)}
+    onRefreshConsult={async () => {
+  if (!selectedConsult) return;
+  const { data } = await supabase
+    .from('consult')
+    .select('*')
+    .eq('id', selectedConsult.id)
+    .single();
+  if (data) {
+    setSelectedConsult(prev => prev ? { ...prev, ...data } : prev);
+    setConsultations(prev => prev.map(c => c.id === data.id ? { ...c, ...data } : c));
+  }
+}}
     // --- NEW: edit-mode toggle + actions (UI only, logic already exists) ---
     isEditing={isEditingConsult}
     onStartEdit={handleEditConsult}

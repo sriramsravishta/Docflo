@@ -1411,7 +1411,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
           </button>
           <span className="text-gray-300">|</span>
           <button
-            onClick={voiceEdit.dismissEdit}
+            onClick={() => { voiceEdit.dismissEdit(); onRefreshMedicines?.(); }}
             className="text-sm font-medium text-[#024CDB] hover:underline"
           >
             Got it

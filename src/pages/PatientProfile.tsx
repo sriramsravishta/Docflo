@@ -191,7 +191,7 @@ export default function PatientProfile() {
   const [showDocumentConfirm, setShowDocumentConfirm] = useState(false);
 
   const [showConfirmation, setShowConfirmation] = useState(false);
-
+  const [activeProfileTab, setActiveProfileTab] = useState<'outpatient' | 'inpatient'>('outpatient');
   useEffect(() => {
     if (selectedConsult?.id) {
       loadConsultMedicines(selectedConsult.id);

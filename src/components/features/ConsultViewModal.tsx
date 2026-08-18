@@ -88,6 +88,8 @@ interface ConsultViewModalProps {
   onSendWhatsApp: () => void;
   formatDate: (s: string) => string;
   uiNow: number;
+    onRefreshMedicines?: () => void;
+  onRefreshConsult?: () => void;
 }
 
 const TEXT_MIN_ROWS = 3;

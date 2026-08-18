@@ -1619,48 +1619,16 @@ else{
           formatDate={formatDateShort}
         />
 
-        
-        {/* ─── OPD / IPD Tab Switcher ─── */}
-        <div className="flex border-b border-gray-200 bg-white px-4 sticky top-0 z-20 rounded-t-lg">
-          <button
-            onClick={() => setActiveProfileTab('outpatient')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeProfileTab === 'outpatient'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Outpatient
-          </button>
-          <button
-            onClick={() => setActiveProfileTab('inpatient')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeProfileTab === 'inpatient'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Inpatient
-            {admissionData.activeAdmission && (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                Active
-              </span>
-            )}
-          </button>
-        </div>
-
-        <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 border-t-0">
-          {activeProfileTab === 'outpatient' && (
-            <>
-              {todaysVitals.length > 0 && (
-                <div className="mb-0">
-                  <div className="p-6">
-                    <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2></div>
-                    <div className="space-y-4">
-                      {todaysVitals.map((vital, index) => (
-                        <div key={vital.id}>
-                          
-                        <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          {todaysVitals.length > 0 && (
+            <div className="mb-0">
+              <div className="p-6">
+                <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">Today's Vitals</h2></div>
+                <div className="space-y-4">
+                  {todaysVitals.map((vital, index) => (
+                    <div key={vital.id}>
+                      
+                    <div className="flex items-center justify-between mb-3">
   <div className="min-w-0">
     <div className="text-[10px] uppercase tracking-wider text-gray-500">Recorded at: {vital.created_at ? formatDate(vital.created_at) : '—'}</div>
     
@@ -1675,7 +1643,6 @@ else{
     <Edit className="w-4 h-4" />
     <span>Edit</span>
   </button>
-
 </div>
 
 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -1700,88 +1667,77 @@ else{
     </div>
   ))}
 </div>
-                        </div>
-                      ))}
                     </div>
-                  </div>
+                  ))}
                 </div>
-              )}
-
-              <div className="p-6 space-y-8">
-                {processingPreConsults.length > 0 && (
-                  <section ref={preConsultSectionRef}>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pre-Consultation Processing</h2>
-                    <div className="space-y-3">
-                      {processingPreConsults.map((preConsult) => {
-                        const hasAiSummary = preConsult.ai_summary && (typeof preConsult.ai_summary !== 'object' || Object.keys(preConsult.ai_summary).length > 0);
-                        const isComplete = !!hasAiSummary;
-                        const createdAt = preConsult.created_at ? new Date(preConsult.created_at).getTime() : Date.now();
-                        const elapsed = Math.floor((uiNow - createdAt) / 1000);
-                        const pct = isComplete ? 100 : Math.min(99, Math.floor((elapsed / PRE_CONSULT_ESTIMATED_SECONDS) * 100));
-                        const docCount = Array.isArray(preConsult.documents_uploaded) ? preConsult.documents_uploaded.length : 0;
-                        return (
-                          <div key={preConsult.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="min-w-0">
-                                <p className="font-medium text-gray-900">{isComplete ? 'Pre-consultation processed' : 'Processing pre-consultation documents...'}</p>
-                                <p className="text-sm text-gray-600 mt-1">{docCount} {docCount === 1 ? 'file' : 'files'} uploaded</p>
-                              </div>
-                              <div className="flex flex-col items-end shrink-0">
-                                {isComplete ? (
-                                  <div className="flex items-center gap-2 text-sm text-green-600">
-                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-50">✓</span>
-                                    <span className="font-medium">Complete</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-3">
-                                    <div className="relative w-9 h-9">
-                                      <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
-                                        <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                                        <path className="text-[#024CDB]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
-                                      </svg>
-                                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{pct}%</div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-xs font-medium text-gray-700">Processing</p>
-                                      <p className="text-[11px] text-gray-500">{pct}% completed</p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                )}
-
-                <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Consultations</h2>
-                  {renderPastSummariesTab()}
-                </section>
-
-                {/* OT Notes Section */}
-                <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">OT Notes</h2>
-                  {renderOTNotesTab()}
-                </section>
-
-                <section>{renderHistoryTab()}</section>
               </div>
-            </>
+            </div>
           )}
 
-          {activeProfileTab === 'inpatient' && (
-            <InpatientTab
-              patientId={patientId!}
-              userId={user?.id}
-              patient={patient}
-              admissionData={admissionData}
-              formatDate={formatDateShort}
-            />
-          )}
+          <div className="p-6 space-y-8">
+            {processingPreConsults.length > 0 && (
+              <section ref={preConsultSectionRef}>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Pre-Consultation Processing</h2>
+                <div className="space-y-3">
+                  {processingPreConsults.map((preConsult) => {
+                    const hasAiSummary = preConsult.ai_summary && (typeof preConsult.ai_summary !== 'object' || Object.keys(preConsult.ai_summary).length > 0);
+                    const isComplete = !!hasAiSummary;
+                    const createdAt = preConsult.created_at ? new Date(preConsult.created_at).getTime() : Date.now();
+                    const elapsed = Math.floor((uiNow - createdAt) / 1000);
+                    const pct = isComplete ? 100 : Math.min(99, Math.floor((elapsed / PRE_CONSULT_ESTIMATED_SECONDS) * 100));
+                    const docCount = Array.isArray(preConsult.documents_uploaded) ? preConsult.documents_uploaded.length : 0;
+                    return (
+                      <div key={preConsult.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900">{isComplete ? 'Pre-consultation processed' : 'Processing pre-consultation documents...'}</p>
+                            <p className="text-sm text-gray-600 mt-1">{docCount} {docCount === 1 ? 'file' : 'files'} uploaded</p>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0">
+                            {isComplete ? (
+                              <div className="flex items-center gap-2 text-sm text-green-600">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-50">✓</span>
+                                <span className="font-medium">Complete</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-9 h-9">
+                                  <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                                    <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                                    <path className="text-[#024CDB]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{pct}%</div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-medium text-gray-700">Processing</p>
+                                  <p className="text-[11px] text-gray-500">{pct}% completed</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Consultations</h2>
+              {renderPastSummariesTab()}
+            </section>
+
+            {/* OT Notes Section */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">OT Notes</h2>
+              {renderOTNotesTab()}
+            </section>
+
+            <section>{renderHistoryTab()}</section>
+          </div>
         </div>
+      </div>
 
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
         <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">

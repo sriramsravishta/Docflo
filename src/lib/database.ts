@@ -1119,3 +1119,139 @@ export const triggerVoiceEdit = async (
     console.error('Failed to trigger voice edit workflow:', e);
   }
 };
+
+// ============================================
+// IPD (Inpatient) Functions
+// ============================================
+
+const IPD_NOTE_WEBHOOK_URL = 'https://atblink.app.n8n.cloud/webhook/ipd-note';
+const GENERATE_DS_WEBHOOK_URL = 'https://atblink.app.n8n.cloud/webhook/generate-ds-ipd';
+
+// --- Admissions ---
+
+export const createAdmission = async (
+  patientId: string,
+  docId: string,
+  admissionType: 'inpatient' | 'daycare',
+  admittingDiagnosis: string,
+  wardBed: string
+) => {
+  const { data, error } = await supabase
+    .from('admissions')
+    .insert({
+      patient_id: patientId,
+      doc_id: docId,
+      admission_type: admissionType,
+      admitting_diagnosis: admittingDiagnosis,
+      ward_bed: wardBed,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const getAdmissions = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('admissions')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+export const getActiveAdmission = async (patientId: string) => {
+  const { data, error } = await supabase
+    .from('admissions')
+    .select('*')
+    .eq('patient_id', patientId)
+    .eq('status', 'admitted')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+};
+
+export const updateAdmission = async (id: string, updates: Record<string, unknown>) => {
+  const { data, error } = await supabase
+    .from('admissions')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+// --- IPD Notes ---
+
+export const createIPDNote = async (
+  admissionId: string,
+  authorId: string,
+  noteType: 'admission_note' | 'progress_note' | 'procedure_note' | 'pre_discharge',
+  recordingUrl: string,
+  dayNumber: number
+) => {
+  const { data, error } = await supabase
+    .from('ipd_notes')
+    .insert({
+      admission_id: admissionId,
+      author_id: authorId,
+      note_type: noteType,
+      recording_url: recordingUrl,
+      day_number: dayNumber,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const getIPDNotes = async (admissionId: string) => {
+  const { data, error } = await supabase
+    .from('ipd_notes')
+    .select('*')
+    .eq('admission_id', admissionId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+export const updateIPDNote = async (id: string, updates: Record<string, unknown>) => {
+  const { data, error } = await supabase
+    .from('ipd_notes')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+// --- IPD Triggers ---
+
+export const triggerIPDNote = async (noteId: string, admissionId: string, recordingUrl: string) => {
+  try {
+    await fetch(IPD_NOTE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note_id: noteId, admission_id: admissionId, recording_url: recordingUrl }),
+    });
+  } catch (e) {
+    console.error('Failed to trigger IPD note processing:', e);
+  }
+};
+
+export const triggerGenerateDS = async (admissionId: string) => {
+  try {
+    await fetch(GENERATE_DS_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admission_id: admissionId }),
+    });
+  } catch (e) {
+    console.error('Failed to trigger DS generation:', e);
+  }
+};

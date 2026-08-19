@@ -369,27 +369,29 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
           </section>
 
           <section>
-            <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-lg font-semibold text-gray-900">All Patients</h2>
               <div className="flex items-center gap-2">
-                {hasActivePatientFilter && (
+                {hasActiveFilters && (
                   <button
-                    onClick={clearPatientFilter}
+                    onClick={clearAllFilters}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
-                    Clear filter
+                    Clear all
                   </button>
                 )}
                 <button
-                  onClick={() => setShowPatientFilter(true)}
+                  onClick={() => setShowFilters(true)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-                    hasActivePatientFilter
+                    hasActiveFilters
                       ? 'bg-[#024CDB] text-white border-[#024CDB]'
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <Filter className="w-4 h-4" />
-                  Filter
+                  {hasActiveFilters
+                    ? `Filters (${(appliedFilters.dateMode !== 'none' ? 1 : 0) + appliedFilters.diagnoses.length})`
+                    : 'Filter'}
                 </button>
               </div>
             </div>

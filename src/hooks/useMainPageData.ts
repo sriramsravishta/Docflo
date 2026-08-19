@@ -165,7 +165,7 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     }
   };
 
-  const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string, uhidToSave?: string, locationId?: string, scheduledAt?: string): Promise<boolean> => { // CHANGED: added uhidToSave, location, scheduled_at, returns boolean
+    const handleAddToQueue = async (existingPatient: { id: string }, doctorId: string, referredBy?: string, uhidToSave?: string, locationId?: string, scheduledAt?: string, lastVisitAt?: string): Promise<boolean> => {
     setFormError('');
     setIsSubmitting(true);
     try {

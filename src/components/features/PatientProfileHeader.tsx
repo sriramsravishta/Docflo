@@ -179,13 +179,15 @@ export default function PatientProfileHeader({
                 <Mic className="w-4 h-4" />
                 <span className="text-sm font-medium">Record</span>
               </button>
-              <button
-                onClick={onStartOTRecording}
-                className="flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                <Scissors className="w-4 h-4" />
-                <span className="text-sm font-medium">OT Note</span>
-              </button>
+                            {showOTNotes && (
+                <button
+                  onClick={onStartOTRecording}
+                  className="flex-1 sm:flex-none sm:min-w-[150px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-colors font-medium bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  <Scissors className="w-4 h-4" />
+                  <span className="text-sm font-medium">OT Note</span>
+                </button>
+              )}
             </>
           )}
         </div>

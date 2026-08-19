@@ -1,5 +1,7 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
+import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import MainPage from './pages/MainPage';
 import PatientProfile from './pages/PatientProfile';

@@ -469,7 +469,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 type="number"
                 value={newPatient.age}
                 onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
-                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+                                className="input-field read-only:bg-gray-50"
                 readOnly={!!existingPatient}
                 required
               />

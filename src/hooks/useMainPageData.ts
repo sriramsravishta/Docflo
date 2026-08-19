@@ -141,13 +141,14 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         setFormError('A patient with this phone number already exists!');
         return false; // CHANGED
       }
-            const patient = await createPatient({
+                  const patient = await createPatient({
         name: data.name,
         age: parseInt(data.age),
         phone: data.phone,
         gender: data.gender,
         uhid: data.uhid || undefined,
         address: data.address || undefined,
+        last_visit_at: lastVisitAt || undefined,
       });
       await createAppointment(patient.id, userId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // CHANGED: pass referredBy, location, scheduled_at
       if (locationId) {

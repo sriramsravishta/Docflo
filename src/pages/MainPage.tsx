@@ -55,6 +55,8 @@ export default function MainPage() {
 const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (appointment-level field)
   const [newLocationId, setNewLocationId] = useState(''); // CHANGED: appointment location
   const [newScheduledAt, setNewScheduledAt] = useState(''); // CHANGED: appointment date & time
+    const [lastVisitAt, setLastVisitAt] = useState(''); // last visit date for new/existing patient
+  const [showOptionalFields, setShowOptionalFields] = useState(false); // accordion toggle
   const [showManageLocations, setShowManageLocations] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentRow | null>(null);
 

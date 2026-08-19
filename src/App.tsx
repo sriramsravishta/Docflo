@@ -28,7 +28,15 @@ function AppRoutes() {
           <Route path="/favorites" element={<ProtectedRoute><FavouritesPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
+            </Router>
+    </FeatureFlagsProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }

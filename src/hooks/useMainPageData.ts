@@ -16,7 +16,7 @@ interface UseMainPageDataReturn {
   handleMoveDown: (appointment: AppointmentRow) => Promise<void>;
   handleConfirmRemove: (appointment: AppointmentRow) => Promise<void>;
   handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string, locationId?: string, scheduledAt?: string) => Promise<boolean>; // CHANGED: returns boolean
-  handleAddToQueue: (patient: PatientRow, userId: string, referredBy?: string, uhidToSave?: string, locationId?: string, scheduledAt?: string) => Promise<boolean>; // CHANGED: added uhidToSave, returns boolean
+    handleCreatePatient: (data: { phone: string; name: string; age: string; gender: string; uhid: string }, userId: string, referredBy?: string, locationId?: string, scheduledAt?: string, lastVisitAt?: string) => Promise<boolean>;
   handleReschedule: (appointmentId: string, scheduledAt: string) => Promise<boolean>;
   handleCreateLocation: (name: string) => Promise<LocationRow | null>;
   handleUpdateLocation: (id: string, name: string) => Promise<boolean>;

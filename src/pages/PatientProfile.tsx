@@ -97,7 +97,8 @@ function formatEventDate(dt: string): string {
   const SHOW_INPATIENT_TAB = false; // Set to true when ready to release to users
 export default function PatientProfile() {
   const { patientId } = useParams<{ patientId: string }>();
-  const { user } = useAuth();
+    const { user } = useAuth();
+  const cachedDoctorNameRef = useRef<string | null>(null);
 
   const {
     patient,

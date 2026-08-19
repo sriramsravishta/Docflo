@@ -1787,12 +1787,21 @@ else{
       </div>
 
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient">
-        <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="input-field" required />
+               <form onSubmit={(e) => { e.preventDefault(); handleEditPatient(); }} className="space-y-4">
+          {/* Row 1: Name + Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="input-field" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="input-field" required />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* Row 2: Age + Gender */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
               <input type="number" value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: e.target.value })} className="input-field" required />
@@ -1806,34 +1815,28 @@ else{
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="input-field" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
-            <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
+
+          {/* Row 3: Case + UHID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Case</label>
+              <input type="text" value={editForm.case} onChange={(e) => setEditForm({ ...editForm, case: e.target.value })} className="input-field" placeholder="e.g., Hypertension, Diabetes" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">UHID</label>
+              <input
+                type="text"
+                value={editForm.uhid}
+                onChange={(e) => setEditForm({ ...editForm, uhid: e.target.value })}
+                className="input-field"
+                placeholder="e.g., UHID-00123"
+              />
+            </div>
           </div>
 
-          {/* CHANGED: Added UHID field to edit modal */}
+          {/* Row 4: Locations (full width — multi-select needs space) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              UHID <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.uhid}
-              onChange={(e) => setEditForm({ ...editForm, uhid: e.target.value })}
-              className="input-field"
-              placeholder="e.g., UHID-00123"
-            />
-          </div>
-
-          {/* CHANGED: Added Locations multi-select to edit modal */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Locations <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Locations</label>
             <LocationMultiSelect
               locations={locations}
               selectedIds={editLocationIds}
@@ -1841,10 +1844,9 @@ else{
             />
           </div>
 
-                   <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
+          {/* Row 5: Address (full width) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
             <input
               type="text"
               value={editForm.address}

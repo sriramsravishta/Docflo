@@ -180,7 +180,10 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     setNewLocationId(''); // CHANGED: reset location
     setNewScheduledAt(''); // CHANGED: reset date & time
     setExistingPatient(null);
-    setFormError('');
+        setFormError('');
+    setLastVisitAt('');
+    setShowOptionalFields(false);
+  };
   };
 
   const handleRemoveClick = (appointment: { id: string; patients?: { name?: string } }) => {

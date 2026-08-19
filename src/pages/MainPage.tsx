@@ -655,94 +655,14 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         }}
       />
 
-      {showPatientFilter && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
-          onClick={() => setShowPatientFilter(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-           <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-900">Filter Patients by Visit Date</h3>
-              <button onClick={() => setShowPatientFilter(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
-              <button
-                onClick={() => { setPatientFilterMode('single'); setPatientFilterFrom(''); setPatientFilterTo(''); }}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  patientFilterMode === 'single' ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                Specific Date
-              </button>
-              <button
-                onClick={() => { setPatientFilterMode('range'); setPatientFilterDate(''); }}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  patientFilterMode === 'range' ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                Date Range
-              </button>
-            </div>
-            {patientFilterMode === 'single' ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Visit Date</label>
-                <input
-                  type="date"
-                  value={patientFilterDate}
-                  onChange={(e) => setPatientFilterDate(e.target.value)}
-                  className="input-field"
-                />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                  <input
-                    type="date"
-                    value={patientFilterFrom}
-                    onChange={(e) => setPatientFilterFrom(e.target.value)}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                  <input
-                    type="date"
-                    value={patientFilterTo}
-                    onChange={(e) => setPatientFilterTo(e.target.value)}
-                    className="input-field"
-                  />
-                </div>
-              </div>
-            )}
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={clearPatientFilter}
-                className="flex-1 btn-secondary text-sm"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => {
-                  setAppliedFilterDate(patientFilterDate);
-                  setAppliedFilterFrom(patientFilterFrom);
-                  setAppliedFilterTo(patientFilterTo);
-                  setShowPatientFilter(false);
-                }}
-                className="flex-1 btn-primary text-sm"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
+            {user?.id && (
+        <PatientsFilterModal
+          isOpen={showFilters}
+          onClose={() => setShowFilters(false)}
+          docId={user.id}
+          applied={appliedFilters}
+          onApply={setAppliedFilters}
+        />
       )}
     </div>
   );

@@ -898,58 +898,48 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     return content;
   };
 
-  const handleDownloadPDF = async () => {
+    const handleDownloadPDF = async () => {
     if (!selectedConsult) return;
-    let referredBy: string | undefined;
-    let fetchedDoctorName: string | undefined;
 
-    try {
-      // 1. Fetch referred_by
-      const appt = await getAppointmentByConsultId(selectedConsult.id);
-      referredBy = appt?.referred_by || undefined;
+    const attachedChartNames = (selectedConsult.consult_summary_final as any)?.attached_diet_charts || [];
 
-      // 2. Fetch doctor name from the organizations table
-      if (user?.id) {
-        const { data: orgData } = await supabase
-          .from('organizations')
-          .select('name')
-          .eq('auth_id', user.id)
-          .single();
-        
-        if (orgData?.name) {
-          fetchedDoctorName = orgData.name;
-        }
-      }
-    } catch (e) {
-      console.error('Error fetching data for PDF:', e);
-    }
+    // Run all fetches in parallel — referred_by, doctor name (cached), diet charts
+    const [appt, doctorNameResult, chartData] = await Promise.all([
+      getAppointmentByConsultId(selectedConsult.id).catch(() => null),
 
-    // Fallback to Auth metadata if the database fetch fails
-    const finalDoctorName = fetchedDoctorName || user?.user_metadata?.display_name || user?.user_metadata?.name || '—';
+      // Doctor name: use cache after first fetch — never changes in a session
+      cachedDoctorNameRef.current
+        ? Promise.resolve(cachedDoctorNameRef.current)
+        : user?.id
+          ? supabase.from('organizations').select('name').eq('auth_id', user.id).single()
+              .then(({ data }) => {
+                const name = data?.name || user?.user_metadata?.display_name || user?.user_metadata?.name || '—';
+                cachedDoctorNameRef.current = name;
+                return name;
+              })
+              .catch(() => user?.user_metadata?.display_name || user?.user_metadata?.name || '—')
+          : Promise.resolve(user?.user_metadata?.display_name || user?.user_metadata?.name || '—'),
+
+      attachedChartNames.length > 0 && user?.id
+        ? supabase.from('diet_charts').select('name, file_urls').eq('doc_id', user.id).in('name', attachedChartNames)
+            .then(({ data }) => data || [])
+            .catch(() => [])
+        : Promise.resolve([]),
+    ]);
+
+    const referredBy = appt?.referred_by || undefined;
+    const finalDoctorName = typeof doctorNameResult === 'string'
+      ? doctorNameResult
+      : user?.user_metadata?.display_name || '—';
 
     let htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName);
 
     // Append diet chart image pages if attached
-    const attachedChartNames = (selectedConsult.consult_summary_final as any)?.attached_diet_charts || [];
-    if (attachedChartNames.length > 0) {
-      try {
-        const { data: chartData } = await supabase
-          .from('diet_charts')
-          .select('name, file_urls')
-          .eq('doc_id', user!.id)
-          .in('name', attachedChartNames);
-
-        if (chartData && chartData.length > 0) {
-          for (const chart of chartData) {
-            for (const url of (chart.file_urls || [])) {
-              htmlContent += `<div style="page-break-before: always; text-align: center; padding: 0;">
-                <img src="${url}" style="width: 100%; max-width: 794px;" />
-              </div>`;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error fetching diet charts for PDF:', e);
+    for (const chart of (chartData as any[])) {
+      for (const url of (chart.file_urls || [])) {
+        htmlContent += `<div style="page-break-before: always; text-align: center; padding: 0;">
+          <img src="${url}" style="width: 100%; max-width: 794px;" />
+        </div>`;
       }
     }
 

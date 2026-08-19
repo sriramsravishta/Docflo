@@ -1256,3 +1256,19 @@ export const triggerGenerateDS = async (admissionId: string) => {
     console.error('Failed to trigger DS generation:', e);
   }
 };
+
+// ─── Feature Flags ───────────────────────────────────────────────
+export const getUserFeatures = async (userId: string): Promise<Record<string, boolean>> => {
+  const [{ data: features }, { data: userFeatures }] = await Promise.all([
+    supabase.from('features').select('id, default_enabled'),
+    supabase.from('user_features').select('feature_id, enabled').eq('user_id', userId),
+  ]);
+
+  const flags: Record<string, boolean> = {};
+  // Start from defaults
+  (features || []).forEach((f) => { flags[f.id] = f.default_enabled; });
+  // Apply per-user overrides (take priority over defaults)
+  (userFeatures || []).forEach((uf) => { flags[uf.feature_id] = uf.enabled; });
+
+  return flags;
+};

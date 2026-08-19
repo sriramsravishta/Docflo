@@ -492,22 +492,22 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
-          {/* Optional Details accordion */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Optional Details — progressive disclosure */}
+          <div>
             <button
               type="button"
               onClick={() => setShowOptionalFields(!showOptionalFields)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+              className="flex items-center gap-1.5 text-sm font-medium text-[#024CDB] hover:text-[#023BA3] transition-colors py-0.5"
             >
-              <span>Optional Details</span>
               {showOptionalFields
-                ? <ChevronDown className="w-4 h-4 text-gray-500" />
-                : <ChevronRight className="w-4 h-4 text-gray-500" />
+                ? <ChevronDown className="w-4 h-4" />
+                : <ChevronRight className="w-4 h-4" />
               }
+              Optional Details
             </button>
 
             {showOptionalFields && (
-              <div className="p-4 flex flex-col gap-4">
+              <div className="mt-4 flex flex-col gap-4">
                 {/* UHID + Referred By */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

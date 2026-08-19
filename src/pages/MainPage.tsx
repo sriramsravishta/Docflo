@@ -572,7 +572,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                     type="date"
                     value={lastVisitAt}
                     onChange={(e) => setLastVisitAt(e.target.value)}
-                                        className={`input-field w-full min-w-0 bg-white appearance-none ${!lastVisitAt ? 'text-gray-400' : ''}`}
+                                                            className={`input-field w-full min-w-0 bg-white appearance-none h-10 ${!lastVisitAt ? 'text-gray-400' : ''}`}
                     max={new Date().toISOString().split('T')[0]}
                   />
                   <p className="text-xs text-gray-400 mt-1">Set if the patient visited you before Docflo</p>

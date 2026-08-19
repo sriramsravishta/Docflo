@@ -395,11 +395,38 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </button>
               </div>
             </div>
+                        {hasActiveFilters && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {appliedFilters.dateMode === 'specific' && appliedFilters.date && (
+                  <span className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                    Date: {new Date(appliedFilters.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <button onClick={() => setAppliedFilters({ ...appliedFilters, dateMode: 'none', date: '' })} className="hover:text-blue-900">×</button>
+                  </span>
+                )}
+                {appliedFilters.dateMode === 'range' && (appliedFilters.from || appliedFilters.to) && (
+                  <span className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                    Range: {appliedFilters.from || '…'} to {appliedFilters.to || '…'}
+                    <button onClick={() => setAppliedFilters({ ...appliedFilters, dateMode: 'none', from: '', to: '' })} className="hover:text-blue-900">×</button>
+                  </span>
+                )}
+                {appliedFilters.diagnoses.map((d) => (
+                  <span key={d} className="inline-flex items-center gap-1 bg-blue-50 text-[#024CDB] text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                    {d}
+                    <button onClick={() => setAppliedFilters({ ...appliedFilters, diagnoses: appliedFilters.diagnoses.filter((x) => x !== d) })} className="hover:text-blue-900">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
                 <div className="flex-1 px-6 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Number of Patients</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">{patientsCount}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    {hasActiveFilters ? 'Patients (Filtered)' : 'Number of Patients'}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                    {hasActiveFilters ? filteredAllPatients.length : patientsCount}
+                  </p>
                 </div>
                 <div className="flex-1 px-6 py-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prescriptions Created</p>

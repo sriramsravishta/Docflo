@@ -184,7 +184,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     setLastVisitAt('');
     setShowOptionalFields(false);
   };
-  };
 
   const handleRemoveClick = (appointment: { id: string; patients?: { name?: string } }) => {
     setAppointmentToRemove(appointment);

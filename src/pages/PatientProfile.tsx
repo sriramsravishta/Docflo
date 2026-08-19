@@ -1617,7 +1617,8 @@ else{
           onCancelRecording={handleCancelRecording}
           onEditPatient={() => setShowEditModal(true)}
           onAddVitals={() => setShowVitalsModal(true)}
-          onUploadDocuments={() => setShowDocumentUpload(true)}
+                    onUploadDocuments={() => setShowDocumentUpload(true)}
+          showOTNotes={showOTNotes}
           formatDate={formatDateShort}
         />
 

@@ -481,7 +481,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               <select
                 value={newPatient.gender}
                 onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-                className={`input-field ${existingPatient ? 'bg-gray-50' : ''}`}
+                                className="input-field disabled:bg-gray-50"
                 disabled={!!existingPatient}
                 required
               >
@@ -548,7 +548,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                       type="datetime-local"
                       value={newScheduledAt}
                       onChange={(e) => setNewScheduledAt(e.target.value)}
-                      className={`input-field w-full ${!newScheduledAt ? 'text-gray-400' : ''}`}
+                      className="input-field w-full"
                     />
                   </div>
                 </div>

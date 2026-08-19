@@ -12,9 +12,10 @@ import SummaryDetail from './pages/SummaryDetail';
 import FavouritesPage from './pages/FavouritesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+function AppRoutes() {
+  const { user } = useAuth();
   return (
-    <AuthProvider>
+    <FeatureFlagsProvider userId={user?.id}>
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />

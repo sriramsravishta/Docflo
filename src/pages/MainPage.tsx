@@ -93,31 +93,28 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return groups;
   })();
 
-  const [showPatientFilter, setShowPatientFilter] = useState(false);
-  const [patientFilterMode, setPatientFilterMode] = useState<'single' | 'range'>('single');
-  
-  // These track what you are selecting in the pop-up
-  const [patientFilterDate, setPatientFilterDate] = useState('');
-  const [patientFilterFrom, setPatientFilterFrom] = useState('');
-  const [patientFilterTo, setPatientFilterTo] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
+    dateMode: 'none',
+    date: '',
+    from: '',
+    to: '',
+    diagnoses: [],
+  });
 
-  // These track what is ACTUALLY applied to the table
-  const [appliedFilterDate, setAppliedFilterDate] = useState('');
-  const [appliedFilterFrom, setAppliedFilterFrom] = useState('');
-  const [appliedFilterTo, setAppliedFilterTo] = useState('');
-
-  const isPatientInFilter = (dateStr?: string): boolean => {
+  const isPatientInDateFilter = (dateStr?: string): boolean => {
+    if (appliedFilters.dateMode === 'none') return true;
     if (!dateStr) return false;
     const d = new Date(dateStr);
     d.setHours(0, 0, 0, 0);
-    if (patientFilterMode === 'single' && appliedFilterDate) {
-      const target = new Date(appliedFilterDate);
+    if (appliedFilters.dateMode === 'specific' && appliedFilters.date) {
+      const target = new Date(appliedFilters.date);
       target.setHours(0, 0, 0, 0);
       return d.getTime() === target.getTime();
     }
-    if (patientFilterMode === 'range' && (appliedFilterFrom || appliedFilterTo)) {
-      const from = appliedFilterFrom ? new Date(appliedFilterFrom) : null;
-      const to = appliedFilterTo ? new Date(appliedFilterTo) : null;
+    if (appliedFilters.dateMode === 'range') {
+      const from = appliedFilters.from ? new Date(appliedFilters.from) : null;
+      const to = appliedFilters.to ? new Date(appliedFilters.to) : null;
       if (from) from.setHours(0, 0, 0, 0);
       if (to) to.setHours(23, 59, 59, 999);
       if (from && d < from) return false;
@@ -127,23 +124,21 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return true;
   };
 
-  const hasActivePatientFilter =
-    (patientFilterMode === 'single' && appliedFilterDate !== '') ||
-    (patientFilterMode === 'range' && (appliedFilterFrom !== '' || appliedFilterTo !== ''));
+  const hasActiveFilters =
+    appliedFilters.dateMode !== 'none' || appliedFilters.diagnoses.length > 0;
 
-  const clearPatientFilter = () => {
-    setPatientFilterDate('');
-    setPatientFilterFrom('');
-    setPatientFilterTo('');
-    setAppliedFilterDate('');
-    setAppliedFilterFrom('');
-    setAppliedFilterTo('');
-    setShowPatientFilter(false);
+  const clearAllFilters = () => {
+    setAppliedFilters({ dateMode: 'none', date: '', from: '', to: '', diagnoses: [] });
   };
 
   const filteredAllPatients = allPatients
     .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((p) => !hasActivePatientFilter || isPatientInFilter(p.last_visit_at));
+    .filter((p) => isPatientInDateFilter(p.last_visit_at))
+    .filter((p) => {
+      if (appliedFilters.diagnoses.length === 0) return true;
+      const patientDiags = (p as any).diagnoses_canonical || [];
+      return appliedFilters.diagnoses.some((d) => patientDiags.includes(d));
+    });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

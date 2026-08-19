@@ -575,7 +575,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                     className="input-field"
                     max={new Date().toISOString().split('T')[0]}
                   />
-                  <p className="text-xs text-gray-400 mt-1">Set if the patient visited you before Docflo</p>
                 </div>
               </div>
             )}

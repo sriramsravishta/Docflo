@@ -420,8 +420,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         </div>
       </div>
 
-      <Modal isOpen={showAddPatient} onClose={handleCloseModal} title="Add New Patient">
-       <form
+           <Modal isOpen={showAddPatient} onClose={handleCloseModal} title="Add New Patient">
+        <form
           onSubmit={(e) => { e.preventDefault(); onSubmitForm(); }}
           className="flex flex-col gap-5"
         >
@@ -429,8 +429,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{formError}</div>
           )}
 
-          {/* Group 1: Contact & Identity */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {/* Required: Phone + Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone <span className="text-red-500">*</span>
@@ -444,7 +444,6 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               />
               {existingPatient && <p className="text-xs text-green-600 mt-1">Patient found! Details auto-filled.</p>}
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name <span className="text-red-500">*</span>
@@ -460,8 +459,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
-          {/* Group 2: Demographics */}
-          <div className="grid grid-cols-2 gap-4 sm:gap-5">
+          {/* Required: Age + Gender */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age <span className="text-red-500">*</span>
@@ -493,91 +492,107 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             </div>
           </div>
 
-          {/* Group 3: Clinical Identifiers */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                UHID <span className="text-gray-400 text-xs">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={newPatient.uhid}
-                onChange={(e) => setNewPatient({ ...newPatient, uhid: e.target.value })}
-                className={`input-field ${existingPatient && existingPatient.uhid ? 'bg-gray-50' : ''}`}
-                readOnly={!!(existingPatient && existingPatient.uhid)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Referred By <span className="text-gray-400 text-xs">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={referredBy}
-                onChange={(e) => setReferredBy(e.target.value)}
-                className="input-field"
-              />
-            </div>
+          {/* Optional Details accordion */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowOptionalFields(!showOptionalFields)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+            >
+              <span>Optional Details</span>
+              {showOptionalFields
+                ? <ChevronDown className="w-4 h-4 text-gray-500" />
+                : <ChevronRight className="w-4 h-4 text-gray-500" />
+              }
+            </button>
+
+            {showOptionalFields && (
+              <div className="p-4 flex flex-col gap-4">
+                {/* UHID + Referred By */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">UHID</label>
+                    <input
+                      type="text"
+                      value={newPatient.uhid}
+                      onChange={(e) => setNewPatient({ ...newPatient, uhid: e.target.value })}
+                      className={`input-field ${existingPatient && existingPatient.uhid ? 'bg-gray-50' : ''}`}
+                      readOnly={!!(existingPatient && existingPatient.uhid)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Referred By</label>
+                    <input
+                      type="text"
+                      value={referredBy}
+                      onChange={(e) => setReferredBy(e.target.value)}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                {/* Location + Date & Time */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <LocationSelect
+                      locations={locations}
+                      value={newLocationId}
+                      onChange={setNewLocationId}
+                      onCreate={handleCreateLocation}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date &amp; Time</label>
+                    <input
+                      type="datetime-local"
+                      value={newScheduledAt}
+                      onChange={(e) => setNewScheduledAt(e.target.value)}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input
+                    type="text"
+                    value={newPatient.address}
+                    onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+                    className="input-field"
+                    placeholder="Full address"
+                  />
+                </div>
+
+                {/* Last Visit Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Visit Date</label>
+                  <input
+                    type="date"
+                    value={lastVisitAt}
+                    onChange={(e) => setLastVisitAt(e.target.value)}
+                    className="input-field"
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Set if the patient visited you before Docflo</p>
+                </div>
+              </div>
+            )}
           </div>
 
-            
-
-          {/* Group 4: Appointment Logistics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location <span className="text-gray-400 text-xs">(optional)</span>
-              </label>
-              <LocationSelect
-                locations={locations}
-                value={newLocationId}
-                onChange={setNewLocationId}
-                onCreate={handleCreateLocation}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date &amp; Time <span className="text-gray-400 text-xs">(optional)</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={newScheduledAt}
-                onChange={(e) => setNewScheduledAt(e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
-
-   {/* Group 5: Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={newPatient.address}
-              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-              className="input-field"
-              placeholder="Full address"
-            />
-          </div>
-         
           {/* Actions */}
-          <div className="flex space-x-3 justify-end pt-4 mt-2 border-t border-gray-100">
+          <div className="flex space-x-3 justify-end pt-2 border-t border-gray-100">
             <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>
             {existingPatient ? (
               <button type="submit" className="btn-primary flex items-center justify-center" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><Spinner size="sm" className="mr-2" />Adding...</>
-                ) : 'Add to Queue'}
+                {isSubmitting ? <><Spinner size="sm" className="mr-2" />Adding...</> : 'Add to Queue'}
               </button>
             ) : (
               <button type="submit" className="btn-primary flex items-center justify-center" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><Spinner size="sm" className="mr-2" />Creating...</>
-                ) : 'Create'}
+                {isSubmitting ? <><Spinner size="sm" className="mr-2" />Creating...</> : 'Create'}
               </button>
             )}
           </div>

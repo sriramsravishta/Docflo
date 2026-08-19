@@ -224,8 +224,9 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
         setFormError('This patient already has an appointment today!');
       }
     } else {
-      const scheduledIso = newScheduledAt ? new Date(newScheduledAt).toISOString() : undefined;
-      const success = await handleCreatePatient(newPatient, user!.id, referredBy, newLocationId || undefined, scheduledIso); // CHANGED: use returned boolean
+           const scheduledIso = newScheduledAt ? new Date(newScheduledAt).toISOString() : undefined;
+      const lastVisitIso = lastVisitAt ? new Date(lastVisitAt).toISOString() : undefined;
+      const success = await handleCreatePatient(newPatient, user!.id, referredBy, newLocationId || undefined, scheduledIso, lastVisitIso);
       if (success) { // CHANGED: check returned value, not stale formError
         handleCloseModal();
         await loadData();

@@ -44,6 +44,7 @@ import LocationMultiSelect from '../components/features/LocationMultiSelect';
 import type { LocationRow } from '../types/db';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
 import {
   formatDate,
   formatDateShort,

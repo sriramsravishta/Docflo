@@ -154,9 +154,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     if (phone.length >= 10) {
       try {
         const patient = await getPatientByPhone(phone, user!.id);
-        if (patient) {
+                if (patient) {
           setExistingPatient(patient);
           setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
+          // Prefill last visit date if the patient already has one
+          if (patient.last_visit_at) {
+            setLastVisitAt(patient.last_visit_at.split('T')[0]);
+          }
         } else {
           setExistingPatient(null);
                     setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });

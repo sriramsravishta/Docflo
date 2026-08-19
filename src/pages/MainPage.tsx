@@ -481,7 +481,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               <select
                 value={newPatient.gender}
                 onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-                                className="input-field disabled:bg-gray-50"
+                                className="input-field bg-white disabled:bg-gray-50"
                 disabled={!!existingPatient}
                 required
               >
@@ -566,13 +566,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </div>
 
                 {/* Last Visit Date */}
-                                <div className="min-w-0">
+                                               <div className="min-w-0 overflow-hidden">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Visit Date</label>
                   <input
                     type="date"
                     value={lastVisitAt}
                     onChange={(e) => setLastVisitAt(e.target.value)}
-                    className={`input-field w-full bg-white ${!lastVisitAt ? 'text-gray-400' : ''}`}
+                    className={`input-field w-full min-w-0 bg-white ${!lastVisitAt ? 'text-gray-400' : ''}`}
                     max={new Date().toISOString().split('T')[0]}
                   />
                   <p className="text-xs text-gray-400 mt-1">Set if the patient visited you before Docflo</p>

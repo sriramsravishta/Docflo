@@ -116,6 +116,7 @@ export default function PatientProfile() {
     const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
     useRecording(patientId, user?.id, async () => { await loadPatientData(); });
     const admissionData = useAdmissionData(patientId, user?.id);
+    const showOTNotes = useFeatureFlag('ot_notes');
 
   const [uiNow, setUiNow] = useState(Date.now());
   useEffect(() => {

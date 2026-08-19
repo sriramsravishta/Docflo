@@ -23,7 +23,8 @@ interface PatientProfileHeaderProps {
   onCancelRecording: () => void;
   onEditPatient: () => void;
   onAddVitals: () => void;
-  onUploadDocuments: () => void;
+    onUploadDocuments: () => void;
+  showOTNotes?: boolean;
   formatDate: (s: string) => string;
 }
 

@@ -548,7 +548,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                       type="datetime-local"
                       value={newScheduledAt}
                       onChange={(e) => setNewScheduledAt(e.target.value)}
-                      className={`input-field w-full min-w-0 bg-white ${!newScheduledAt ? 'text-gray-400' : ''}`}
+                                            className={`input-field w-full min-w-0 bg-white ${!newScheduledAt ? 'text-gray-400' : ''}`}
                     />
                   </div>
                 </div>

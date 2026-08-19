@@ -173,8 +173,11 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
         setFormError('This patient already has an appointment today!');
         return false; // CHANGED
       }
-      if (uhidToSave) {
-        await updatePatient(existingPatient.id, { uhid: uhidToSave }); // CHANGED: save uhid if provided
+            if (uhidToSave) {
+        await updatePatient(existingPatient.id, { uhid: uhidToSave });
+      }
+      if (lastVisitAt) {
+        await updatePatient(existingPatient.id, { last_visit_at: lastVisitAt });
       }
       await createAppointment(existingPatient.id, doctorId, referredBy || undefined, locationId || undefined, scheduledAt || undefined); // FIXED: was patient.id + userId; CHANGED: pass referredBy, location, scheduled_at
       if (locationId) {

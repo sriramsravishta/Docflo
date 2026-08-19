@@ -75,6 +75,7 @@ export const createPatient = async (patientData: {
   gender: string;
   uhid?: string;
   address?: string;
+  last_visit_at?: string;
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');

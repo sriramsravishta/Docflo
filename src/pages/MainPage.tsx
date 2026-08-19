@@ -566,13 +566,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                 </div>
 
                 {/* Last Visit Date */}
-                <div>
+                                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Visit Date</label>
                   <input
                     type="date"
                     value={lastVisitAt}
                     onChange={(e) => setLastVisitAt(e.target.value)}
-                    className="input-field"
+                    className="input-field w-full"
                     max={new Date().toISOString().split('T')[0]}
                   />
                 </div>

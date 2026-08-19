@@ -49,8 +49,9 @@ export default function PatientProfileHeader({
   onCancelRecording,
   onEditPatient,
   onAddVitals,
-  onUploadDocuments, 
+  onUploadDocuments,
   formatDate,
+  showOTNotes = false,
 }: PatientProfileHeaderProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

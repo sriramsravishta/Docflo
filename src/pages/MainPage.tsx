@@ -542,13 +542,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                       onCreate={handleCreateLocation}
                     />
                   </div>
-                                    <div className="min-w-0">
+                                                     <div className="min-w-0 overflow-hidden">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date &amp; Time</label>
                     <input
                       type="datetime-local"
                       value={newScheduledAt}
                       onChange={(e) => setNewScheduledAt(e.target.value)}
-                      className={`input-field w-full bg-white ${!newScheduledAt ? 'text-gray-400' : ''}`}
+                      className={`input-field w-full min-w-0 bg-white ${!newScheduledAt ? 'text-gray-400' : ''}`}
                     />
                   </div>
                 </div>

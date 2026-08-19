@@ -130,8 +130,9 @@ export function useMainPageData(userId: string | undefined): UseMainPageDataRetu
     userId: string,
     referredBy?: string, // CHANGED: added referredBy
     locationId?: string, // CHANGED: added location
-    scheduledAt?: string // CHANGED: added scheduled_at
-  ): Promise<boolean> => { // CHANGED: returns boolean
+        scheduledAt?: string,
+    lastVisitAt?: string
+  ): Promise<boolean> => {
     setFormError('');
     setIsSubmitting(true);
     try {

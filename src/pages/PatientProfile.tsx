@@ -1064,6 +1064,8 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 .man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}
 .man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}
 .man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
+.info-block-flat{margin-bottom:20px;padding-bottom:12px;border-bottom:1.5px solid #111}
+.info-value-bold{font-weight:700;font-size:13px}
 @page{margin-top:160px;margin-bottom:100px;margin-left:12mm;margin-right:12mm}
 @media print{body{margin:0}}
 </style></head><body>${htmlContent}<script>

@@ -921,7 +921,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     const attachedChartNames = (selectedConsult.consult_summary_final as any)?.attached_diet_charts || [];
 
     // Run all fetches in parallel — referred_by, doctor name (cached), diet charts
-    const [appt, doctorNameResult, chartData] = await Promise.all([
+        const [appt, doctorNameResult, chartData, presConfigResult] = await Promise.all([
       getAppointmentByConsultId(selectedConsult.id).catch(() => null),
 
       // Doctor name: use cache after first fetch — never changes in a session
@@ -942,6 +942,13 @@ const resetDrafts: Record<string, MedicineDraft> = {};
             .then(({ data }) => data || [])
             .catch(() => [])
         : Promise.resolve([]),
+
+      // Prescription layout config — per-doctor customization
+      user?.id
+        ? supabase.from('organizations').select('prescription_config').eq('auth_id', user.id).single()
+            .then(({ data }) => data?.prescription_config || {})
+            .catch(() => ({}))
+        : Promise.resolve({}),
     ]);
 
     const referredBy = appt?.referred_by || undefined;

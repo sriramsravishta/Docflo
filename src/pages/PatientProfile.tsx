@@ -956,7 +956,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       ? doctorNameResult
       : user?.user_metadata?.display_name || '—';
 
-    let htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName);
+        let htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, presConfigResult);
 
     // Append diet chart image pages if attached
     for (const chart of (chartData as any[])) {

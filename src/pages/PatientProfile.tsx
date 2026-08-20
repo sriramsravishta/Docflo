@@ -663,10 +663,35 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       `;
     };
 
-    let content = `
-      <div class="info-block"> 
+        const isFlatLayout = presConfig?.patient_info_style === 'flat';
 
-    <div class="info-box"> <!-- CHANGED: added bordered container -->
+    let content = isFlatLayout
+      ? `
+      <div class="info-block-flat">
+        <div class="info-grid">
+
+          <div class="info-item">
+            <span class="info-label">Patient -</span>
+            <span class="info-value info-value-bold">${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Date -</span>
+            <span class="info-value info-value-bold">${escapeHtml(formatDate(consult.created_at))}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">UHID -</span>
+            <span class="info-value">${escapeHtml(patient?.uhid || '—')}</span>
+          </div>
+
+        </div>
+      </div>
+      `
+      : `
+      <div class="info-block">
+
+    <div class="info-box">
 
       <div class="info-grid">
 
@@ -710,7 +735,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     </div>
 
   </div>
-    `; // CHANGED: added UHID (if exists) and Referred By (if exists)
+      `;
 
     // CHANGED: Diagnosis section — only if data exists
     if (summary.diagnosis) {

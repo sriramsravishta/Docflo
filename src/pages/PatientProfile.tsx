@@ -756,8 +756,20 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       `;
     }
 
-    // Past Medical History — K/C/O line per Indian OP prescription convention
-    if ((summary as any).past_medical_history) {
+        // Examination Findings — only if data exists
+    if ((summary as any).examination_findings) {
+      const ef = (summary as any).examination_findings;
+      const efArr = Array.isArray(ef) ? ef : [String(ef)];
+      const cleaned = efArr.map((s: unknown) => String(s).trim()).filter(Boolean);
+      if (cleaned.length) {
+        content += `
+          <div class="section">
+            <div class="section-header">Examination Findings</div>
+            ${toHtmlList(cleaned)}
+          </div>
+        `;
+      }
+    }
       const pmh = (summary as any).past_medical_history;
       const pmhArr = Array.isArray(pmh) ? pmh : String(pmh).split('\n');
       const cleaned = pmhArr.map((s: unknown) => String(s).replace(/^[-•]\s*/, '').trim()).filter(Boolean);

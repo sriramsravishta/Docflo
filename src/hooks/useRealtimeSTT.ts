@@ -74,6 +74,7 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log("ElevenLabs Response:", data);
 
           if (data.type === 'transcript') {
             if (data.is_final) {

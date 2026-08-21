@@ -142,10 +142,10 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-           realtimeSTT.stop();
-     const realtimeTranscript = realtimeSTT.source === 'realtime' && realtimeSTT.transcript
-       ? realtimeSTT.transcript
-       : undefined;
+                 const finalTranscript = realtimeSTT.stop();
+      const realtimeTranscript = realtimeSTT.source === 'realtime' && finalTranscript
+        ? finalTranscript
+        : undefined;
 
      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, realtimeTranscript);
       await updateConsult(consult.id, {

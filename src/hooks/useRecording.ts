@@ -149,7 +149,7 @@ if (finalChunks.length > 0) {
 
      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, realtimeTranscript);
       await updateConsult(consult.id, {
-        recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+               recording_transcript: realtimeTranscript || 'Pending batch transcription',
         consult_summary_ai: '',
       });
 

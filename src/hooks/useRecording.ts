@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useRealtimeSTT } from './useRealtimeSTT';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 

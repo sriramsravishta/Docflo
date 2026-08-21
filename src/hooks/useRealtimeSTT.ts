@@ -55,7 +55,7 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
       const { token } = await tokenRes.json();
 
       // 3. Connect to ElevenLabs — ALL config goes in query params, NOT a separate message
-      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=${token}&audio_format=pcm_16000&language_code=auto`;
+      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=${token}&audio_format=pcm_16000`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

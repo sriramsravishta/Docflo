@@ -83,9 +83,11 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
               setTranscript(accumulatedTranscriptRef.current);
               setPartialTranscript('');
             }
-          } else if (data.message_type === 'partial_transcript') {
+                    } else if (data.message_type === 'partial_transcript') {
             // Interim text — show live but don't commit yet
-            setPartialTranscript(data.text || '');
+            const partialText = data.text || '';
+            lastPartialRef.current = partialText;
+            setPartialTranscript(partialText);
           } else if (data.message_type === 'input_error') {
             console.error('RealtimeSTT: Input error', data.error);
           } else if (data.message_type === 'error') {

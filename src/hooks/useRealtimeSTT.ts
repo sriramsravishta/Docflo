@@ -22,7 +22,8 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const accumulatedTranscriptRef = useRef('');
+    const accumulatedTranscriptRef = useRef('');
+  const lastPartialRef = useRef('');
 
   const start = useCallback(async (stream: MediaStream) => {
     try {

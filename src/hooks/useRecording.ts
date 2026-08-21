@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useRealtimeSTT } from './useRealtimeSTT';
 import { supabase } from '../lib/supabase';
 import { createConsult, updateConsult, completeTodaysAppointmentByPatientAndDoctor, updateAppointmentConsultId } from '../lib/database'; // CHANGED: added updateAppointmentConsultId
 
@@ -31,7 +30,6 @@ export function useRecording(
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
-  const realtimeSTT = useRealtimeSTT();
     const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const acquireWakeLock = async () => {

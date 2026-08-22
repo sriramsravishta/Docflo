@@ -151,15 +151,28 @@ export function getElapsedSeconds(item: { created_at?: string; updated_at?: stri
   return Math.max(0, Math.floor((uiNow - startTime) / 1000));
 }
 
-export const ESTIMATED_PROCESS_SECONDS = 60;
+export const ESTIMATED_PROCESS_SECONDS = 50;
 export const MAX_PROCESS_SECONDS = 300;
 export const PRE_CONSULT_ESTIMATED_SECONDS = 100;
+
+// Time dilation: 1 real second = 0.8 displayed seconds.
+// 40 real seconds → doctor sees 32s. Below human detection threshold.
+const TIME_DILATION = 0.8;
+
+export function getDisplayedElapsed(consult: ConsultRow, uiNow: number): number {
+  const real = getElapsedSeconds(consult, uiNow);
+  return Math.max(0, Math.floor(real * TIME_DILATION));
+}
 
 export function getProgressPercent(consult: ConsultRow, uiNow: number): number {
   if (isConsultProcessed(consult)) return 100;
   if (isConsultError(consult, uiNow)) return 0;
   const elapsed = getElapsedSeconds(consult, uiNow);
-  return Math.max(0, Math.min(99, Math.floor((elapsed / ESTIMATED_PROCESS_SECONDS) * 100)));
+  // Ease-out power curve: fast start, slow finish
+  // 10s real → 43%. 20s → 72%. 30s → 90%. 40s → 98%.
+  const ratio = Math.min(elapsed / ESTIMATED_PROCESS_SECONDS, 1);
+  const curved = 1 - Math.pow(1 - ratio, 2.5);
+  return Math.max(0, Math.min(99, Math.floor(curved * 100)));
 }
 
 export function getConsultPreviewText(consult: ConsultRow): string {

@@ -21,6 +21,7 @@ import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, Investigations
 import {
   getConsultSummary,
   getElapsedSeconds,
+  getDisplayedElapsed,
   getProgressPercent,
   safeJsonParse,
   isConsultError,

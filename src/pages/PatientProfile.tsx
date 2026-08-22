@@ -630,17 +630,14 @@ const resetDrafts: Record<string, MedicineDraft> = {};
   };
 
     const generatePDFHTMLContent = (consult: ConsultRow, referredBy?: string, doctorName?: string, presConfig?: Record<string, any>): string => {
-    // CHANGED: Fully rewritten for Apollo247-inspired clean layout
     const summary = getConsultSummary(consult) as ConsultSummary | null;
     if (!summary) return '<p>No consultation summary available.</p>';
 
     const meds = getViewModeMedicines(summary, consultMedicines);
 
-    // CHANGED: Helper to compute M-A-N dosage grid from medicine time[] and quantity
     const getMaNGrid = (time: string[], quantity: string): string => {
-      // CHANGED: only use numeric quantity, never fall back to dosage string
-  const rawQty = (quantity || '').trim();
-  const qty = rawQty || '1';
+      const rawQty = (quantity || '').trim();
+      const qty = rawQty || '1';
       const normalizedTime = (time || []).map((t) => t.toLowerCase());
       const morning = normalizedTime.some((t) => t.includes('morning')) ? qty : '0';
       const afternoon = normalizedTime.some((t) => t.includes('afternoon') || t.includes('noon')) ? qty : '0';
@@ -665,81 +662,39 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       `;
     };
 
-        const isFlatLayout = presConfig?.patient_info_style === 'flat';
+    // Section ordering
+    const DEFAULT_SECTION_ORDER = ['diagnosis','chief_complaints','history','past_medical_history','examination_findings','medications','treatment','investigations','diet_charts','followup'];
+    const sectionOrder: string[] = presConfig?.section_order || DEFAULT_SECTION_ORDER;
 
-    let content = isFlatLayout
-      ? `
-      <div class="info-block-flat">
-        <div class="info-grid">
+    // Build patient info block
+    const ptName = (patient?.name || '').toUpperCase();
+    const ptAge = patient?.age ? `${patient.age}${(patient?.gender || '').charAt(0)}` : '';
+    const ptDisplay = [ptName, ptAge].filter(Boolean).join(', ');
+    const ptUhid = patient?.uhid;
+    const ptPhone = patient?.phone;
 
-          <div class="info-item">
-            <span class="info-label">Patient -</span>
-            <span class="info-value info-value-bold">${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}</span>
-          </div>
+    let content = `<div class="pres-wrapper"><div class="pt-info">`;
 
-          <div class="info-item">
-            <span class="info-label">Date -</span>
-            <span class="info-value info-value-bold">${escapeHtml(formatDate(consult.created_at))}</span>
-          </div>
+    content += `<div class="pt-row">`;
+    content += `<div><p class="pt-name">${escapeHtml(ptDisplay)}</p></div>`;
+    content += `<div style="text-align:right">`;
+    if (ptUhid) content += `<span class="pt-meta"><span class="pt-label">UHID: </span><span class="pt-val">${escapeHtml(ptUhid)}</span></span>`;
+    content += `</div></div>`;
 
-          <div class="info-item">
-            <span class="info-label">UHID -</span>
-            <span class="info-value">${escapeHtml(patient?.uhid || '—')}</span>
-          </div>
+    content += `<div class="pt-row" style="margin-top:4px">`;
+    content += `<div><span class="pt-meta"><span class="pt-label">Date: </span><span class="pt-date-val">${escapeHtml(formatDate(consult.created_at))}</span></span></div>`;
+    content += `<div style="text-align:right">`;
+    if (referredBy) content += `<span class="pt-meta"><span class="pt-label">Referred by: </span><span class="pt-val">${escapeHtml(referredBy)}</span></span>`;
+    content += `</div></div>`;
 
-        </div>
-      </div>
-      `
-      : `
-      <div class="info-block">
+    if (ptPhone) {
+      content += `<div style="margin-top:4px"><span class="pt-meta"><span class="pt-label">Phone: </span><span class="pt-val">${escapeHtml(String(ptPhone))}</span></span></div>`;
+    }
+    content += `</div>`; // close pt-info
 
-    <div class="info-box">
+    // Build all sections into a map
+    const sectionHtmlMap: Record<string, string> = {};
 
-      <div class="info-grid">
-
-        <div class="info-item">
-          <span class="info-label">Doctor -</span>
-          <span class="info-value">
-            ${escapeHtml(doctorName || '—')}
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">Date -</span>
-          <span class="info-value">
-            ${escapeHtml(formatDate(consult.created_at))}
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">Patient -</span>
-          <span class="info-value">
-            ${escapeHtml(patient?.name || '—')}, ${escapeHtml(String(patient?.age || '—'))}${escapeHtml((patient?.gender || '').charAt(0))}
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">UHID -</span>
-          <span class="info-value">
-            ${escapeHtml(patient?.uhid || '—')}
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">Referred by -</span>
-          <span class="info-value">
-            ${escapeHtml(referredBy || '—')}
-          </span>
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-      `;
-
-    // CHANGED: Diagnosis section — only if data exists
     if (summary.diagnosis) {
       let diagContent = '';
       if (typeof summary.diagnosis === 'string') {
@@ -749,84 +704,47 @@ const resetDrafts: Record<string, MedicineDraft> = {};
         const prov = Array.isArray(d.provisional) ? d.provisional : [];
         if (prov.length) diagContent += `<p class="sub-label">Provisional Diagnosis</p>${toHtmlList(prov)}`;
       }
-      if (diagContent) {
-        content += `
-          <div class="section">
-            <div class="section-header">Diagnosis / Provisional Diagnosis</div>
-            ${diagContent}
-          </div>
-        `;
-      }
+      if (diagContent) sectionHtmlMap['diagnosis'] = `<div class="section"><div class="section-header">Diagnosis / Provisional Diagnosis</div>${diagContent}</div>`;
     }
 
-    // CHANGED: Chief Complaints — only if data exists
     if (summary.chief_complaints) {
       const cc = summary.chief_complaints;
-      const ccHtml = Array.isArray(cc)
-        ? toHtmlList(cc)
-        : `<p class="section-text">${escapeHtml(String(cc))}</p>`;
-      content += `
-        <div class="section">
-          <div class="section-header">Chief Complaints</div>
-          ${ccHtml}
-        </div>
-      `;
+      const ccHtml = Array.isArray(cc) ? toHtmlList(cc) : `<p class="section-text">${escapeHtml(String(cc))}</p>`;
+      sectionHtmlMap['chief_complaints'] = `<div class="section"><div class="section-header">Chief Complaints</div>${ccHtml}</div>`;
     }
 
-    // CHANGED: History — only if data exists
     if (summary.history) {
-      content += `
-        <div class="section">
-          <div class="section-header">History</div>
-          <p class="section-text">${escapeHtml(summary.history)}</p>
-        </div>
-      `;
+      sectionHtmlMap['history'] = `<div class="section"><div class="section-header">History</div><p class="section-text">${escapeHtml(summary.history)}</p></div>`;
     }
 
-    
-
-    // Past Medical History — K/C/O line per Indian OP prescription convention
     if ((summary as any).past_medical_history) {
       const pmh = (summary as any).past_medical_history;
       const pmhArr = Array.isArray(pmh) ? pmh : String(pmh).split('\n');
       const cleaned = pmhArr.map((s: unknown) => String(s).replace(/^[-•]\s*/, '').trim()).filter(Boolean);
       if (cleaned.length) {
-        content += `
-          <div class="section">
-            <div class="section-header">Past Medical History (K/C/O)</div>
-            <p class="section-text">${escapeHtml(cleaned.join(', '))}</p>
-          </div>
-        `;
+        sectionHtmlMap['past_medical_history'] = `<div class="section"><div class="section-header">Past Medical History (K/C/O)</div><p class="section-text">${escapeHtml(cleaned.join(', '))}</p></div>`;
       }
     }
 
-        // Examination Findings — only if data exists
     if ((summary as any).examination_findings) {
       const ef = (summary as any).examination_findings;
       const efArr = Array.isArray(ef) ? ef : [String(ef)];
       const cleaned = efArr.map((s: unknown) => String(s).trim()).filter(Boolean);
       if (cleaned.length) {
-        content += `
-          <div class="section">
-            <div class="section-header">Examination Findings</div>
-            ${toHtmlList(cleaned)}
-          </div>
-        `;
+        sectionHtmlMap['examination_findings'] = `<div class="section"><div class="section-header">Examination Findings</div>${toHtmlList(cleaned)}</div>`;
       }
     }
 
-    // CHANGED: Medications — Apollo-style numbered table, only if medicines exist
     if (meds.length > 0) {
       const medsRows = meds.map((m, idx) => {
         const timeArr = Array.isArray(m?.time) ? m.time : [];
         const manGrid = getMaNGrid(timeArr, m?.quantity || m?.dosage || '');
-        // CHANGED: prepend quantity to detail line, show "1 Tab | 1x everyday | after food"
         const rawQty = (m?.quantity || '').trim();
         const displayQty = rawQty || '1';
         const detailParts = [
-          m?.type ? `${displayQty} ${escapeHtml(m.type)}` : '',  // e.g. "1 Tab"
-          m?.frequency ? escapeHtml(m.frequency) : '',            // e.g. "1x everyday"
-          m?.food ? `${escapeHtml(m.food)} food` : '',            // e.g. "after food"
+          m?.type ? `${displayQty} ${escapeHtml(m.type)}` : '',
+          m?.frequency ? escapeHtml(m.frequency) : '',
+          m?.food ? `${escapeHtml(m.food)} food` : '',
         ].filter(Boolean);
         const detailLine = detailParts.join(' | ');
         const instructionLine = m?.instructions ? `<div class="med-instruction">${escapeHtml(m.instructions)}</div>` : '';
@@ -844,28 +762,9 @@ const resetDrafts: Record<string, MedicineDraft> = {};
           </tr>
         `;
       }).join('');
-
-      content += `
-        <div class="section">
-          <div class="section-header">Medication Prescribed</div>
-          <table class="med-table">
-            <thead>
-              <tr>
-                <th class="th-num">#</th>
-                <th class="th-name">Medicine Name</th>
-                <th class="th-man">Dosage</th>
-                <th class="th-detail">Medicine Details</th>
-                <th class="th-dur">Duration</th>
-              </tr>
-            </thead>
-            <tbody>${medsRows}</tbody>
-          </table>
-          <p class="man-legend"><strong>M-A-N:</strong> Morning - Afternoon - Night</p>
-        </div>
-      `;
+      sectionHtmlMap['medications'] = `<div class="section"><div class="section-header">Medication Prescribed</div><table class="med-table"><thead><tr><th class="th-num">#</th><th class="th-name">Medicine Name</th><th class="th-man">Dosage</th><th class="th-detail">Medicine Details</th><th class="th-dur">Duration</th></tr></thead><tbody>${medsRows}</tbody></table><p class="man-legend"><strong>M-A-N:</strong> Morning - Afternoon - Night</p></div>`;
     }
 
-    // CHANGED: Treatment Suggested — only if data exists
     if (summary.treatment_suggested) {
       let treatHtml = '';
       if (typeof summary.treatment_suggested === 'string') {
@@ -877,68 +776,59 @@ const resetDrafts: Record<string, MedicineDraft> = {};
         if (immediate.length) treatHtml += `<p class="sub-label">Immediate Plan</p>${toHtmlList(immediate)}`;
         if (contingent.length) treatHtml += `<p class="sub-label">Contingent Plan</p>${toHtmlList(contingent)}`;
       }
-      if (treatHtml) {
-        content += `
-          <div class="section">
-            <div class="section-header">Treatment Suggested</div>
-            ${treatHtml}
-          </div>
-        `;
+      if (treatHtml) sectionHtmlMap['treatment'] = `<div class="section"><div class="section-header">Treatment Suggested</div>${treatHtml}</div>`;
+    }
+
+    if (summary.investigations) {
+      let invHtml = '';
+      if (typeof summary.investigations === 'string' && summary.investigations.trim()) {
+        invHtml = `<p class="section-text">${escapeHtml(summary.investigations)}</p>`;
+      } else if (typeof summary.investigations === 'object') {
+        const inv = summary.investigations as InvestigationsSummary;
+        const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
+        if (ordered.length) {
+          invHtml += `<ul class="section-list">${ordered.map((o) =>
+            `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
+          ).join('')}</ul>`;
+        }
+        if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
       }
+      if (invHtml) sectionHtmlMap['investigations'] = `<div class="section"><div class="section-header">Investigations</div>${invHtml}</div>`;
     }
 
-    // REPLACEMENT
-
-  if (summary.investigations) {
-  let invHtml = '';
-
-  if (typeof summary.investigations === 'string' && summary.investigations.trim()) {
-    invHtml = `<p class="section-text">${escapeHtml(summary.investigations)}</p>`;
-  } else if (typeof summary.investigations === 'object') {
-    const inv = summary.investigations as InvestigationsSummary;
-    const ordered = Array.isArray(inv.ordered) ? inv.ordered : [];
-    if (ordered.length) {
-      invHtml += `<ul class="section-list">${ordered.map((o) =>
-        `<li><strong>${escapeHtml(o?.name || '—')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`
-      ).join('')}</ul>`;
-    }
-    if (inv.notes) invHtml += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
-  }
-
-  if (invHtml) {
-    content += `
-      <div class="section">
-        <div class="section-header">Investigations</div>
-        ${invHtml}
-      </div>
-    `;
-  }
-}
-
-    // Attached diet charts — note in PDF
     const attachedCharts = (summary as any)?.attached_diet_charts;
     if (Array.isArray(attachedCharts) && attachedCharts.length > 0) {
-      content += `
-        <div class="section" style="margin-top: 24px; padding: 12px; border: 1px solid #d1fae5; background: #f0fdf4; border-radius: 8px;">
-          <p style="font-size: 11px; color: #166534; font-weight: 600;">📎 Diet Chart Attached — See following pages</p>
-        </div>
-      `;
-    }
-    
-    // CHANGED: Follow-up Recommendations — only if data exists
-    if (summary.followup_recommendations) {
-      const fu = summary.followup_recommendations;
-      const fuHtml = Array.isArray(fu)
-        ? toHtmlList(fu)
-        : `<p class="section-text">${escapeHtml(String(fu))}</p>`;
-      content += `
-        <div class="section">
-          <div class="section-header">Advice & Instructions</div>
-          ${fuHtml}
-        </div>
-      `;
+      sectionHtmlMap['diet_charts'] = `<div class="section" style="background:#f0fdf4;border-color:#d1fae5"><p style="font-size:12px;color:#166534;font-weight:600;margin:0">📎 Diet Chart Attached — See following pages</p></div>`;
     }
 
+    if (summary.followup_recommendations) {
+      const fu = summary.followup_recommendations;
+      const fuHtml = Array.isArray(fu) ? toHtmlList(fu) : `<p class="section-text">${escapeHtml(String(fu))}</p>`;
+      sectionHtmlMap['followup'] = `<div class="section"><div class="section-header">Advice &amp; Instructions</div>${fuHtml}</div>`;
+    }
+
+    for (const key of sectionOrder) {
+      if (sectionHtmlMap[key]) content += sectionHtmlMap[key];
+    }
+
+    for (const key of Object.keys(sectionHtmlMap)) {
+      if (!sectionOrder.includes(key)) content += sectionHtmlMap[key];
+    }
+
+    const sigDoctorName = (doctorName || '').toUpperCase();
+    const sigDept = presConfig?.department || '';
+    const sigDate = formatDate(consult.created_at);
+    content += `
+      <div class="signature-wrapper">
+        <div class="signature">
+          <p class="sig-name">${escapeHtml(sigDoctorName)}</p>
+          ${sigDept ? `<p class="sig-dept">${escapeHtml(sigDept)}</p>` : ''}
+          <p class="sig-date">Visit Date: ${escapeHtml(sigDate)}</p>
+        </div>
+      </div>
+    `;
+
+    content += `</div>`;
     return content;
   };
 

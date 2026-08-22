@@ -236,7 +236,7 @@ export default function PatientProfile() {
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('consult')
-        .select('id, consult_summary_final, created_at, updated_at, status')
+                .select('id, consult_summary_final, summary_streaming, created_at, updated_at, status')
         .in('id', activeIds);
         
       if (data && data.length > 0) {

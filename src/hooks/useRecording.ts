@@ -61,7 +61,9 @@ export function useRecording(
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
-      realtimeSTT.start(stream).catch(err => console.error('RealtimeSTT start failed:', err));
+            if (realtimeEnabled) {
+        realtimeSTT.start(stream).catch(err => console.error('RealtimeSTT start failed:', err));
+      }
       setIsPaused(false);
       setRecordingTime(0);
       await acquireWakeLock();

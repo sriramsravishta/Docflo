@@ -1388,6 +1388,8 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
               <div className="h-6" />
             </div>
             )
+                    ) : consult.summary_streaming ? (
+            <StreamingPreview consult={consult} />
           ) : (
             <div className="p-6">
               <ProcessingState consult={consult} uiNow={uiNow} onRetryOptimistic={onRetryOptimistic} />
@@ -1483,6 +1485,126 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ═══ STREAMING PREVIEW ═══
+// Shows consultation summary sections one by one as the LLM generates them.
+// Each section fades in when complete. Pending sections show as skeleton cards.
+const STREAMING_SECTION_CONFIG = [
+  { key: 'diagnosis', title: 'Diagnosis', render: (v: any) => {
+    if (!v) return '';
+    const prov = Array.isArray(v.provisional) ? v.provisional : (typeof v === 'string' ? [v] : []);
+    return prov.join(', ') || 'No diagnosis recorded';
+  }},
+  { key: 'chief_complaints', title: 'Chief Complaints', render: (v: any) => Array.isArray(v) ? v.map(c => `• ${c}`).join('\n') : String(v || '') },
+  { key: 'history', title: 'History of Present Illness', render: (v: any) => String(v || '') },
+  { key: 'past_medical_history', title: 'Past Medical History', render: (v: any) => Array.isArray(v) ? v.map(c => `• ${c}`).join('\n') : String(v || '') },
+  { key: 'examination_findings', title: 'Examination & Findings', render: (v: any) => Array.isArray(v) && v.length > 0 ? v.map(c => `• ${c}`).join('\n') : null },
+  { key: 'medications', title: 'Current Medications', render: (v: any) => {
+    if (!Array.isArray(v) || v.length === 0) return 'No medications';
+    return v.map(m => {
+      const parts = [m.name || '?'];
+      if (m.dosage) parts.push(m.dosage);
+      if (m.frequency) parts.push(m.frequency);
+      if (m.duration) parts.push(`for ${m.duration}`);
+      return `• ${parts.join(' — ')}`;
+    }).join('\n');
+  }},
+  { key: 'investigations', title: 'Investigations', render: (v: any) => {
+    if (!v) return 'No investigations';
+    const ordered = Array.isArray(v.ordered) ? v.ordered : [];
+    if (ordered.length === 0) return v.notes || 'No investigations';
+    return ordered.map(i => `• ${i.name || '?'}${i.priority ? ` (${i.priority})` : ''}`).join('\n');
+  }},
+  { key: 'treatment_suggested', title: 'Treatment Suggested', render: (v: any) => {
+    if (!v) return '';
+    const items = [...(v.immediate_plan || []), ...(v.contingent_plan || [])];
+    return items.map(i => `• ${i}`).join('\n') || 'No treatment recorded';
+  }},
+  { key: 'followup_recommendations', title: 'Follow-up Recommendations', render: (v: any) => Array.isArray(v) ? v.map(c => `• ${c}`).join('\n') : String(v || '') },
+  { key: 'key_personal_insights', title: 'Key Personal Insights', render: (v: any) => Array.isArray(v) ? v.map(c => `• ${c}`).join('\n') : String(v || '') },
+  { key: 'flags_for_review', title: 'Flags for Review', render: (v: any) => Array.isArray(v) && v.length > 0 ? v.map(c => `⚠ ${c}`).join('\n') : null },
+];
+
+function StreamingPreview({ consult }: { consult: ConsultRow }) {
+  const streaming = consult.summary_streaming;
+  if (!streaming) return null;
+
+  const completed = streaming.completed_sections || [];
+  const data = streaming.data || {};
+  
+  // Find the index of the next section to generate (for skeleton)
+  const nextIdx = STREAMING_SECTION_CONFIG.findIndex(s => !completed.includes(s.key));
+
+  return (
+    <div className="px-6 py-6 space-y-4">
+      {/* Generating badge */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-[#024CDB] rounded-full animate-pulse" />
+          <span className="text-sm font-semibold text-[#024CDB]">Generating summary...</span>
+        </div>
+        <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-[#024CDB] rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${Math.round((completed.length / STREAMING_SECTION_CONFIG.length) * 100)}%` }}
+          />
+        </div>
+        <span className="text-xs text-gray-400">{completed.length}/{STREAMING_SECTION_CONFIG.length}</span>
+      </div>
+
+      {/* Completed sections */}
+      {STREAMING_SECTION_CONFIG.map((section, idx) => {
+        const isCompleted = completed.includes(section.key);
+        const isNext = idx === nextIdx;
+        
+        if (!isCompleted && !isNext) return null; // Hide future sections
+
+        if (!isCompleted && isNext) {
+          // Skeleton card for the next section being generated
+          return (
+            <div key={section.key} className="border border-gray-200 bg-white rounded-lg overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-[#024CDB] rounded-full animate-pulse" />
+                  <h3 className="font-semibold text-gray-400">{section.title}</h3>
+                </div>
+              </div>
+              <div className="px-4 py-3 space-y-2">
+                <div className="h-3 bg-gray-200 rounded-full animate-pulse w-3/4" />
+                <div className="h-3 bg-gray-200 rounded-full animate-pulse w-1/2" style={{ animationDelay: '150ms' }} />
+                <div className="h-3 bg-gray-200 rounded-full animate-pulse w-2/3" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          );
+        }
+
+        // Completed section — render it
+        const rendered = section.render(data[section.key]);
+        if (rendered === null) return null; // Skip sections that return null (e.g., empty examination_findings)
+
+        const isFlag = section.key === 'flags_for_review';
+
+        return (
+          <div 
+            key={section.key}
+            className={`border rounded-lg overflow-hidden animate-[fadeIn_0.4s_ease-out] ${
+              isFlag ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'
+            }`}
+          >
+            <div className={`px-4 py-3 border-b ${isFlag ? 'border-red-200 bg-red-100/50' : 'border-gray-200 bg-gray-50'}`}>
+              <h3 className={`font-semibold ${isFlag ? 'text-red-800' : 'text-gray-900'}`}>{section.title}</h3>
+            </div>
+            <div className="px-4 py-3">
+              <p className={`text-[15px] whitespace-pre-line leading-relaxed ${isFlag ? 'text-red-800 font-medium text-sm' : 'text-gray-700'}`}>
+                {rendered}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

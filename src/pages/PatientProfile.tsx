@@ -1555,7 +1555,7 @@ else{
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-medium text-[#024CDB]">Generating</p>
-                          <p className="text-[11px] text-gray-500">{(consult as any).summary_streaming?.completed_sections?.length || 0}/12 sections</p>
+                                                    <p className="text-[11px] text-gray-500">{(consult as any).summary_streaming?.completed_sections?.length || 0}/12 sections</p>
                         </div>
                       </>
                     ) : (
@@ -1565,11 +1565,11 @@ else{
                             <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                             <path className="text-[#024CDB]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${getProgressPercent(consult, uiNow)}, 100`} strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{getProgressPercent(consult, uiNow)}%</div>
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-gray-700">{getDisplayedElapsed(consult, uiNow)}s</div>
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-medium text-gray-700">Processing</p>
-                          <p className="text-[11px] text-gray-500">{getProgressPercent(consult, uiNow)}% completed</p>
+                          <p className="text-[11px] text-gray-500">{getDisplayedElapsed(consult, uiNow)}s elapsed</p>
                         </div>
                       </>
                     )}

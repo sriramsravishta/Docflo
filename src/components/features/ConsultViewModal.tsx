@@ -1683,7 +1683,7 @@ function ProcessingState({ consult, uiNow, onRetryOptimistic }: { consult: Consu
         <p className="text-sm font-semibold text-gray-900">
           {isError
             ? 'Consultation summary failed'
-            : `Preparing consultation summary: ${elapsed}s / ${ESTIMATED_PROCESS_SECONDS}s`}
+                        : `Preparing consultation summary: ${getDisplayedElapsed(activeConsult, uiNow)}s`}
         </p>
       </div> 
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">

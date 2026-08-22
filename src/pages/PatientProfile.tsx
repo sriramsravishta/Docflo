@@ -890,65 +890,34 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     // CHANGED: Replaced with Apollo-inspired clean print styles
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;font-size:13px;background:#fff}
-/* CHANGED: remove divider line under patient info */
-.info-block{
-  margin-bottom:20px;
-  padding-bottom:0;
-  border-bottom:none;
-}
-
-/* CHANGED: add bordered square box around patient info */
-.info-box{
-  border:1.5px solid #111;  /* same color/thickness as section header line */
-  padding:16px 16px;
-  margin-bottom:32px;
-}
-
-/* CHANGED: keep 2-column layout */
-.info-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px 40px;
-}
-
-.info-item{
-  font-size:12px;
-}
-
-.info-label{
-  font-weight:700;
-  color:#333;
-  margin-right:4px;
-}
-
-.info-value{
-  color:#111;
-}
-
-/* CHANGED: remove light divider from sections but keep spacing */
-.section{
-  margin-bottom:18px;
-  padding-bottom:12px;
-  border-bottom:none;
-}
-.section-header{font-size:13px;font-weight:700;color:#111;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #111;text-transform:none;letter-spacing:0}
-.section-text{margin:4px 0;font-size:12px;color:#222}
-.sub-label{font-size:11px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}
+body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;font-size:14px;background:#fff}
+.pres-wrapper{border:1.5px solid #111;margin:16px;padding:0}
+.pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}
+.pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}
+.pt-name{font-size:16px;font-weight:700;text-transform:uppercase;color:#111;margin:0 0 4px 0}
+.pt-meta{font-size:13px;color:#333}
+.pt-label{font-weight:400;color:#555}
+.pt-val{font-weight:400;color:#111}
+.pt-date-val{font-weight:700;color:#111}
+.section{margin:0;padding:12px 16px 12px 16px;border-bottom:1px solid #ccc}
+.section:last-child{border-bottom:none}
+.section-header{font-size:14px;font-weight:700;color:#111;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.02em}
+.section-text{margin:4px 0;font-size:14px;color:#222}
+.sub-label{font-size:12px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}
 .section-list{margin:4px 0 4px 18px;padding:0}
-.section-list li{font-size:12px;margin-bottom:3px;color:#222}
-.inv-priority{font-size:11px;color:#666;font-style:italic}
-.med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.section-list li{font-size:14px;margin-bottom:3px;color:#222}
+.inv-priority{font-size:12px;color:#666;font-style:italic}
+.med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
 .med-table thead tr{background:#f3f4f6}
-.med-table th{text-align:left;padding:7px 8px;font-size:11px;font-weight:700;border:1px solid #d1d5db;color:#333}
+.med-table th{text-align:left;padding:7px 8px;font-size:12px;font-weight:700;border:1px solid #d1d5db;color:#333}
 .med-table td{padding:7px 8px;border:1px solid #d1d5db;vertical-align:top;color:#222}
 .th-num,.td-num{width:28px;text-align:center}
 .th-man,.td-man{width:90px;text-align:center}
 .th-dur,.td-dur{width:80px}
 .th-detail,.td-detail{width:140px}
-.td-name strong{font-size:12px;font-weight:700}
-.med-sub{font-size:11px;color:#555;margin-top:2px}
-.med-instruction{font-size:11px;color:#555;margin-top:3px;font-style:italic}
+.td-name strong{font-size:13px;font-weight:700}
+.med-sub{font-size:12px;color:#555;margin-top:2px}
+.med-instruction{font-size:12px;color:#555;margin-top:3px;font-style:italic}
 .row-even{background:#fff}
 .row-odd{background:#f9fafb}
 .man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}
@@ -956,10 +925,13 @@ body{font-family:Arial,sans-serif;margin:24px 28px;line-height:1.5;color:#111;fo
 .man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}
 .man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}
 .man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
-.info-block-flat{margin-bottom:40px;padding-bottom:12px;border-bottom:1.5px solid #111}
-.info-value-bold{font-weight:700;font-size:13px}
+.signature-wrapper{break-inside:avoid;page-break-inside:avoid}
+.signature{text-align:right;padding:24px 20px 16px 16px}
+.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}
+.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
+.sig-date{font-size:12px;color:#555;margin:0}
 @page{margin-top:198px;margin-bottom:138px;margin-left:12mm;margin-right:12mm}
-@media print{body{margin:0}}
+@media print{body{margin:0}.pres-wrapper{margin:0;border-left:none;border-right:none}}
 </style></head><body>${htmlContent}<script>
 window.onafterprint=function(){window.close()};
 var imgs=document.images;

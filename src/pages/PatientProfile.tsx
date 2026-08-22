@@ -53,6 +53,7 @@ import {
   isConsultError,
   getElapsedSeconds,
   getProgressPercent,
+    getDisplayedElapsed,
   getViewModeMedicines,
   getConsultPreviewText,
   normalizeTime,

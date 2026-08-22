@@ -891,7 +891,10 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;font-size:14px;background:#fff}
-.pres-wrapper{border:1.5px solid #111;margin:16px;padding:0}
+
+/* FIX: Margin is strictly 0, solid border on all sides */
+.pres-wrapper{border:1.5px solid #111;margin:0;padding:0}
+
 .pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}
 .pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}
 .pt-name{font-size:16px;font-weight:700;text-transform:uppercase;color:#111;margin:0 0 4px 0}
@@ -930,8 +933,12 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}
 .sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
 .sig-date{font-size:12px;color:#555;margin:0}
+
+/* Page margins dictate the spacing around the border */
 @page{margin-top:198px;margin-bottom:138px;margin-left:12mm;margin-right:12mm}
-@media print{body{margin:0}.pres-wrapper{margin:0;border-left:none;border-right:none}}
+
+/* FIX: Removed the code that hid the borders during print */
+@media print{body{margin:0}}
 </style></head><body>${htmlContent}<script>
 window.onafterprint=function(){window.close()};
 var imgs=document.images;

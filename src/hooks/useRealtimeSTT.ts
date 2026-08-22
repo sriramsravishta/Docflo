@@ -8,7 +8,7 @@ interface UseRealtimeSTTReturn {
   isConnected: boolean;
   error: string | null;
   start: (stream: MediaStream) => Promise<void>;
-  stop: () => void;
+  stop: () => string;
   reset: () => void;
 }
 
@@ -22,10 +22,12 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const accumulatedTranscriptRef = useRef('');
+    const accumulatedTranscriptRef = useRef('');
+  const lastPartialRef = useRef('');
 
   const start = useCallback(async (stream: MediaStream) => {
     try {
+      // 1. Get auth session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.error('RealtimeSTT: No auth session');
@@ -33,6 +35,7 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
         return;
       }
 
+      // 2. Get single-use token from Edge Function
       const tokenRes = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stt-token`,
         {
@@ -52,7 +55,8 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
 
       const { token } = await tokenRes.json();
 
-      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=${token}`;
+      // 3. Connect to ElevenLabs — ALL config goes in query params, NOT a separate message
+      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=${token}&audio_format=pcm_16000`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -61,31 +65,33 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
         setIsConnected(true);
         setSource('realtime');
         setError(null);
-
-        ws.send(JSON.stringify({
-          type: 'config',
-          config: {
-            language_code: 'auto',
-            keyterms: [],
-          },
-        }));
+        // NO config message — config is in the URL query params
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('ElevenLabs Response:', data);
 
-          if (data.type === 'transcript') {
-            if (data.is_final) {
-              const text = data.text?.trim();
-              if (text) {
-                accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + text;
-                setTranscript(accumulatedTranscriptRef.current);
-                setPartialTranscript('');
-              }
-            } else {
-              setPartialTranscript(data.text || '');
+          if (data.message_type === 'session_started') {
+            console.log('RealtimeSTT: Session started', data.session_id);
+          } else if (data.message_type === 'committed_transcript') {
+            // Finalized text — append to accumulated transcript
+            const text = data.text?.trim();
+            if (text) {
+              accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + text;
+              setTranscript(accumulatedTranscriptRef.current);
+              setPartialTranscript('');
             }
+                    } else if (data.message_type === 'partial_transcript') {
+            // Interim text — show live but don't commit yet
+            const partialText = data.text || '';
+            lastPartialRef.current = partialText;
+            setPartialTranscript(partialText);
+          } else if (data.message_type === 'input_error') {
+            console.error('RealtimeSTT: Input error', data.error);
+          } else if (data.message_type === 'error') {
+            console.error('RealtimeSTT: Server error', data.error);
           }
         } catch (e) {
           console.error('RealtimeSTT: Parse error', e);
@@ -107,6 +113,7 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
         }
       };
 
+      // 4. Set up PCM 16kHz audio capture from the same mic stream
       const audioContext = new AudioContext({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
       const sourceNode = audioContext.createMediaStreamSource(stream);
@@ -117,12 +124,14 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
         if (ws.readyState !== WebSocket.OPEN) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
+        // Convert Float32 to Int16 PCM
         const pcm16 = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const s = Math.max(-1, Math.min(1, inputData[i]));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
+        // Base64 encode
         const bytes = new Uint8Array(pcm16.buffer);
         let binary = '';
         for (let i = 0; i < bytes.length; i++) {
@@ -130,11 +139,12 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
         }
         const base64 = btoa(binary);
 
+        // Send in the EXACT format the API requires — all 4 fields are required
         ws.send(JSON.stringify({
-          type: 'audio',
-          audio_event: {
-            audio_base_64: base64,
-          },
+          message_type: 'input_audio_chunk',
+          audio_base_64: base64,
+          commit: false,
+          sample_rate: 16000,
         }));
       };
 
@@ -147,7 +157,8 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
     }
   }, []);
 
-  const stop = useCallback(() => {
+    const stop = useCallback((): string => {
+    // Stop audio processing first
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
@@ -157,16 +168,31 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
       audioContextRef.current = null;
     }
 
+    // Send a final commit signal before closing — tells ElevenLabs to finalize whatever it has
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
-        wsRef.current.send(JSON.stringify({ type: 'close_connection' }));
+        wsRef.current.send(JSON.stringify({
+          message_type: 'input_audio_chunk',
+          audio_base_64: '',
+          commit: true,
+          sample_rate: 16000,
+        }));
       } catch (e) {
         // ignore
       }
-      wsRef.current.close();
+      // Give ElevenLabs 500ms to send back the committed_transcript before we close
+      const ws = wsRef.current;
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      }, 500);
     }
     wsRef.current = null;
     setIsConnected(false);
+
+    // Return committed text if available, otherwise fall back to last partial
+    return accumulatedTranscriptRef.current || lastPartialRef.current;
   }, []);
 
   const reset = useCallback(() => {

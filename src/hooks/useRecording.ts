@@ -142,9 +142,14 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode);
+                 const finalTranscript = realtimeSTT.stop();
+      const realtimeTranscript = realtimeSTT.source === 'realtime' && finalTranscript
+        ? finalTranscript
+        : undefined;
+
+     const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, realtimeTranscript);
       await updateConsult(consult.id, {
-        recording_transcript: 'Dummy transcription text. Patient reports feeling tired and experiencing headaches for the past week.',
+               recording_transcript: realtimeTranscript || 'Pending batch transcription',
         consult_summary_ai: '',
       });
 
@@ -170,6 +175,7 @@ if (finalChunks.length > 0) {
 
     const handleCancelRecording = () => {
           releaseWakeLock();
+           realtimeSTT.reset();
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }

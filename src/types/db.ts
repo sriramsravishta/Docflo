@@ -52,7 +52,8 @@ export interface ConsultRow {
   recording_file?: string | null;
   recording_transcript?: string | null;
   consult_summary_ai?: string | null;
-  consult_summary_final?: Record<string, unknown> | string | null;
+    consult_summary_final?: Record<string, unknown> | string | null;
+  summary_streaming?: { completed_sections: string[]; data: Record<string, unknown> } | null;
   type?: 'consultation' | 'ot_note';
   status?: string;
   updated_at?: string;

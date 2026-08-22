@@ -145,8 +145,8 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-                 const finalTranscript = realtimeSTT.stop();
-      const realtimeTranscript = realtimeSTT.source === 'realtime' && finalTranscript
+                                  const finalTranscript = realtimeEnabled ? realtimeSTT.stop() : null;
+      const realtimeTranscript = realtimeEnabled && realtimeSTT.source === 'realtime' && finalTranscript
         ? finalTranscript
         : undefined;
 

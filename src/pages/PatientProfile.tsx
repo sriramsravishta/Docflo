@@ -95,7 +95,7 @@ function formatEventDate(dt: string): string {
   if (isNaN(d.getTime())) return dt;
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-  const SHOW_INPATIENT_TAB = false; // Set to true when ready to release to users
+    const SHOW_INPATIENT_TAB = useFeatureFlag('inpatient');
 export default function PatientProfile() {
   const { patientId } = useParams<{ patientId: string }>();
     const { user } = useAuth();

@@ -121,6 +121,7 @@ export default function PatientProfile() {
     useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled);
     const admissionData = useAdmissionData(patientId, user?.id);
     const showOTNotes = useFeatureFlag('ot_notes');
+    const SHOW_INPATIENT_TAB = useFeatureFlag('inpatient');
 
   const [uiNow, setUiNow] = useState(Date.now());
   useEffect(() => {

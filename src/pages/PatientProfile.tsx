@@ -95,7 +95,7 @@ function formatEventDate(dt: string): string {
   if (isNaN(d.getTime())) return dt;
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
+  const SHOW_INPATIENT_TAB = false; // Set to true when ready to release to users
 export default function PatientProfile() {
   const { patientId } = useParams<{ patientId: string }>();
     const { user } = useAuth();
@@ -121,7 +121,6 @@ export default function PatientProfile() {
     useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled);
     const admissionData = useAdmissionData(patientId, user?.id);
     const showOTNotes = useFeatureFlag('ot_notes');
-    const SHOW_INPATIENT_TAB = useFeatureFlag('inpatient');
 
   const [uiNow, setUiNow] = useState(Date.now());
   useEffect(() => {

@@ -34,7 +34,8 @@ export function useRecording(
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [recordingMode, setRecordingMode] = useState<'consultation' | 'ot_note'>('consultation');
-  const realtimeSTT = useRealtimeSTT();
+    const realtimeSTT = useRealtimeSTT();
+  const chunkedSTT = useChunkedSTT();
     const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const acquireWakeLock = async () => {

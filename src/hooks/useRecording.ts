@@ -97,23 +97,18 @@ export function useRecording(
   const handlePauseRecording = () => {
     if (!mediaRecorder) return;
     const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
-       if (isPaused) {
+    if (isPaused) {
       mediaRecorder.resume();
-      if (chunkedSttEnabled) {
-        chunkedSTT.onResume(mediaRecorder.stream);
-      }
       const interval = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
       win.recordingInterval = interval;
     } else {
       mediaRecorder.pause();
-      if (chunkedSttEnabled) {
-        chunkedSTT.onPause();
-      }
       clearInterval(win.recordingInterval);
     }
     setIsPaused(!isPaused);
+  };
 
   const handleEndRecording = async () => {
     if (!mediaRecorder) return;
@@ -155,28 +150,14 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-                                                   let finalTranscript: string | null = null;
-      let transcriptSource: string | undefined;
+                                              const finalTranscript = realtimeEnabled ? await realtimeSTT.stop() : null;
+      const realtimeTranscript = realtimeEnabled && finalTranscript && finalTranscript.trim().length > 0
+        ? finalTranscript
+        : undefined;
 
-      if (chunkedSttEnabled) {
-        finalTranscript = await chunkedSTT.stop();
-        if (chunkedSTT.source === 'chunked' && finalTranscript && finalTranscript.trim().length > 0) {
-          transcriptSource = 'chunked';
-        } else {
-          finalTranscript = null;
-        }
-      } else if (realtimeEnabled) {
-        finalTranscript = await realtimeSTT.stop();
-        if (realtimeSTT.source === 'realtime' && finalTranscript && finalTranscript.trim().length > 0) {
-          transcriptSource = 'realtime';
-        } else {
-          finalTranscript = null;
-        }
-      }
-
-      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, finalTranscript || undefined, transcriptSource);
+     const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, realtimeTranscript);
       await updateConsult(consult.id, {
-        recording_transcript: finalTranscript || 'Pending batch transcription',
+               recording_transcript: realtimeTranscript || 'Pending batch transcription',
         consult_summary_ai: '',
       });
 

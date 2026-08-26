@@ -157,8 +157,26 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
     }
   }, []);
 
-          const stop = useCallback(async (): Promise<string> => {
-    // Stop audio processing first
+           const stop = useCallback(async (): Promise<string> => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      // WebSocket already closed — clean up and return what we have
+      if (processorRef.current) {
+        processorRef.current.disconnect();
+        processorRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      wsRef.current = null;
+      setIsConnected(false);
+      return accumulatedTranscriptRef.current || lastPartialRef.current;
+    }
+
+    // 1. Keep audio flowing for 800ms so the last spoken words reach ElevenLabs
+    await new Promise((r) => setTimeout(r, 800));
+
+    // 2. NOW stop the audio processor
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
@@ -168,25 +186,21 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
       audioContextRef.current = null;
     }
 
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      wsRef.current = null;
-      setIsConnected(false);
-      return accumulatedTranscriptRef.current || lastPartialRef.current;
-    }
-
-    // Send a final commit signal before closing
+    // 3. Send a final commit signal to finalize whatever ElevenLabs has buffered
     try {
-      wsRef.current.send(JSON.stringify({
-        message_type: 'input_audio_chunk',
-        audio_base_64: '',
-        commit: true,
-        sample_rate: 16000,
-      }));
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          message_type: 'input_audio_chunk',
+          audio_base_64: '',
+          commit: true,
+          sample_rate: 16000,
+        }));
+      }
     } catch (e) {
       // ignore
     }
 
-    // Wait up to 500ms for final committed_transcript to arrive before resolving
+    // 4. Wait up to 500ms for the final committed_transcript, then close
     return new Promise((resolve) => {
       const ws = wsRef.current;
       const timeout = setTimeout(() => {

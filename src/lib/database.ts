@@ -223,7 +223,7 @@ export const updatePreConsult = async (id: string, updates: any) => {
   return data;
 };
 
-export const createConsult = async (docId: string, patientId: string, recordingFile: string, type: 'consultation' | 'ot_note' = 'consultation', realtimeTranscript?: string) => {
+export const createConsult = async (docId: string, patientId: string, recordingFile: string, type: 'consultation' | 'ot_note' = 'consultation', transcript?: string, transcriptSource?: string) => {
   const insertData: Record<string, unknown> = {
     doc_id: docId,
     patient_id: patientId,
@@ -231,9 +231,9 @@ export const createConsult = async (docId: string, patientId: string, recordingF
     type,
   };
 
-  if (realtimeTranscript) {
-    insertData.recording_transcript = realtimeTranscript;
-    insertData.transcript_source = 'realtime';
+  if (transcript) {
+    insertData.recording_transcript = transcript;
+    insertData.transcript_source = transcriptSource || 'realtime';
   }
 
   const { data, error } = await supabase

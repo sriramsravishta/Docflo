@@ -8,7 +8,7 @@ interface UseRealtimeSTTReturn {
   isConnected: boolean;
   error: string | null;
   start: (stream: MediaStream) => Promise<void>;
-  stop: () => string;
+    stop: () => Promise<string>;
   reset: () => void;
 }
 

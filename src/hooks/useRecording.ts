@@ -203,7 +203,8 @@ if (finalChunks.length > 0) {
 
     const handleCancelRecording = () => {
           releaseWakeLock();
-           realtimeSTT.reset();
+               realtimeSTT.reset();
+    chunkedSTT.reset();
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }

@@ -65,7 +65,9 @@ export function useRecording(
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
-            if (realtimeEnabled) {
+                 if (chunkedSttEnabled) {
+        chunkedSTT.start(stream).catch(err => console.error('ChunkedSTT start failed:', err));
+      } else if (realtimeEnabled) {
         realtimeSTT.start(stream).catch(err => console.error('RealtimeSTT start failed:', err));
       }
       setIsPaused(false);

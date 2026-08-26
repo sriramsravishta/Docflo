@@ -155,14 +155,28 @@ if (finalChunks.length > 0) {
         recordingFileUrl = urlData.publicUrl;
       }
 
-                                              const finalTranscript = realtimeEnabled ? await realtimeSTT.stop() : null;
-      const realtimeTranscript = realtimeEnabled && finalTranscript && finalTranscript.trim().length > 0
-        ? finalTranscript
-        : undefined;
+                                                   let finalTranscript: string | null = null;
+      let transcriptSource: string | undefined;
 
-     const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, realtimeTranscript);
+      if (chunkedSttEnabled) {
+        finalTranscript = await chunkedSTT.stop();
+        if (chunkedSTT.source === 'chunked' && finalTranscript && finalTranscript.trim().length > 0) {
+          transcriptSource = 'chunked';
+        } else {
+          finalTranscript = null;
+        }
+      } else if (realtimeEnabled) {
+        finalTranscript = await realtimeSTT.stop();
+        if (realtimeSTT.source === 'realtime' && finalTranscript && finalTranscript.trim().length > 0) {
+          transcriptSource = 'realtime';
+        } else {
+          finalTranscript = null;
+        }
+      }
+
+      const consult = await createConsult(userId!, patientId!, recordingFileUrl || '', recordingMode, finalTranscript || undefined, transcriptSource);
       await updateConsult(consult.id, {
-               recording_transcript: realtimeTranscript || 'Pending batch transcription',
+        recording_transcript: finalTranscript || 'Pending batch transcription',
         consult_summary_ai: '',
       });
 

@@ -25,7 +25,8 @@ export function useRecording(
   patientId: string | undefined,
   userId: string | undefined,
   onRecordingComplete: () => void,
-  realtimeEnabled: boolean = false
+    realtimeEnabled: boolean = false,
+  chunkedSttEnabled: boolean = false
 ): UseRecordingReturn & { recordingMode: 'consultation' | 'ot_note'; handleStartRecordingWithMode: (mode: 'consultation' | 'ot_note') => Promise<void> } {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);

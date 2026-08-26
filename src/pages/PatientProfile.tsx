@@ -116,7 +116,8 @@ export default function PatientProfile() {
     preConsultSectionRef,
   } = usePatientData(patientId, user?.id);
 
-        const realtimeEnabled = useFeatureFlag('streaming_llm');
+         const realtimeEnabled = useFeatureFlag('streaming_llm');
+  const chunkedSttEnabled = useFeatureFlag('chunked_stt');
     const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
     useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled);
     const admissionData = useAdmissionData(patientId, user?.id);

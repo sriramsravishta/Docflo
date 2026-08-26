@@ -119,7 +119,7 @@ export default function PatientProfile() {
          const realtimeEnabled = useFeatureFlag('streaming_llm');
   const chunkedSttEnabled = useFeatureFlag('chunked_stt');
     const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
-    useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled);
+       useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled && !chunkedSttEnabled, chunkedSttEnabled);
     const admissionData = useAdmissionData(patientId, user?.id);
     const showOTNotes = useFeatureFlag('ot_notes');
 

@@ -157,7 +157,7 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
     }
   }, []);
 
-    const stop = useCallback((): string => {
+          const stop = useCallback(async (): Promise<string> => {
     // Stop audio processing first
     if (processorRef.current) {
       processorRef.current.disconnect();
@@ -168,31 +168,40 @@ export function useRealtimeSTT(): UseRealtimeSTTReturn {
       audioContextRef.current = null;
     }
 
-    // Send a final commit signal before closing — tells ElevenLabs to finalize whatever it has
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      try {
-        wsRef.current.send(JSON.stringify({
-          message_type: 'input_audio_chunk',
-          audio_base_64: '',
-          commit: true,
-          sample_rate: 16000,
-        }));
-      } catch (e) {
-        // ignore
-      }
-      // Give ElevenLabs 500ms to send back the committed_transcript before we close
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      wsRef.current = null;
+      setIsConnected(false);
+      return accumulatedTranscriptRef.current || lastPartialRef.current;
+    }
+
+    // Send a final commit signal before closing
+    try {
+      wsRef.current.send(JSON.stringify({
+        message_type: 'input_audio_chunk',
+        audio_base_64: '',
+        commit: true,
+        sample_rate: 16000,
+      }));
+    } catch (e) {
+      // ignore
+    }
+
+    // Wait up to 500ms for final committed_transcript to arrive before resolving
+    return new Promise((resolve) => {
       const ws = wsRef.current;
-      setTimeout(() => {
-        if (ws.readyState === WebSocket.OPEN) {
+      const timeout = setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
           ws.close();
         }
       }, 500);
-    }
-    wsRef.current = null;
-    setIsConnected(false);
 
-    // Return committed text if available, otherwise fall back to last partial
-    return accumulatedTranscriptRef.current || lastPartialRef.current;
+      ws!.onclose = () => {
+        clearTimeout(timeout);
+        wsRef.current = null;
+        setIsConnected(false);
+        resolve(accumulatedTranscriptRef.current || lastPartialRef.current);
+      };
+    });
   }, []);
 
   const reset = useCallback(() => {

@@ -97,18 +97,23 @@ export function useRecording(
   const handlePauseRecording = () => {
     if (!mediaRecorder) return;
     const win = window as Window & { recordingInterval?: ReturnType<typeof setInterval> };
-    if (isPaused) {
+       if (isPaused) {
       mediaRecorder.resume();
+      if (chunkedSttEnabled) {
+        chunkedSTT.onResume(mediaRecorder.stream);
+      }
       const interval = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
       win.recordingInterval = interval;
     } else {
       mediaRecorder.pause();
+      if (chunkedSttEnabled) {
+        chunkedSTT.onPause();
+      }
       clearInterval(win.recordingInterval);
     }
     setIsPaused(!isPaused);
-  };
 
   const handleEndRecording = async () => {
     if (!mediaRecorder) return;

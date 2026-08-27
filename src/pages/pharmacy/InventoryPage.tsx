@@ -34,7 +34,7 @@ interface FormData {
   mrp: number;
   sale_price: number;
   purchase_price: number;
-  gst_percentage: number;
+    gst_percent: number;
   hsn_code: string;
   unit: string;
   pack_size: string;
@@ -52,7 +52,7 @@ const initialFormData: FormData = {
   mrp: 0,
   sale_price: 0,
   purchase_price: 0,
-  gst_percentage: 12,
+    gst_percent: 12,
   hsn_code: '',
   unit: 'Tab',
   pack_size: '',

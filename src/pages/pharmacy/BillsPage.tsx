@@ -56,10 +56,10 @@ export default function BillsPage() {
     setError(null);
     try {
       const roleData = await getUserRole(user.id);
-      if (!roleData || !roleData.organization_id) {
-        throw new Error('Organization not found for user.');
-      }
-      const currentOrgId = roleData.organization_id;
+      if (!roleData || !roleData.org_id) {
+  throw new Error('Organization not found for user.');
+}
+const currentOrgId = roleData.org_id;
       setOrgId(currentOrgId);
       
       const configData = await getPharmacyConfig(currentOrgId);

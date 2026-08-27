@@ -228,7 +228,16 @@ export const dispenseBill = async (params: {
     gst_percent: number;
   }>;
 }) => {
-  const { data, error } = await supabase.rpc('dispense_and_create_bill', params);
+    const { data, error } = await supabase.rpc('dispense_and_create_bill', {
+    p_org_id: params.org_id,
+    p_consult_id: params.consult_id,
+    p_patient_id: params.patient_id,
+    p_created_by: params.created_by,
+    p_discount_amount: params.discount_amount,
+    p_payment_mode: params.payment_mode,
+    p_notes: params.notes,
+    p_items: JSON.stringify(params.items)
+  });
   if (error) throw error;
   return data as string;
 };

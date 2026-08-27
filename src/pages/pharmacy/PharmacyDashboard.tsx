@@ -214,7 +214,7 @@ export default function PharmacyDashboard() {
           {filteredQueue.map(item => (
             <div
               key={item.consult_id}
-              onClick={() => navigate(`/dispense/${item.item.consult_id}`)}
+              onClick={() => navigate(`/dispense/${item.consult_id}`)}
               className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer flex flex-col relative overflow-hidden group"
             >
               {/* Status indicator line */}

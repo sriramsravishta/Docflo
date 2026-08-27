@@ -484,7 +484,7 @@ export default function DispenseScreen() {
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className={isSkipped ? 'line-through' : ''}>
-                        <h4 className="font-semibold text-gray-900">{item.prescribed?.medicine_name}</h4>
+                        <h4 className="font-semibold text-gray-900">{item.prescribed?.name}</h4>
                         <p className="text-sm text-gray-600 mt-1">
                           {item.prescribed?.dosage} • {item.prescribed?.frequency} • {item.prescribed?.duration}
                         </p>

@@ -13,11 +13,11 @@ import FavouritesPage from './pages/FavouritesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pharmacy pages
-// import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
-// import DispenseScreen from './pages/pharmacy/DispenseScreen';
-// import InventoryPage from './pages/pharmacy/InventoryPage';
-// import BillsPage from './pages/pharmacy/BillsPage';
-// import PharmacyNav from './components/pharmacy/PharmacyNav';
+import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
+import DispenseScreen from './pages/pharmacy/DispenseScreen';
+import InventoryPage from './pages/pharmacy/InventoryPage';
+import BillsPage from './pages/pharmacy/BillsPage';
+import PharmacyNav from './components/pharmacy/PharmacyNav';
 
 function DoctorRoutes() {
   return (
@@ -58,7 +58,7 @@ function AppRoutes() {
   return (
     <FeatureFlagsProvider userId={user?.id}>
       <Router>
-               {false ? <PharmacyRoutes /> : <DoctorRoutes />}
+        {isPharmacist ? <PharmacyRoutes /> : <DoctorRoutes />}
       </Router>
     </FeatureFlagsProvider>
   );

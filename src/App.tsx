@@ -58,7 +58,7 @@ function AppRoutes() {
   return (
     <FeatureFlagsProvider userId={user?.id}>
       <Router>
-        {isPharmacist ? <PharmacyRoutes /> : <DoctorRoutes />}
+               {false ? <PharmacyRoutes /> : <DoctorRoutes />}
       </Router>
     </FeatureFlagsProvider>
   );

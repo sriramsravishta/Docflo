@@ -59,7 +59,7 @@ export default function PharmacyDashboard() {
 
   const filteredQueue = queue.filter(item => {
     const matchesSearch = item.patient_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterPending ? item.status === 'pending' : true;
+       const matchesFilter = true;
     return matchesSearch && matchesFilter;
   });
 

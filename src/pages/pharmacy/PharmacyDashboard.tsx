@@ -248,7 +248,7 @@ export default function PharmacyDashboard() {
                 <span className={`font-medium ${
                                    'text-amber-600'
                 }`}>
-                  {item.status === 'pending' ? 'Pending' : 'Billed'}
+                                    Pending
                 </span>
               </div>
             </div>

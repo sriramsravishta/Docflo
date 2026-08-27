@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: any;
+  role: string;
+  orgId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -12,7 +14,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string>('Doctor');
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,10 +28,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // If refresh token is invalid, clear the session
           if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
             await supabase.auth.signOut();
-          }
+          } 
           setUser(null);
-        } else {
-          setUser(session?.user ?? null);
+                } else {
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          if (currentUser) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role, org_id')
+              .eq('auth_id', currentUser.id)
+              .single();
+            if (userData) {
+              setRole(userData.role || 'Doctor');
+              setOrgId(userData.org_id || null);
+            }
+          }
         }
       } catch (error) {
         console.warn('Unexpected session error:', error);

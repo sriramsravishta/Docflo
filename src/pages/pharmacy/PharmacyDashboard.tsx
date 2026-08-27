@@ -213,8 +213,8 @@ export default function PharmacyDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredQueue.map(item => (
             <div
-              key={item.consultation_id}
-              onClick={() => navigate(`/dispense/${item.consultation_id}`)}
+              key={item.consult_id}
+              onClick={() => navigate(`/dispense/${item.item.consult_id}`)}
               className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer flex flex-col relative overflow-hidden group"
             >
               {/* Status indicator line */}
@@ -241,7 +241,7 @@ export default function PharmacyDashboard() {
                 <div className="flex items-center text-gray-500">
                   <Clock className="h-4 w-4 mr-1.5" />
                   <span>
-                    {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(item.consult_created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 

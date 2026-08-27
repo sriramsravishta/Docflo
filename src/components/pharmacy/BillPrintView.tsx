@@ -16,7 +16,7 @@ export interface PharmacyBillRow {
 export interface PharmacyBillItemRow {
   id: string;
   medicine_name: string;
-  batch_number: string;
+    batch_no: string;
   expiry_date: string;
   quantity: number;
   mrp: number;

@@ -236,7 +236,7 @@ export const dispenseBill = async (params: {
     p_discount_amount: params.discount_amount,
     p_payment_mode: params.payment_mode,
     p_notes: params.notes,
-    p_items: JSON.stringify(params.items)
+        p_items: params.items
   });
   if (error) throw error;
   return data as string;

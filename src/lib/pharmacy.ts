@@ -92,7 +92,8 @@ export const getPharmacyQueue = async (
     patient_gender: c.patients.gender,
     patient_age: c.patients.age,
     patient_phone: c.patients.phone,
-    created_at: c.created_at,
+        consult_created_at: c.created_at,
+    is_billed: false,
     medicine_count: medCounts[c.id] || 0
   }));
 };

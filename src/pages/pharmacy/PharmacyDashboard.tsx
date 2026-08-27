@@ -219,7 +219,7 @@ export default function PharmacyDashboard() {
             >
               {/* Status indicator line */}
               <div className={`absolute top-0 left-0 w-1 h-full ${
-                item.status === 'pending' ? 'bg-[#024CDB]' : 'bg-green-500'
+                                'bg-[#024CDB]'
               }`}></div>
               
               <div className="flex justify-between items-start mb-3">

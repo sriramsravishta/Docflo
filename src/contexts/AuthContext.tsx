@@ -83,8 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-    if (error) throw error;
+       if (error) throw error;
     setUser(data.user);
+    if (data.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role, org_id')
+        .eq('auth_id', data.user.id)
+        .single();
+      if (userData) {
+        setRole(userData.role || 'Doctor');
+        setOrgId(userData.org_id || null);
+      }
+    }
   };
 
   const signUp = async (name: string, email: string, password: string, phone?: string) => {

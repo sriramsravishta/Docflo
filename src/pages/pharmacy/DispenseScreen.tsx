@@ -106,14 +106,14 @@ export default function DispenseScreen() {
                   (r) => r.medicine_name.toLowerCase() === med.name.toLowerCase()
                 );
 
-                if (exactMatch && exactMatch.current_stock > 0) {
+                if (exactMatch && exactMatch.quantity_in_stock > 0) {
                   item.selectedInventory = exactMatch;
                   item.status = 'matched';
-                  item.quantityToDispense = Math.min(parsedQty, exactMatch.current_stock);
-                } else if (results.length > 0 && results[0].current_stock > 0) {
+                  item.quantityToDispense = Math.min(parsedQty, exactMatch.quantity_in_stock);
+                } else if (results.length > 0 && results[0].quantity_in_stock > 0) {
                   item.selectedInventory = results[0];
                   item.status = 'matched';
-                  item.quantityToDispense = Math.min(parsedQty, results[0].current_stock);
+                  item.quantityToDispense = Math.min(parsedQty, results[0].quantity_in_stock);
                 } else {
                   item.status = 'not_in_stock';
                 }
@@ -175,8 +175,8 @@ export default function DispenseScreen() {
     updated[index].searchResults = [];
     
     // cap quantity at available stock if necessary
-    if (updated[index].quantityToDispense > inventoryItem.current_stock) {
-      updated[index].quantityToDispense = inventoryItem.current_stock;
+    if (updated[index].quantityToDispense > inventoryItem.quantity_in_stock) {
+      updated[index].quantityToDispense = inventoryItem.quantity_in_stock;
     }
     setPrescribedItems(updated);
   };
@@ -189,8 +189,8 @@ export default function DispenseScreen() {
     let newQty = item.quantityToDispense + delta;
     if (newQty < 1) newQty = 1;
     
-    if (item.selectedInventory && newQty > item.selectedInventory.current_stock) {
-      newQty = item.selectedInventory.current_stock;
+    if (item.selectedInventory && newQty > item.selectedInventory.quantity_in_stock) {
+      newQty = item.selectedInventory.quantity_in_stock;
     }
     
     updated[index].quantityToDispense = newQty;
@@ -262,8 +262,8 @@ export default function DispenseScreen() {
     updated[index].selectedInventory = inventoryItem;
     updated[index].searchQuery = inventoryItem.medicine_name;
     updated[index].searchResults = [];
-    if (updated[index].quantityToDispense > inventoryItem.current_stock) {
-      updated[index].quantityToDispense = inventoryItem.current_stock;
+    if (updated[index].quantityToDispense > inventoryItem.quantity_in_stock) {
+      updated[index].quantityToDispense = inventoryItem.quantity_in_stock;
     }
     setManualItems(updated);
   };
@@ -275,8 +275,8 @@ export default function DispenseScreen() {
     let newQty = item.quantityToDispense + delta;
     if (newQty < 1) newQty = 1;
     
-    if (item.selectedInventory && newQty > item.selectedInventory.current_stock) {
-      newQty = item.selectedInventory.current_stock;
+    if (item.selectedInventory && newQty > item.selectedInventory.quantity_in_stock) {
+      newQty = item.selectedInventory.quantity_in_stock;
     }
     
     updated[index].quantityToDispense = newQty;
@@ -525,7 +525,7 @@ export default function DispenseScreen() {
                               </p>
                               <p className="text-sm font-medium text-gray-900 mt-1">
                                 ₹{item.selectedInventory.sale_price} / unit
-                                <span className="text-gray-500 text-xs ml-2">({item.selectedInventory.current_stock} in stock)</span>
+                                <span className="text-gray-500 text-xs ml-2">({item.selectedInventory.quantity_in_stock} in stock)</span>
                               </p>
                             </div>
                             
@@ -545,7 +545,7 @@ export default function DispenseScreen() {
                                 <button 
                                   onClick={() => handleUpdateQuantity(index, 1)}
                                   className="p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                                  disabled={item.quantityToDispense >= item.selectedInventory.current_stock}
+                                  disabled={item.quantityToDispense >= item.selectedInventory.quantity_in_stock}
                                 >
                                   <Plus className="h-4 w-4" />
                                 </button>
@@ -583,7 +583,7 @@ export default function DispenseScreen() {
                                   >
                                     <span className="font-medium text-gray-900">{res.medicine_name}</span>
                                     <span className="text-sm text-gray-500">
-                                      Batch: {res.batch_number} | Stock: {res.current_stock} | ₹{res.sale_price}
+                                      Batch: {res.batch_number} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
                                     </span>
                                   </button>
                                 ))}
@@ -640,7 +640,7 @@ export default function DispenseScreen() {
                               >
                                 <span className="font-medium text-gray-900">{res.medicine_name}</span>
                                 <span className="text-sm text-gray-500">
-                                  Batch: {res.batch_number} | Stock: {res.current_stock} | ₹{res.sale_price}
+                                  Batch: {res.batch_number} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
                                 </span>
                               </button>
                             ))}
@@ -655,7 +655,7 @@ export default function DispenseScreen() {
                         </p>
                         <p className="text-sm font-medium text-gray-900 mt-1">
                           ₹{item.selectedInventory.sale_price} / unit
-                          <span className="text-gray-500 text-xs ml-2">({item.selectedInventory.current_stock} in stock)</span>
+                          <span className="text-gray-500 text-xs ml-2">({item.selectedInventory.quantity_in_stock} in stock)</span>
                         </p>
                       </div>
                     )}
@@ -686,7 +686,7 @@ export default function DispenseScreen() {
                       <button 
                         onClick={() => handleUpdateManualQuantity(index, 1)}
                         className="p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                        disabled={item.quantityToDispense >= item.selectedInventory.current_stock}
+                        disabled={item.quantityToDispense >= item.selectedInventory.quantity_in_stock}
                       >
                         <Plus className="h-4 w-4" />
                       </button>

@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: any;
-  role: string;
-  orgId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -14,9 +12,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string>('Doctor');
-  const [orgId, setOrgId] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,33 +21,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Session retrieval error:', error.message);
-          // If refresh token is invalid, clear the session
           if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
             await supabase.auth.signOut();
           }
           setUser(null);
-                } else {
-          const currentUser = session?.user ?? null;
-          setUser(currentUser);
-                   if (currentUser) {
-            try {
-              const { data: userData } = await supabase
-                .from('users')
-                .select('role, org_id')
-                .eq('auth_id', currentUser.id)
-                .single();
-              if (userData) {
-                setRole(userData.role || 'Doctor');
-                setOrgId(userData.org_id || null);
-              }
-            } catch (e) {
-              console.warn('Could not fetch user role:', e);
-            }
-          }
+        } else {
+          setUser(session?.user ?? null);
         }
       } catch (error) {
         console.warn('Unexpected session error:', error);
-        // Clear any invalid session state
         await supabase.auth.signOut();
         setUser(null);
       } finally {
@@ -59,27 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-            if (currentUser) {
-        try {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('role, org_id')
-            .eq('auth_id', currentUser.id)
-            .single();
-          if (userData) {
-            setRole(userData.role || 'Doctor');
-            setOrgId(userData.org_id || null);
-          }
-                } catch (e) {
-          console.warn('Could not fetch user role:', e);
-        }
-      } else {
-        setRole('Doctor');
-        setOrgId(null);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -91,23 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-       if (error) throw error;
+    if (error) throw error;
     setUser(data.user);
-        if (data.user) {
-      try {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role, org_id')
-          .eq('auth_id', data.user.id)
-          .single();
-        if (userData) {
-          setRole(userData.role || 'Doctor');
-          setOrgId(userData.org_id || null);
-        }
-      } catch (e) {
-        console.warn('Could not fetch user role:', e);
-      }
-    }
   };
 
   const signUp = async (name: string, email: string, password: string, phone?: string) => {
@@ -160,11 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-  await supabase.auth.signOut({ scope: 'local' });
-};
+    await supabase.auth.signOut({ scope: 'local' });
+  };
 
   return (
-        <AuthContext.Provider value={{ user, role, orgId, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );

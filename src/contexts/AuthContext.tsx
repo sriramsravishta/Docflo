@@ -73,9 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(userData.role || 'Doctor');
             setOrgId(userData.org_id || null);
           }
-        } catch (e) {
+                } catch (e) {
           console.warn('Could not fetch user role:', e);
         }
+      } else {
         setRole('Doctor');
         setOrgId(null);
       }

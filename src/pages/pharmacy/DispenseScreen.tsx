@@ -521,7 +521,7 @@ export default function DispenseScreen() {
                                 <span className="text-sm font-medium">Matched in Inventory</span>
                               </div>
                               <p className="text-sm text-gray-600">
-                                Batch: {item.selectedInventory.batch_number} | Exp: {new Date(item.selectedInventory.expiry_date).toLocaleDateString()}
+                                Batch: {item.selectedInventory.batch_no} | Exp: {new Date(item.selectedInventory.expiry_date).toLocaleDateString()}
                               </p>
                               <p className="text-sm font-medium text-gray-900 mt-1">
                                 ₹{item.selectedInventory.sale_price} / unit
@@ -583,7 +583,7 @@ export default function DispenseScreen() {
                                   >
                                     <span className="font-medium text-gray-900">{res.medicine_name}</span>
                                     <span className="text-sm text-gray-500">
-                                      Batch: {res.batch_number} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
+                                      Batch: {res.batch_no} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
                                     </span>
                                   </button>
                                 ))}
@@ -640,7 +640,7 @@ export default function DispenseScreen() {
                               >
                                 <span className="font-medium text-gray-900">{res.medicine_name}</span>
                                 <span className="text-sm text-gray-500">
-                                  Batch: {res.batch_number} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
+                                  Batch: {res.batch_no} | Stock: {res.quantity_in_stock} | ₹{res.sale_price}
                                 </span>
                               </button>
                             ))}
@@ -651,7 +651,7 @@ export default function DispenseScreen() {
                       <div>
                         <h4 className="font-semibold text-gray-900">{item.selectedInventory.medicine_name}</h4>
                         <p className="text-sm text-gray-600">
-                          Batch: {item.selectedInventory.batch_number} | Exp: {new Date(item.selectedInventory.expiry_date).toLocaleDateString()}
+                          Batch: {item.selectedInventory.batch_no} | Exp: {new Date(item.selectedInventory.expiry_date).toLocaleDateString()}
                         </p>
                         <p className="text-sm font-medium text-gray-900 mt-1">
                           ₹{item.selectedInventory.sale_price} / unit

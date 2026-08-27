@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // If refresh token is invalid, clear the session
           if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
             await supabase.auth.signOut();
-          } 
+          }
           setUser(null);
                 } else {
           const currentUser = session?.user ?? null;

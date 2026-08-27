@@ -98,7 +98,7 @@ const BillPrintView = forwardRef<HTMLDivElement, BillPrintViewProps>(
               <tr key={item.id} className="border-b border-gray-300">
                 <td className="py-2 px-1 text-left">{index + 1}</td>
                 <td className="py-2 px-1 text-left font-medium">{item.medicine_name}</td>
-                <td className="py-2 px-1 text-left">{item.batch_number}</td>
+                <td className="py-2 px-1 text-left">{{item.batch_no}}</td>
                 <td className="py-2 px-1 text-left">{item.expiry_date}</td>
                 <td className="py-2 px-1 text-right">{item.quantity}</td>
                 <td className="py-2 px-1 text-right">₹{item.mrp.toFixed(2)}</td>

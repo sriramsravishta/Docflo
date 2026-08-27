@@ -90,20 +90,20 @@ export default function DispenseScreen() {
               selectedInventory: null,
               quantityToDispense: parsedQty,
               status: 'pending',
-              searchQuery: med.medicine_name || '',
+              searchQuery: med.name || '',
               searchResults: [],
               isSearching: true,
             };
 
             try {
-              if (med.medicine_name) {
-                const results = await searchInventory(currentOrgId, med.medicine_name);
+              if (med.med.name) {
+                const results = await searchInventory(currentOrgId, med.name);
                 item.isSearching = false;
                 item.searchResults = results;
 
                 // Auto-match if exact match or only one result with sufficient stock
                 const exactMatch = results.find(
-                  (r) => r.medicine_name.toLowerCase() === med.medicine_name.toLowerCase()
+                  (r) => r.medicine_name.toLowerCase() === med.name.toLowerCase()
                 );
 
                 if (exactMatch && exactMatch.current_stock > 0) {

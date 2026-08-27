@@ -90,9 +90,8 @@ export default function InventoryPage() {
       if (!role) {
         throw new Error('User role not found');
       }
-      setOrgId(role.organization_id);
-      
-      const data = await getInventory(role.organization_id, searchTerm);
+      setOrgId(role.org_id);
+const data = await getInventory(role.org_id, { search: searchTerm });
       setInventory(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load inventory');

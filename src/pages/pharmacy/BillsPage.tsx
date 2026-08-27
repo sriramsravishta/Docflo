@@ -62,8 +62,12 @@ export default function BillsPage() {
 const currentOrgId = roleData.org_id;
       setOrgId(currentOrgId);
       
-      const configData = await getPharmacyConfig(currentOrgId);
-      setConfig(configData);
+            try {
+        const configData = await getPharmacyConfig(currentOrgId);
+        setConfig(configData);
+      } catch (e) {
+        console.warn('Could not fetch pharmacy config:', e);
+      }
       
       await fetchBillsData(currentOrgId, fromDate, toDate);
     } catch (err: any) {

@@ -82,7 +82,7 @@ const currentOrgId = roleData.org_id;
     setLoading(true);
     setError(null);
     try {
-      const data = await getBills(organizationId, from, to);
+            const data = await getBills(organizationId, from && to ? { from, to } : undefined);
       setBills(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch bills');

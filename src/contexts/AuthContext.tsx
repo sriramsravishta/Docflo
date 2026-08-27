@@ -30,8 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await supabase.auth.signOut();
           }
           setUser(null);
-        } else {
-          setUser(session?.user ?? null);
+                } else {
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          if (currentUser) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role, org_id')
+              .eq('auth_id', currentUser.id)
+              .single();
+            if (userData) {
+              setRole(userData.role || 'Doctor');
+              setOrgId(userData.org_id || null);
+            }
+          }
         }
       } catch (error) {
         console.warn('Unexpected session error:', error);

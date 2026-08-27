@@ -215,7 +215,7 @@ const data = await getInventory(role.org_id, { search: searchTerm });
     try {
       const payload = {
         ...formData,
-        organization_id: orgId
+        org_id: orgId
       };
       
       if (editingId) {

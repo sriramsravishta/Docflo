@@ -92,15 +92,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
        if (error) throw error;
     setUser(data.user);
-    if (data.user) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role, org_id')
-        .eq('auth_id', data.user.id)
-        .single();
-      if (userData) {
-        setRole(userData.role || 'Doctor');
-        setOrgId(userData.org_id || null);
+        if (data.user) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role, org_id')
+          .eq('auth_id', data.user.id)
+          .single();
+        if (userData) {
+          setRole(userData.role || 'Doctor');
+          setOrgId(userData.org_id || null);
+        }
+      } catch (e) {
+        console.warn('Could not fetch user role:', e);
       }
     }
   };

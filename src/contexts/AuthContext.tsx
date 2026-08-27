@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: any;
+  role: string;
+  orgId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;

@@ -1,75 +1,123 @@
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
-import { useAuth } from './contexts/AuthContext';
-import Login from './pages/Login';
-import MainPage from './pages/MainPage';
-import PatientProfile from './pages/PatientProfile';
-import PreConsultForm from './pages/PreConsultForm';
-import ClinicalSummariserList from './pages/ClinicalSummariserList';
-import NewSummary from './pages/NewSummary';
-import SummaryDetail from './pages/SummaryDetail';
-import FavouritesPage from './pages/FavouritesPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
-// Pharmacy pages
-import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
-import DispenseScreen from './pages/pharmacy/DispenseScreen';
-import InventoryPage from './pages/pharmacy/InventoryPage';
-import BillsPage from './pages/pharmacy/BillsPage';
-import PharmacyNav from './components/pharmacy/PharmacyNav';
+interface AuthContextType {
+  user: any;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  loading: boolean;
+}
 
-function DoctorRoutes() {
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Session retrieval error:', error.message);
+          if (error.message.includes('Invalid Refresh Token') || error.message.includes('Refresh Token Not Found')) {
+            await supabase.auth.signOut();
+          }
+          setUser(null);
+        } else {
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.warn('Unexpected session error:', error);
+        await supabase.auth.signOut();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+    setUser(data.user);
+  };
+
+  const signUp = async (name: string, email: string, password: string, phone?: string) => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          phone,
+        },
+      },
+    });
+
+    if (authError) throw authError;
+
+    if (authData.user) {
+      const { error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          auth_id: authData.user.id,
+          name: name,
+        })
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
+
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('auth_id', authData.user.id)
+        .limit(1)
+        .single();
+
+      if (orgData) {
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authData.user.id,
+            org_id: orgData.id,
+            role: 'Doctor',
+          });
+
+        if (userError) throw userError;
+      }
+    }
+
+    await supabase.auth.signOut();
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut({ scope: 'local' });
+  };
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
-      <Route path="/patient/:patientId" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
-      <Route path="/pre-consult/:preConsultId" element={<PreConsultForm />} />
-      <Route path="/clinical-summariser" element={<ProtectedRoute><ClinicalSummariserList /></ProtectedRoute>} />
-      <Route path="/clinical-summariser/new" element={<ProtectedRoute><NewSummary /></ProtectedRoute>} />
-      <Route path="/clinical-summariser/:id" element={<ProtectedRoute><SummaryDetail /></ProtectedRoute>} />
-      <Route path="/favorites" element={<ProtectedRoute><FavouritesPage /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
-function PharmacyRoutes() {
-  return (
-    <>
-      <PharmacyNav />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
-        <Route path="/dispense/:consultId" element={<ProtectedRoute><DispenseScreen /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
-        <Route path="/bills" element={<ProtectedRoute><BillsPage /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
-  );
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
-
-function AppRoutes() {
-  const { user, role } = useAuth();
-  const isPharmacist = role === 'Pharmacist';
-
-  return (
-    <FeatureFlagsProvider userId={user?.id}>
-      <Router>
-        {isPharmacist ? <PharmacyRoutes /> : <DoctorRoutes />}
-      </Router>
-    </FeatureFlagsProvider>
-  );
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
-  );
-}
-
-export default App;

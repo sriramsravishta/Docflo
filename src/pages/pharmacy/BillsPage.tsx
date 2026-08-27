@@ -410,7 +410,7 @@ export default function BillsPage() {
                             <tr key={item.id} className="border-b border-gray-100 last:border-0">
                               <td className="py-2 align-top">{index + 1}</td>
                               <td className="py-2 align-top">{item.medicine_name}</td>
-                              <td className="py-2 align-top text-gray-500">{item.batch_number}</td>
+                              <td className="py-2 align-top text-gray-500">{item.batch_no}</td>
                               <td className="py-2 align-top text-right">{item.quantity}</td>
                               <td className="py-2 align-top text-right">{item.unit_price.toFixed(2)}</td>
                               <td className="py-2 align-top text-right">{item.total_price.toFixed(2)}</td>

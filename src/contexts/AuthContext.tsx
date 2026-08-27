@@ -62,17 +62,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role, org_id')
-          .eq('auth_id', currentUser.id)
-          .single();
-        if (userData) {
-          setRole(userData.role || 'Doctor');
-          setOrgId(userData.org_id || null);
+            if (currentUser) {
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role, org_id')
+            .eq('auth_id', currentUser.id)
+            .single();
+          if (userData) {
+            setRole(userData.role || 'Doctor');
+            setOrgId(userData.org_id || null);
+          }
+        } catch (e) {
+          console.warn('Could not fetch user role:', e);
         }
-      } else {
         setRole('Doctor');
         setOrgId(null);
       }

@@ -103,7 +103,8 @@ export default function PatientProfile() {
   const cachedDoctorNameRef = useRef<string | null>(null);
 
   const {
-    patient,
+        patient,
+    setPatient,
     loading,
     consultations,
     setConsultations,

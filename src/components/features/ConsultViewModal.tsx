@@ -15,6 +15,8 @@ import { CreditCard as Edit } from 'lucide-react';
 import { Mic, Square } from 'lucide-react';
 import { useVoiceEdit } from '../../hooks/useVoiceEdit';
 import { supabase } from '../../lib/supabase';
+import AttachmentGallery from '../AttachmentGallery';
+import type { AttachmentItem } from '../AttachmentGallery';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 

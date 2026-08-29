@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Heart,
   History,
-} from 'lucide-react'; 
+} from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 import { Mic, Square } from 'lucide-react';
 import { useVoiceEdit } from '../../hooks/useVoiceEdit';

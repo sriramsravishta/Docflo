@@ -16,6 +16,7 @@ import { Mic, Square } from 'lucide-react';
 import { useVoiceEdit } from '../../hooks/useVoiceEdit';
 import { supabase } from '../../lib/supabase';
 import type { ConsultRow, ConsultMedicineRow, PatientRow } from '../../types/db';
+import { supabase } from '../../lib/supabase';
 import type { ConsultSummary, DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../../types/db';
 
 import {

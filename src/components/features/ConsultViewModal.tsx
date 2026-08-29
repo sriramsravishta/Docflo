@@ -909,7 +909,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     setConsultDocs(prev => prev.filter(d => d.id !== item.id));
   };
 
-  // View text
+  // View text 
 
   // Consultation Documents state
   const [consultDocs, setConsultDocs] = useState<{ id: string; file_url: string; file_name: string; file_type?: string }[]>([]);

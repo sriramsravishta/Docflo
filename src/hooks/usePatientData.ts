@@ -288,8 +288,9 @@ export function usePatientData(patientId: string | undefined, userId: string | u
     return () => { clearTimeout(timeout); if (interval) clearInterval(interval); };
   }, [patientId, consultations]);
 
-  return {
+    return {
     patient,
+    setPatient,
     loading,
     consultations,
     setConsultations,

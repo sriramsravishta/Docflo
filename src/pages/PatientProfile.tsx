@@ -730,13 +730,28 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       }
     }
 
+       // Build vitals string for PDF (only include recorded values)
+    const vitalForPdf = todaysVitals.length > 0 ? todaysVitals[0] : null;
+    const vitalParts: string[] = [];
+    if (vitalForPdf?.temperature) vitalParts.push(`Temp: ${vitalForPdf.temperature}°C`);
+    if (vitalForPdf?.blood_pressure) vitalParts.push(`BP: ${vitalForPdf.blood_pressure} mmHg`);
+    if (vitalForPdf?.heart_rate) vitalParts.push(`HR: ${vitalForPdf.heart_rate} bpm`);
+    if (vitalForPdf?.spo2) vitalParts.push(`SpO2: ${vitalForPdf.spo2}%`);
+    if (vitalForPdf?.weight) vitalParts.push(`Wt: ${vitalForPdf.weight} kg`);
+
+    const vitalsHtml = vitalParts.length > 0
+      ? `<p class="section-text" style="margin-bottom:8px"><strong>Vitals:</strong> ${vitalParts.map(v => escapeHtml(v)).join(' &nbsp;|&nbsp; ')}</p>`
+      : '';
+
     if ((summary as any).examination_findings) {
       const ef = (summary as any).examination_findings;
       const efArr = Array.isArray(ef) ? ef : [String(ef)];
       const cleaned = efArr.map((s: unknown) => String(s).trim()).filter(Boolean);
-      if (cleaned.length) {
-        sectionHtmlMap['examination_findings'] = `<div class="section"><div class="section-header">Examination Findings</div>${toHtmlList(cleaned)}</div>`;
+      if (cleaned.length || vitalsHtml) {
+        sectionHtmlMap['examination_findings'] = `<div class="section"><div class="section-header">Examination Findings</div>${vitalsHtml}${cleaned.length ? toHtmlList(cleaned) : ''}</div>`;
       }
+    } else if (vitalsHtml) {
+      sectionHtmlMap['examination_findings'] = `<div class="section"><div class="section-header">Examination Findings</div>${vitalsHtml}</div>`;
     }
 
     if (meds.length > 0) {

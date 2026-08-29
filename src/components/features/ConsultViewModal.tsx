@@ -1638,6 +1638,17 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 </div>
               </SectionCard>
 
+                         <AttachmentGallery
+                title="Attached Documents"
+                items={consultDocs}
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                uploading={uploadingDoc}
+                onUpload={handleDocUpload}
+                onView={(item) => window.open(item.url, '_blank')}
+                onDelete={handleRemoveDoc}
+                emptyText="No documents attached"
+              />
+
               <div className="h-6" />
             </div>
             )

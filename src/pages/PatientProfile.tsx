@@ -1644,6 +1644,18 @@ else{
                 </div>
               </div>
             </div>
+                    )}
+
+          {patient.gender === 'Female' && (
+            <div className="px-6 pb-0 pt-4">
+              <PregnancyWheel
+                patientId={patient.id}
+                lmpDate={patient.lmp_date ?? null}
+                onLmpUpdated={(newLmp) => {
+                  setPatient((prev: any) => prev ? { ...prev, lmp_date: newLmp } : prev);
+                }}
+              />
+            </div>
           )}
 
           <div className="p-6 space-y-8">

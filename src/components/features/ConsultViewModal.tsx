@@ -787,7 +787,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const otFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setOtImages((consult as any)?.ot_images || []);
+        setOtImages(Array.isArray((consult as any)?.ot_images) ? (consult as any).ot_images : []);
   }, [consult?.id]);
 
   const handleOtImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

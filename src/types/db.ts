@@ -19,6 +19,7 @@ export interface PatientRow {
   case?: string | null;
   last_visit_at?: string | null;
   location_ids?: string[] | null;
+    lmp_date?: string | null;
   created_at: string;
 }
 

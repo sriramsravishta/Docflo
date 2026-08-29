@@ -1248,6 +1248,53 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                     emptyText="No instructions recorded"
                   />
                 </SectionCard>
+                                {/* ── OT Images ── */}
+                <SectionCard title="Surgery Images">
+                  <div className="px-3 py-3">
+                    <input
+                      ref={otFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleOtImageUpload}
+                    />
+                    {otImages.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                        {otImages.map((url, idx) => (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                              src={url}
+                              alt={`OT image ${idx + 1}`}
+                              className="w-full h-32 object-cover cursor-pointer"
+                              onClick={() => window.open(url, '_blank')}
+                            />
+                            <button
+                              onClick={() => handleRemoveOtImage(url)}
+                              className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => otFileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      className="flex items-center gap-2 text-sm text-[#024CDB] font-medium hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      {uploadingImage ? (
+                        <><span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /> Uploading...</>
+                      ) : (
+                        <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><circle cx="12" cy="13" r="3" /></svg> Add Surgery Images</>
+                      )}
+                    </button>
+                    {otImages.length === 0 && !uploadingImage && (
+                      <p className="text-xs text-gray-400 mt-1">Upload photos from the surgery for your records</p>
+                    )}
+                  </div>
+                </SectionCard>
                 <div className="h-6" />
               </div>
             ) : (

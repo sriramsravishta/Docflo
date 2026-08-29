@@ -779,8 +779,51 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   } = props;
 
   const summary = getConsultSummary(consult) as ConsultSummary | null;
-  const isOTNote = (consult as any)?.type === 'ot_note';
+    const isOTNote = (consult as any)?.type === 'ot_note';
   const otSummary = isOTNote ? (summary as any) : null;
+
+  // OT Images state
+  const [otImages, setOtImages] = useState<string[]>((consult as any)?.ot_images || []);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const otFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setOtImages((consult as any)?.ot_images || []);
+  }, [consult?.id]);
+
+  const handleOtImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !consult?.id) return;
+    setUploadingImage(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop() || 'jpg';
+        const fileName = `${consult.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { data, error } = await supabase.storage
+          .from('ot-images')
+          .upload(fileName, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        const { data: urlData } = supabase.storage.from('ot-images').getPublicUrl(data.path);
+        newUrls.push(urlData.publicUrl);
+      }
+      const updated = [...otImages, ...newUrls];
+      await supabase.from('consult').update({ ot_images: updated }).eq('id', consult.id);
+      setOtImages(updated);
+    } catch (err) {
+      console.error('OT image upload failed:', err);
+    } finally {
+      setUploadingImage(false);
+      if (otFileInputRef.current) otFileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveOtImage = async (url: string) => {
+    if (!consult?.id) return;
+    const updated = otImages.filter(u => u !== url);
+    await supabase.from('consult').update({ ot_images: updated }).eq('id', consult.id);
+    setOtImages(updated);
+  };
 
   // View text
   const viewFindings = useMemo(() => {

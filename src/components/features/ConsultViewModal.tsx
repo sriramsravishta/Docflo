@@ -817,11 +817,72 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     }
   };
 
-  const handleRemoveOtImage = async (url: string) => {
+    const handleRemoveOtImage = async (url: string) => {
     if (!consult?.id) return;
     const updated = otImages.filter(u => u !== url);
     await supabase.from('consult').update({ ot_images: updated }).eq('id', consult.id);
     setOtImages(updated);
+  };
+
+  // Consultation Documents state
+  const [consultDocs, setConsultDocs] = useState<{ id: string; file_url: string; file_name: string; file_type?: string }[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!consult?.id || isOTNote) return;
+    supabase
+      .from('consult_documents')
+      .select('id, file_url, file_name, file_type')
+      .eq('consult_id', consult.id)
+      .order('uploaded_at', { ascending: false })
+      .then(({ data }) => { if (data) setConsultDocs(data); });
+  }, [consult?.id, isOTNote]);
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !consult?.id || !props.userId) return;
+    setUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${consult.id}/${Date.now()}-${sanitized}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('consult-documents')
+          .upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+        if (uploadErr) throw uploadErr;
+        // For private bucket, store the path; we'll get signed URL for display
+        const fileUrl = uploadData.path;
+        const { data: row } = await supabase
+          .from('consult_documents')
+          .insert({
+            consult_id: consult.id,
+            doc_id: props.userId,
+            file_url: fileUrl,
+            file_name: file.name,
+            file_type: file.type || null,
+            file_size_bytes: file.size,
+          })
+          .select('id, file_url, file_name, file_type')
+          .single();
+        if (row) setConsultDocs(prev => [row, ...prev]);
+      }
+    } catch (err) {
+      console.error('Document upload failed:', err);
+    } finally {
+      setUploadingDoc(false);
+      if (docFileInputRef.current) docFileInputRef.current.value = '';
+    }
+  };
+
+  const handleViewDoc = async (fileUrl: string) => {
+    const { data } = await supabase.storage.from('consult-documents').createSignedUrl(fileUrl, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const handleRemoveDoc = async (docId: string) => {
+    await supabase.from('consult_documents').delete().eq('id', docId);
+    setConsultDocs(prev => prev.filter(d => d.id !== docId));
   };
 
   // View text

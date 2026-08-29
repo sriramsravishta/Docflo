@@ -1201,7 +1201,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                       />
                     ) : (
                       <ol className="list-decimal list-inside space-y-1 text-gray-700 text-[16px]">
-                        {(otSummary?.procedure_steps || []).map((step: string, i: number) => (
+                                                {(Array.isArray(otSummary?.procedure_steps) ? otSummary.procedure_steps : []).map((step: string, i: number) => (
                           <li key={i}>{step}</li>
                         ))}
                         {(!otSummary?.procedure_steps || otSummary.procedure_steps.length === 0) && (

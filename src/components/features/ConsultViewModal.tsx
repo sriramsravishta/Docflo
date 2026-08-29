@@ -819,12 +819,97 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     }
   };
 
-    const handleRemoveOtImage = async (url: string) => {
+      const handleRemoveOtImage = async (url: string) => {
     if (!consult?.id) return;
     const updated = otImages.filter(u => u !== url);
     await supabase.from('consult').update({ ot_images: updated }).eq('id', consult.id);
     setOtImages(updated);
   };
+
+  // OT images as AttachmentItems (public bucket — URLs used directly)
+  const otAttachments: AttachmentItem[] = otImages.map((url, idx) => ({
+    id: String(idx),
+    url,
+    name: `Image ${idx + 1}`,
+    isImage: true,
+  }));
+
+  // Consultation Documents state (private bucket — needs signed URLs)
+  const [consultDocs, setConsultDocs] = useState<AttachmentItem[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+
+  useEffect(() => {
+    if (!consult?.id || isOTNote) return;
+    (async () => {
+      const { data } = await supabase
+        .from('consult_documents')
+        .select('id, file_url, file_name, file_type')
+        .eq('consult_id', consult.id)
+        .order('uploaded_at', { ascending: false });
+      if (!data || data.length === 0) { setConsultDocs([]); return; }
+      const withUrls = await Promise.all(data.map(async (doc) => {
+        const { data: signed } = await supabase.storage
+          .from('consult-documents')
+          .createSignedUrl(doc.file_url, 3600);
+        return {
+          id: doc.id,
+          url: signed?.signedUrl || '',
+          name: doc.file_name,
+          isImage: (doc.file_type || '').startsWith('image/'),
+        };
+      }));
+      setConsultDocs(withUrls);
+    })();
+  }, [consult?.id, isOTNote]);
+
+  const handleDocUpload = async (files: FileList) => {
+    if (!consult?.id || !props.userId) return;
+    setUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${consult.id}/${Date.now()}-${sanitized}`;
+        const { data: uploadData, error } = await supabase.storage
+          .from('consult-documents')
+          .upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+        if (error) throw error;
+        const { data: row } = await supabase
+          .from('consult_documents')
+          .insert({
+            consult_id: consult.id,
+            doc_id: props.userId,
+            file_url: uploadData.path,
+            file_name: file.name,
+            file_type: file.type || null,
+            file_size_bytes: file.size,
+          })
+          .select('id, file_url, file_name, file_type')
+          .single();
+        if (row) {
+          const { data: signed } = await supabase.storage
+            .from('consult-documents')
+            .createSignedUrl(row.file_url, 3600);
+          setConsultDocs(prev => [{
+            id: row.id,
+            url: signed?.signedUrl || '',
+            name: row.file_name,
+            isImage: (row.file_type || '').startsWith('image/'),
+          }, ...prev]);
+        }
+      }
+    } catch (err) {
+      console.error('Document upload failed:', err);
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleRemoveDoc = async (item: AttachmentItem) => {
+    await supabase.from('consult_documents').delete().eq('id', item.id);
+    setConsultDocs(prev => prev.filter(d => d.id !== item.id));
+  };
+
+  // View text
 
   // Consultation Documents state
   const [consultDocs, setConsultDocs] = useState<{ id: string; file_url: string; file_name: string; file_type?: string }[]>([]);

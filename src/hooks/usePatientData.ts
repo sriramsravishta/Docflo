@@ -5,7 +5,8 @@ import { getConsultSummary, isConsultProcessed } from '../lib/utils';
 import type { PatientRow, ConsultRow, PreConsultRow, VitalRow, SummaryRow } from '../types/db';
 
 interface UsePatientDataReturn {
-  patient: PatientRow | null;
+   patient: PatientRow | null;
+  setPatient: React.Dispatch<React.SetStateAction<PatientRow | null>>;
   loading: boolean;
   consultations: ConsultRow[];
   setConsultations: React.Dispatch<React.SetStateAction<ConsultRow[]>>;

@@ -1526,56 +1526,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                 </div>
               )}
 
-                            {/* ── Consultation Documents ── */}
-              <SectionCard title="Attached Documents">
-                <div className="px-3 py-3">
-                  <input
-                    ref={docFileInputRef}
-                    type="file"
-                    accept="image/*,.pdf,.doc,.docx,.txt"
-                    multiple
-                    className="hidden"
-                    onChange={handleDocUpload}
-                  />
-                  {consultDocs.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      {consultDocs.map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 group">
-                          <button
-                            onClick={() => handleViewDoc(doc.file_url)}
-                            className="flex items-center gap-2 min-w-0 text-left hover:text-[#024CDB] transition-colors"
-                          >
-                            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            <span className="text-sm truncate">{doc.file_name}</span>
-                          </button>
-                          <button
-                            onClick={() => handleRemoveDoc(doc.id)}
-                            className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => docFileInputRef.current?.click()}
-                    disabled={uploadingDoc}
-                    className="flex items-center gap-2 text-sm text-[#024CDB] font-medium hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    {uploadingDoc ? (
-                      <><span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /> Uploading...</>
-                    ) : (
-                      <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg> Attach Documents</>
-                    )}
-                  </button>
-                  {consultDocs.length === 0 && !uploadingDoc && (
-                    <p className="text-xs text-gray-400 mt-1">Upload reports, images or documents for this consultation</p>
-                  )}
-                </div>
-              </SectionCard>
+                            
 
                          <AttachmentGallery
                 title="Attached Documents"

@@ -782,7 +782,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
   const otSummary = isOTNote ? (summary as any) : null;
 
   // OT Images state
-  const [otImages, setOtImages] = useState<string[]>((consult as any)?.ot_images || []);
+    const [otImages, setOtImages] = useState<string[]>(Array.isArray((consult as any)?.ot_images) ? (consult as any).ot_images : []);
   const [uploadingImage, setUploadingImage] = useState(false);
   const otFileInputRef = useRef<HTMLInputElement>(null);
 

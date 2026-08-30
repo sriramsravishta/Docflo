@@ -1706,13 +1706,17 @@ else{
   </button>
 </div>
 
-<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
   {[
     { label: 'Temperature', value: vital.temperature, unit: '°C', Icon: Thermometer },
     { label: 'Blood Pressure', value: vital.blood_pressure, unit: 'mmHg', Icon: Activity },
     { label: 'Heart Rate', value: vital.heart_rate, unit: 'bpm', Icon: HeartPulse },
     { label: 'SpO2', value: vital.spo2, unit: '%', Icon: Droplets },
     { label: 'Weight', value: vital.weight, unit: 'kg', Icon: Weight },
+    { label: 'Height', value: vital.height, unit: 'cm', Icon: Ruler },
+    ...(vital.weight && vital.height && parseFloat(vital.height) > 0
+      ? [{ label: 'BMI', value: (parseFloat(vital.weight) / ((parseFloat(vital.height) / 100) ** 2)).toFixed(1), unit: 'kg/m²', Icon: Activity }]
+      : []),
   ].map(({ label, value, unit, Icon }) => (
     <div
       key={label}

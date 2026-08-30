@@ -2064,7 +2064,7 @@ onRefreshMedicines={() => selectedConsult && loadConsultMedicines(selectedConsul
               placeholder="e.g., 98"
             />
           </div>
-          <div>
+                    <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
             <input
               type="text"
@@ -2072,6 +2072,16 @@ onRefreshMedicines={() => selectedConsult && loadConsultMedicines(selectedConsul
               onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setVitalForm({ ...vitalForm, weight: v }); }}
               className="input-field"
               placeholder="e.g., 70"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+            <input
+              type="text"
+              value={vitalForm.height}
+              onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setVitalForm({ ...vitalForm, height: v }); }}
+              className="input-field"
+              placeholder="e.g., 165"
             />
           </div>
           <div className="flex space-x-3 justify-end pt-4">

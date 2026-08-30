@@ -12,6 +12,7 @@ import ClinicalSummariserList from './pages/ClinicalSummariserList';
 import NewSummary from './pages/NewSummary';
 import SummaryDetail from './pages/SummaryDetail';
 import FavouritesPage from './pages/FavouritesPage';
+import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pharmacy pages

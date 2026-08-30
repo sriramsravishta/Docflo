@@ -1339,7 +1339,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   />
                 </SectionCard>
                                       <AttachmentGallery
-                  title="Surgery Images"
+                                    title="Surgery Files"
                   items={otAttachments}
                                     accept="*"
                   uploading={uploadingImage}

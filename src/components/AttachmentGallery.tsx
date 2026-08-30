@@ -31,6 +31,7 @@ export default function AttachmentGallery({
 }: AttachmentGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AttachmentItem | null>(null);
 
   return (
     <>
@@ -57,9 +58,9 @@ export default function AttachmentGallery({
             accept={accept}
             multiple
             className="hidden"
-                        onChange={(e) => {
+            onChange={(e) => {
               if (e.target.files && e.target.files.length > 0) {
-                const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+                const MAX_SIZE = 50 * 1024 * 1024;
                 const oversized = Array.from(e.target.files).filter(f => f.size > MAX_SIZE);
                 if (oversized.length > 0) {
                   alert(`File "${oversized[0].name}" exceeds the 50MB limit. Please upload a smaller file.`);
@@ -94,13 +95,7 @@ export default function AttachmentGallery({
                     </button>
                   )}
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Delete "${item.name}"?`)) {
-                        if (window.confirm('Are you sure? This cannot be undone.')) {
-                          onDelete(item);
-                        }
-                      }
-                    }}
+                    onClick={() => setPendingDelete(item)}
                     className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     ×
@@ -114,6 +109,7 @@ export default function AttachmentGallery({
         </div>
       </div>
 
+      {/* Fullscreen image viewer */}
       {viewerUrl && (
         <div
           className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4"
@@ -131,6 +127,35 @@ export default function AttachmentGallery({
             className="max-w-full max-h-[90vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {pendingDelete && (
+        <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" onClick={() => setPendingDelete(null)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete File</h3>
+            <p className="text-sm text-gray-600 mb-1">Are you sure you want to delete:</p>
+            <p className="text-sm font-medium text-gray-900 mb-4 truncate">"{pendingDelete.name}"</p>
+            <p className="text-xs text-red-600 mb-6">This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(pendingDelete);
+                  setPendingDelete(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

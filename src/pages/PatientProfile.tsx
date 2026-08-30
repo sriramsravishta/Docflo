@@ -848,6 +848,72 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     `;
 
     content += `</div>`;
+       return content;
+  };
+
+    const generateOTNotePDFContent = (consult: ConsultRow, doctorName?: string): string => {
+    const summary = getConsultSummary(consult) as any;
+    if (!summary) return '<p>No OT note summary available.</p>';
+
+    const ptName = (patient?.name || '').toUpperCase();
+    const ptAge = patient?.age ? `${patient.age}${(patient?.gender || '').charAt(0)}` : '';
+    const ptDisplay = [ptName, ptAge].filter(Boolean).join(', ');
+    const ptUhid = patient?.uhid;
+    const ptPhone = patient?.phone;
+
+    let content = `<div class="pres-wrapper"><div class="pt-info">`;
+    content += `<div class="pt-row"><div><span class="pt-name">${escapeHtml(ptDisplay)}</span></div>`;
+    content += `<div style="text-align:right"><span class="pt-meta"><span class="pt-label">Date: </span><span class="pt-date-val">${escapeHtml(formatDate(consult.created_at))}</span></span></div></div>`;
+    if (ptUhid) content += `<div class="pt-row"><div><span class="pt-meta"><span class="pt-label">UHID: </span><span class="pt-val">${escapeHtml(ptUhid)}</span></span></div></div>`;
+    if (ptPhone) content += `<div style="margin-top:4px"><span class="pt-meta"><span class="pt-label">Phone: </span><span class="pt-val">${escapeHtml(String(ptPhone))}</span></span></div>`;
+    content += `</div>`;
+
+    // Title
+    content += `<div class="section" style="text-align:center;border-bottom:2px solid #111"><div class="section-header" style="font-size:16px;margin-bottom:4px">OPERATIVE NOTE</div></div>`;
+
+    const addSection = (title: string, value: unknown) => {
+      if (!value) return;
+      if (typeof value === 'string' && value.trim()) {
+        content += `<div class="section"><div class="section-header">${escapeHtml(title)}</div><p class="section-text">${escapeHtml(value)}</p></div>`;
+      } else if (Array.isArray(value) && value.length > 0) {
+        content += `<div class="section"><div class="section-header">${escapeHtml(title)}</div>${toHtmlList(value)}</div>`;
+      }
+    };
+
+    addSection('Procedure', summary.procedure_name);
+    addSection('Indications', summary.indications);
+    addSection('Type of Anesthesia', summary.anesthesia_type);
+    addSection('Intraoperative Findings', typeof summary.intraoperative_findings === 'string'
+      ? summary.intraoperative_findings
+      : Array.isArray(summary.intraoperative_findings) ? summary.intraoperative_findings : null);
+
+    // Procedure steps — numbered list
+    const steps = Array.isArray(summary.procedure_steps) ? summary.procedure_steps : [];
+    if (steps.length > 0) {
+      content += `<div class="section"><div class="section-header">Procedure Steps</div><ol class="section-list" style="list-style-type:decimal">`;
+      steps.forEach((step: string) => { content += `<li>${escapeHtml(step)}</li>`; });
+      content += `</ol></div>`;
+    }
+
+    addSection('Complications', summary.complications);
+    addSection('Estimated Blood Loss', summary.estimated_blood_loss);
+    addSection('Specimens Sent', summary.specimens_sent);
+    addSection('Post-operative Instructions', typeof summary.post_op_instructions === 'string'
+      ? summary.post_op_instructions
+      : Array.isArray(summary.post_op_instructions) ? summary.post_op_instructions : null);
+
+    // Signature
+    const sigDoctorName = (doctorName || '').toUpperCase();
+    const sigDate = formatDate(consult.created_at);
+    content += `
+      <div class="signature-wrapper">
+        <div class="signature">
+          <p class="sig-name">${escapeHtml(sigDoctorName)}</p>
+          <p class="sig-date">Date: ${escapeHtml(sigDate)}</p>
+        </div>
+      </div>
+    `;
+    content += `</div>`;
     return content;
   };
 
@@ -892,7 +958,10 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       ? doctorNameResult
       : user?.user_metadata?.display_name || '—';
 
-        let htmlContent = generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, presConfigResult);
+               const isOTNote = (selectedConsult as any)?.type === 'ot_note';
+        let htmlContent = isOTNote
+          ? generateOTNotePDFContent(selectedConsult, finalDoctorName)
+          : generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, presConfigResult);
 
     // Append diet chart image pages if attached
     for (const chart of (chartData as any[])) {

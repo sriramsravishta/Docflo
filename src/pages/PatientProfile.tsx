@@ -373,10 +373,10 @@ export default function PatientProfile() {
     setShowVitalsModal(true);
   };
 
-  const handleCloseVitalsModal = () => {
+   const handleCloseVitalsModal = () => {
     setShowVitalsModal(false);
     setEditingVital(null);
-    setVitalForm({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
+    setVitalForm({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '', height: '' });
   };
 
   const handleEditConsult = () => {

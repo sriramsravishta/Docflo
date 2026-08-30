@@ -1347,7 +1347,70 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   onView={(item) => window.open(item.url, '_blank')}
                   onDelete={(item) => handleRemoveOtImage(item.url)}
                                     emptyText="No files attached"
-                />
+                                />
+                {/* ── Reference Links ── */}
+                <SectionCard title="Reference Links" highlighted={isHighlighted('reference_links')}>
+                  <div className="px-3 py-3 space-y-2">
+                    {(isEditing
+                      ? (Array.isArray(editedConsult?.reference_links) ? editedConsult.reference_links as string[] : [])
+                      : (Array.isArray(otSummary?.reference_links) ? otSummary.reference_links : [])
+                    ).map((link: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        {isEditing ? (
+                          <>
+                            <input
+                              type="text"
+                              value={link}
+                              onChange={(e) => {
+                                const links = [...((editedConsult?.reference_links as string[]) || [])];
+                                links[idx] = e.target.value;
+                                setEditedConsult({ ...editedConsult, reference_links: links });
+                              }}
+                              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#024CDB]"
+                              placeholder="https://..."
+                            />
+                            <button
+                              onClick={() => {
+                                const links = ((editedConsult?.reference_links as string[]) || []).filter((_, i) => i !== idx);
+                                setEditedConsult({ ...editedConsult, reference_links: links });
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-[#024CDB] hover:underline truncate"
+                          >
+                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
+                            </svg>
+                            {link}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {isEditing && (
+                      <button
+                        onClick={() => {
+                          const links = [...((editedConsult?.reference_links as string[]) || []), ''];
+                          setEditedConsult({ ...editedConsult, reference_links: links });
+                        }}
+                        className="flex items-center gap-1.5 text-sm text-[#024CDB] font-medium hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors"
+                      >
+                        <Plus className="w-4 h-4" /> Add Link
+                      </button>
+                    )}
+                    {!isEditing && (!otSummary?.reference_links || otSummary.reference_links.length === 0) && (
+                      <p className="text-sm text-gray-400 text-center py-2">No reference links</p>
+                    )}
+                  </div>
+                </SectionCard>
                 <div className="h-6" />
               </div>
             ) : (

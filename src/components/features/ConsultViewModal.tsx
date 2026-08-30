@@ -1337,7 +1337,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                                       <AttachmentGallery
                   title="Surgery Images"
                   items={otAttachments}
-                  accept="image/*"
+                                    accept="*"
                   uploading={uploadingImage}
                   onUpload={(files) => handleOtImageUpload({ target: { files } } as any)}
                   onView={(item) => window.open(item.url, '_blank')}

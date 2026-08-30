@@ -11,6 +11,7 @@ import {
   Droplets,
   Loader2,
   Weight,
+  Ruler,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';

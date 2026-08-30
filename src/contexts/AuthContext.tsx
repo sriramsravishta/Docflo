@@ -110,8 +110,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const signOut = async () => {
+    const signOut = async () => {
     await supabase.auth.signOut({ scope: 'local' });
+  };
+
+  const resetPasswordForEmail = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/',
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    setPasswordRecovery(false);
   };
 
   return (

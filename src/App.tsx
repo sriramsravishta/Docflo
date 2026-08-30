@@ -23,7 +23,7 @@ import BillsPage from './pages/pharmacy/BillsPage';
 import PharmacyNav from './components/pharmacy/PharmacyNav';
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+    const { user, loading, passwordRecovery } = useAuth();
   const [role, setRole] = useState<string>('Doctor');
   const [roleLoading, setRoleLoading] = useState(false);
 

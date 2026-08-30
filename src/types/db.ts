@@ -98,6 +98,7 @@ export interface VitalRow {
   heart_rate?: string | null;
   spo2?: string | null;
   weight?: string | null;
+  height?: string | null;
   created_at: string;
 }
 

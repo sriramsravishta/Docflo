@@ -1346,7 +1346,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   onUpload={(files) => handleOtImageUpload({ target: { files } } as any)}
                   onView={(item) => window.open(item.url, '_blank')}
                   onDelete={(item) => handleRemoveOtImage(item.url)}
-                  emptyText="No images attached"
+                                    emptyText="No files attached"
                 />
                 <div className="h-6" />
               </div>

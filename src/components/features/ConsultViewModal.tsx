@@ -1531,7 +1531,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                          <AttachmentGallery
                 title="Attached Documents"
                 items={consultDocs}
-                accept="image/*,.pdf,.doc,.docx,.txt"
+                                accept="*"
                 uploading={uploadingDoc}
                 onUpload={handleDocUpload}
                 onView={(item) => window.open(item.url, '_blank')}

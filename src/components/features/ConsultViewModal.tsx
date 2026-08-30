@@ -826,13 +826,17 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     setOtImages(updated);
   };
 
-  // OT images as AttachmentItems (public bucket — URLs used directly)
-  const otAttachments: AttachmentItem[] = otImages.map((url, idx) => ({
-    id: String(idx),
-    url,
-    name: `Image ${idx + 1}`,
-    isImage: true,
-  }));
+    // OT attachments as AttachmentItems (public bucket — URLs used directly)
+  const otAttachments: AttachmentItem[] = otImages.map((url, idx) => {
+    const ext = url.split('.').pop()?.toLowerCase() || '';
+    const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'bmp'];
+    return {
+      id: String(idx),
+      url,
+      name: `File ${idx + 1}`,
+      isImage: imageExts.includes(ext),
+    };
+  });
 
   // Consultation Documents state (private bucket — needs signed URLs)
   const [consultDocs, setConsultDocs] = useState<AttachmentItem[]>([]);

@@ -345,12 +345,13 @@ export default function PatientProfile() {
     if (vitalsSubmitting) return;
     setVitalsSubmitting(true);
     try {
-      const { error } = await supabase.from('vitals').update({
+            const { error } = await supabase.from('vitals').update({
         temperature: vitalForm.temperature || null,
         blood_pressure: vitalForm.blood_pressure || null,
         heart_rate: vitalForm.heart_rate || null,
         spo2: vitalForm.spo2 || null,
         weight: vitalForm.weight || null,
+        height: vitalForm.height || null,
       }).eq('id', editingVital.id);
       if (error) throw error;
       await loadTodaysVitals();

@@ -65,7 +65,7 @@ function AppRoutes() {
               <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
               <Route path="/bills" element={<ProtectedRoute><BillsPage /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            </Routes> 
           </>
         ) : (
           <Routes>

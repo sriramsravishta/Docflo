@@ -57,8 +57,17 @@ export default function AttachmentGallery({
             accept={accept}
             multiple
             className="hidden"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) onUpload(e.target.files);
+                        onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+                const oversized = Array.from(e.target.files).filter(f => f.size > MAX_SIZE);
+                if (oversized.length > 0) {
+                  alert(`File "${oversized[0].name}" exceeds the 50MB limit. Please upload a smaller file.`);
+                  e.target.value = '';
+                  return;
+                }
+                onUpload(e.target.files);
+              }
               e.target.value = '';
             }}
           />

@@ -1717,7 +1717,7 @@ else{
     ...(vital.weight && vital.height && parseFloat(vital.height) > 0
       ? [{ label: 'BMI', value: (parseFloat(vital.weight) / ((parseFloat(vital.height) / 100) ** 2)).toFixed(1), unit: 'kg/m²', Icon: Activity }]
       : []),
-  ].map(({ label, value, unit, Icon }) => (
+    ].filter(({ value }) => value).map(({ label, value, unit, Icon }) => (
     <div
       key={label}
       className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3"

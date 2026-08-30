@@ -140,7 +140,7 @@ export default function PatientProfile() {
   const [showGraphView, setShowGraphView] = useState(false);
   const [selectedGraphParam, setSelectedGraphParam] = useState<string>('');
   const [editingVital, setEditingVital] = useState<VitalRow | null>(null);
-  const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '' });
+    const [vitalForm, setVitalForm] = useState({ temperature: '', blood_pressure: '', heart_rate: '', spo2: '', weight: '', height: '' });
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
   const [editForm, setEditForm] = useState({ name: '', age: '', phone: '', case: '', gender: 'Male', uhid: '', address: '' });
@@ -323,7 +323,7 @@ export default function PatientProfile() {
     if (vitalsSubmitting) return;
     setVitalsSubmitting(true);
     try {
-      const { error } = await supabase.from('vitals').insert([{
+            const { error } = await supabase.from('vitals').insert([{
         patient_id: patientId,
         doctor_id: user!.id,
         temperature: vitalForm.temperature || null,
@@ -331,6 +331,7 @@ export default function PatientProfile() {
         heart_rate: vitalForm.heart_rate || null,
         spo2: vitalForm.spo2 || null,
         weight: vitalForm.weight || null,
+        height: vitalForm.height || null,
       }]).select();
       if (error) throw error;
       await loadTodaysVitals();

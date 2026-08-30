@@ -57,9 +57,10 @@ function AppRoutes() {
         {isPharmacist ? (
           <>
             <PharmacyNav />
-            <Routes>
+                        <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/" element={passwordRecovery ? <Navigate to="/reset-password" replace /> : <ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
               <Route path="/dispense/:consultId" element={<ProtectedRoute><DispenseScreen /></ProtectedRoute>} />
               <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
               <Route path="/bills" element={<ProtectedRoute><BillsPage /></ProtectedRoute>} />

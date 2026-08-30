@@ -360,7 +360,7 @@ export default function PatientProfile() {
     finally { setVitalsSubmitting(false); }
   };
 
-  const handleEditVital = (vital: VitalRow) => {
+    const handleEditVital = (vital: VitalRow) => {
     setEditingVital(vital);
     setVitalForm({
       temperature: vital.temperature || '',
@@ -368,6 +368,7 @@ export default function PatientProfile() {
       heart_rate: vital.heart_rate || '',
       spo2: vital.spo2 || '',
       weight: vital.weight || '',
+      height: vital.height || '',
     });
     setShowVitalsModal(true);
   };

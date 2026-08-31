@@ -66,7 +66,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
 
   
 
-  const handleCreateFromLead = (lead: LeadRow) => {
+    const handleCreateFromLead = (lead: LeadRow) => {
     setNewPatient({ 
       phone: lead.phone || '', 
       name: lead.lead_name || '', 
@@ -75,7 +75,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
       uhid: '', 
       address: '' 
     });
-    handlePhoneChange(lead.phone || '');
+    // Pass the lead's name securely into the phone check so it doesn't get erased!
+    handlePhoneChange(lead.phone || '', lead.lead_name || '');
     setShowAddPatient(true);
   };
 

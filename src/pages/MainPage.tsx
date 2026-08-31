@@ -16,8 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPatientByPhone } from '../lib/database';
 import type { AppointmentRow, LeadRow } from '../types/db';
 import SummaryTab from '../components/features/SummaryTab';
+import LeadsTab from '../components/features/LeadsTab';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
-import { supabase } from '../lib/supabase';
 import PatientsFilterModal, { AppliedFilters } from '../components/features/PatientsFilterModal';
 
 export default function MainPage() {

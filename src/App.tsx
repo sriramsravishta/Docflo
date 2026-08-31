@@ -87,28 +87,29 @@ function AppRoutes() {
 }
 
 function App() {
+  // 1. Snapshot the exact URL the millisecond the app loads (before Supabase hides it)
+  const [initialHash] = useState(window.location.hash);
+  
+  // Use our snapshot to determine if we need to pause
   const [isParsingAuth, setIsParsingAuth] = useState(
-    window.location.hash.includes('access_token=')
+    initialHash.includes('access_token=')
   );
 
   useEffect(() => {
     if (isParsingAuth) {
-      // 1. We pause HashRouter from loading.
-      // 2. We give Supabase 500ms to grab the tokens from the URL.
       setTimeout(() => {
         setIsParsingAuth(false);
-        // 3. We safely rewrite the URL so HashRouter knows where to go.
-        if (window.location.hash.includes('type=recovery')) {
+        
+        // 2. Check our SAVED snapshot, not the live URL!
+        if (initialHash.includes('type=recovery')) {
           window.location.hash = '/reset-password';
         } else {
           window.location.hash = '/';
         }
       }, 500);
     }
-  }, [isParsingAuth]);
+  }, [isParsingAuth, initialHash]);
 
-  // If there are tokens in the URL, render a blank screen (or a spinner) 
-  // so HashRouter doesn't accidentally destroy the URL!
   if (isParsingAuth) {
     return <div className="h-screen w-screen flex items-center justify-center bg-gray-50 text-gray-500">Verifying secure link...</div>;
   }

@@ -93,10 +93,15 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
     booked: filtered.filter(l => l.status === 'booked').length,
   };
 
+    // Dynamically extract unique doctor names from the data
+  const uniqueDoctors = Array.from(new Set(leads.map(l => l.doctor_label).filter(Boolean)));
+  
   const subTabs = [
     { key: 'All', label: 'All Leads' },
-    { key: 'Dr. Sushma Peruri', label: 'Dr. Sushma' },
-    { key: 'Dr. Prashanth Koyyoda', label: 'Dr. Prashanth' },
+    ...uniqueDoctors.map(doc => ({ 
+      key: doc, 
+      label: doc // Uses whatever label came from n8n dynamically
+    }))
   ];
 
   return (

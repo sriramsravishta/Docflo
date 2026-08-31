@@ -32,7 +32,7 @@ function formatDate(iso: string): string {
 export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<'All' | 'Dr. Sushma Peruri' | 'Dr. Prashanth Koyyoda'>('All');
+    const [activeSubTab, setActiveSubTab] = useState<string>('All');
 
   useEffect(() => {
     fetchLeads();

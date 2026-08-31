@@ -47,8 +47,12 @@ export default function MainPage() {
     isSubmitting,
   } = useMainPageData(user?.id);
 
+    const hasLeadsFeature = useFeatureFlag('leads_management');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'summary'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'summary' | 'leads'>('today');
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadFilter, setLeadFilter] = useState<'All' | 'Dr. Sushma Peruri' | 'Dr. Prashanth Koyyoda'>('All');
   const [showAddPatient, setShowAddPatient] = useState(false);
    const [existingPatient, setExistingPatient] = useState<{ id: string; name: string; age: number; gender: string; phone: string; uhid?: string; address?: string; last_visit_at?: string | null } | null>(null);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);

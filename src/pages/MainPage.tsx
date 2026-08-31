@@ -64,58 +64,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const [showManageLocations, setShowManageLocations] = useState(false);
     const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentRow | null>(null);
 
-  useEffect(() => {
-    if (activeTab === 'leads' && hasLeadsFeature && user?.id) {
-      fetchLeads();
-    }
-  }, [activeTab, hasLeadsFeature, user?.id]);
-
-  const fetchLeads = async () => {
-    if (!user?.id) return;
-    setLeadsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('doc_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      setLeads(data || []);
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-    } finally {
-      setLeadsLoading(false);
-    }
-  };
-
-  const handleLeadStatusChange = async (leadId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', leadId);
-      
-      if (error) throw error;
-      setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus as any } : l));
-    } catch (error) {
-      console.error('Error updating lead status:', error);
-    }
-  };
-
-  const handleLeadNoteSave = async (leadId: string, notes: string) => {
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .update({ notes, updated_at: new Date().toISOString() })
-        .eq('id', leadId);
-        
-      if (error) throw error;
-      setLeads(leads.map(l => l.id === leadId ? { ...l, notes } : l));
-    } catch (error) {
-      console.error('Error updating lead notes:', error);
-    }
-  };
+  
 
   const handleCreateFromLead = (lead: LeadRow) => {
     setNewPatient({ 

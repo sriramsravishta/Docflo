@@ -1,19 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Phone, Calendar, User, MessageCircle } from 'lucide-react';
+import { Phone, MessageCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { LeadRow } from '../../types/db';
 import Spinner from '../ui/Spinner';
-import EmptyState from '../ui/EmptyState';
 
 interface LeadsTabProps {
   docId: string;
   onCreateAppointment: (lead: LeadRow) => void;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  new: 'New',
+  contacted: 'Contacted',
+  booked: 'Booked',
+  not_interested: 'Not Interested',
+};
+
+const STATUS_PILL: Record<string, string> = {
+  new: 'bg-blue-100 text-blue-700',
+  contacted: 'bg-amber-100 text-amber-700',
+  booked: 'bg-green-100 text-green-700',
+  not_interested: 'bg-gray-200 text-gray-700',
+};
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'All' | 'Dr. Sushma Peruri' | 'Dr. Prashanth Koyyoda'>('All');
+  const [activeSubTab, setActiveSubTab] = useState<'All' | 'Dr. Sushma Peruri' | 'Dr. Prashanth Koyyoda'>('All');
 
   useEffect(() => {
     fetchLeads();
@@ -65,129 +84,200 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
     }
   };
 
-  const filteredLeads = leads.filter(l => filter === 'All' || l.doctor_label === filter);
+  const filtered = leads.filter(l => activeSubTab === 'All' || l.doctor_label === activeSubTab);
 
-  if (loading) {
-    return <div className="flex justify-center py-12"><Spinner size="md" /></div>;
-  }
+  const counts = {
+    all: filtered.length,
+    new: filtered.filter(l => l.status === 'new').length,
+    contacted: filtered.filter(l => l.status === 'contacted').length,
+    booked: filtered.filter(l => l.status === 'booked').length,
+  };
+
+  const subTabs = [
+    { key: 'All', label: 'All Leads' },
+    { key: 'Dr. Sushma Peruri', label: 'Dr. Sushma' },
+    { key: 'Dr. Prashanth Koyyoda', label: 'Dr. Prashanth' },
+  ];
 
   return (
     <div className="space-y-4">
-      {/* Segmented Filter Control */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {['All', 'Dr. Sushma Peruri', 'Dr. Prashanth Koyyoda'].map((doc) => (
+      {/* Sub-tabs row */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {subTabs.map((tab) => (
           <button
-            key={doc}
-            onClick={() => setFilter(doc as any)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border whitespace-nowrap ${
-              filter === doc
+            key={tab.key}
+            onClick={() => setActiveSubTab(tab.key as any)}
+            className={`shrink-0 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+              activeSubTab === tab.key
                 ? 'bg-[#024CDB] text-white border-[#024CDB]'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
             }`}
           >
-            {doc}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Table UI (Matches existing Docflo design system) */}
-      {filteredLeads.length === 0 ? (
-        <EmptyState message="No leads found for this selection." />
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interest</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900">{lead.lead_name}</span>
-                        <span className="text-xs text-gray-500 mt-0.5">{lead.source || 'Website'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Phone className="w-3.5 h-3.5 text-gray-400" />
-                          <a href={`tel:${lead.phone}`} className="hover:text-[#024CDB]">{lead.phone}</a>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sm text-green-600">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <a href={`https://wa.me/91${lead.phone.replace(/\D/g, '').slice(-10)}`} target="_blank" rel="noreferrer" className="hover:underline">
-                            WhatsApp
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1.5">
-                        {lead.service && (
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            <User className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="truncate max-w-[150px]" title={lead.service}>{lead.service}</span>
-                          </div>
-                        )}
-                        {(lead.preferred_date || lead.preferred_slot) && (
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            <span>{lead.preferred_date} {lead.preferred_slot}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                        className={`text-sm border-gray-200 rounded-lg shadow-sm focus:border-[#024CDB] focus:ring-[#024CDB] py-1.5 pl-3 pr-8 font-medium ${
-                          lead.status === 'new' ? 'bg-blue-50 text-blue-700' :
-                          lead.status === 'contacted' ? 'bg-yellow-50 text-yellow-700' :
-                          lead.status === 'booked' ? 'bg-green-50 text-green-700' :
-                          'bg-gray-50 text-gray-700'
-                        }`}
-                      >
-                        <option value="new">New</option>
-                        <option value="contacted">Contacted</option>
-                        <option value="booked">Booked</option>
-                        <option value="not_interested">Not Interested</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4">
-                      <input
-                        type="text"
-                        defaultValue={lead.notes || ''}
-                        onBlur={(e) => {
-                          if (e.target.value !== lead.notes) handleNoteSave(lead.id, e.target.value);
-                        }}
-                        placeholder="Add a note..."
-                        className="w-full min-w-[180px] text-sm bg-transparent border border-transparent hover:border-gray-200 focus:bg-white focus:border-[#024CDB] focus:ring-1 focus:ring-[#024CDB] rounded px-2 py-1.5 transition-all outline-none"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => onCreateAppointment(lead)}
-                        className="inline-flex items-center justify-center px-3 py-1.5 border border-[#024CDB] text-[#024CDB] rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors"
-                      >
-                        + Appointment
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Stats strip */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+          <div className="flex-1 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Leads</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{counts.all}</p>
+          </div>
+          <div className="flex-1 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">New</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{counts.new}</p>
+          </div>
+          <div className="flex-1 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Contacted</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{counts.contacted}</p>
+          </div>
+          <div className="flex-1 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Booked</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{counts.booked}</p>
           </div>
         </div>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="flex justify-center py-12"><Spinner size="md" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-gray-500">No leads found for the selected filter</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Date</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Patient</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Contact</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Interest</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Notes</th>
+                    <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map((row) => (
+                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {formatDate(row.created_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium text-gray-900 text-left">{row.lead_name}</p>
+                        <p className="text-xs text-gray-500">{row.source || 'Website'}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <a href={`tel:${row.phone}`} className="text-sm font-medium text-[#024CDB] hover:underline flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-gray-400" /> {row.phone}
+                          </a>
+                          <a href={`https://wa.me/91${row.phone.replace(/\D/g, '').slice(-10)}`} target="_blank" rel="noreferrer" className="text-xs text-green-600 hover:underline flex items-center gap-1.5">
+                            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                          </a>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 max-w-[140px] truncate">
+                        <p>{row.service || '—'}</p>
+                        {(row.preferred_date || row.preferred_slot) && (
+                          <p className="text-xs text-gray-500 mt-0.5">{row.preferred_date} {row.preferred_slot}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={row.status}
+                          onChange={(e) => handleStatusChange(row.id, e.target.value)}
+                          className={`text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${STATUS_PILL[row.status]}`}
+                        >
+                          {(Object.keys(STATUS_LABELS)).map((s) => (
+                            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          defaultValue={row.notes || ''}
+                          onBlur={(e) => { if (e.target.value !== (row.notes || '')) { handleNoteSave(row.id, e.target.value); } }}
+                          className="text-sm text-gray-700 w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-[#024CDB] focus:outline-none py-0.5 min-w-[120px]"
+                          placeholder="Add notes…"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => onCreateAppointment(row)}
+                          className="text-sm font-medium text-[#024CDB] hover:underline"
+                        >
+                          + Appt
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile cards (mirrors SummaryTab styling) */}
+          <div className="md:hidden space-y-3">
+            {filtered.map((row) => (
+              <div key={row.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-gray-900 text-left">{row.lead_name}</p>
+                    <p className="text-xs text-gray-500">{row.source || 'Website'} · {formatDate(row.created_at)}</p>
+                  </div>
+                  <select
+                    value={row.status}
+                    onChange={(e) => handleStatusChange(row.id, e.target.value)}
+                    className={`text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer shrink-0 ${STATUS_PILL[row.status]}`}
+                  >
+                    {(Object.keys(STATUS_LABELS)).map((s) => (
+                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">Phone</p>
+                    <a href={`tel:${row.phone}`} className="text-sm font-medium text-[#024CDB]">{row.phone}</a>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">Interest</p>
+                    <p className="text-sm text-gray-700 truncate">{row.service || '—'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500 mb-0.5">Notes</p>
+                    <input
+                      type="text"
+                      defaultValue={row.notes || ''}
+                      onBlur={(e) => { if (e.target.value !== (row.notes || '')) { handleNoteSave(row.id, e.target.value); } }}
+                      className="w-full text-sm text-gray-700 border-b border-gray-200 focus:border-[#024CDB] focus:outline-none bg-transparent"
+                      placeholder="Add notes…"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-2">
+                  <button
+                    onClick={() => onCreateAppointment(row)}
+                    className="w-full text-center py-2 border border-[#024CDB] text-[#024CDB] rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                  >
+                    Create Appointment
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

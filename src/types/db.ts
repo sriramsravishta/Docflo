@@ -324,3 +324,22 @@ export interface DischargeSummaryData {
   };
   condition_at_discharge?: string;
 }
+
+export interface LeadRow {
+  id: string;
+  doc_id: string;
+  doctor_label: string;
+  lead_name: string;
+  phone: string;
+  service: string | null;
+  preferred_date: string | null;
+  preferred_slot: string | null;
+  email_subject: string | null;
+  email_from: string | null;
+  raw_email: string | null;
+  status: 'new' | 'contacted' | 'booked' | 'not_interested';
+  notes: string | null;
+  source: string | null;
+  created_at: string;
+  updated_at: string;
+}

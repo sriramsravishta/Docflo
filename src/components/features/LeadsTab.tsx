@@ -73,7 +73,7 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
 
   return (
     <div className="space-y-4">
-      {/* Filters (Segmented Control Style) */}
+      {/* Segmented Filter Control */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         {['All', 'Dr. Sushma Peruri', 'Dr. Prashanth Koyyoda'].map((doc) => (
           <button
@@ -90,7 +90,7 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
         ))}
       </div>
 
-      {/* Table UI */}
+      {/* Table UI (Matches existing Docflo design system) */}
       {filteredLeads.length === 0 ? (
         <EmptyState message="No leads found for this selection." />
       ) : (
@@ -110,15 +110,12 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Patient Details */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-gray-900">{lead.lead_name}</span>
                         <span className="text-xs text-gray-500 mt-0.5">{lead.source || 'Website'}</span>
                       </div>
                     </td>
-
-                    {/* Contact */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
@@ -133,8 +130,6 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
                         </div>
                       </div>
                     </td>
-
-                    {/* Interest */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1.5">
                         {lead.service && (
@@ -151,8 +146,6 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
                         )}
                       </div>
                     </td>
-
-                    {/* Status */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={lead.status}
@@ -170,8 +163,6 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
                         <option value="not_interested">Not Interested</option>
                       </select>
                     </td>
-
-                    {/* Notes (Seamless Inline Input) */}
                     <td className="px-6 py-4">
                       <input
                         type="text"
@@ -180,11 +171,9 @@ export default function LeadsTab({ docId, onCreateAppointment }: LeadsTabProps) 
                           if (e.target.value !== lead.notes) handleNoteSave(lead.id, e.target.value);
                         }}
                         placeholder="Add a note..."
-                        className="w-full min-w-[200px] text-sm bg-transparent border border-transparent hover:border-gray-200 focus:bg-white focus:border-[#024CDB] focus:ring-1 focus:ring-[#024CDB] rounded px-2 py-1.5 transition-all"
+                        className="w-full min-w-[180px] text-sm bg-transparent border border-transparent hover:border-gray-200 focus:bg-white focus:border-[#024CDB] focus:ring-1 focus:ring-[#024CDB] rounded px-2 py-1.5 transition-all outline-none"
                       />
                     </td>
-
-                    {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => onCreateAppointment(lead)}

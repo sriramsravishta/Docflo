@@ -14,8 +14,10 @@ import EmptyState from '../components/ui/EmptyState';
 import { useMainPageData } from '../hooks/useMainPageData';
 import { useAuth } from '../contexts/AuthContext';
 import { getPatientByPhone } from '../lib/database';
-import type { AppointmentRow } from '../types/db';
+import type { AppointmentRow, LeadRow } from '../types/db';
 import SummaryTab from '../components/features/SummaryTab';
+import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
+import { supabase } from '../lib/supabase';
 import PatientsFilterModal, { AppliedFilters } from '../components/features/PatientsFilterModal';
 
 export default function MainPage() {

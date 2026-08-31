@@ -399,7 +399,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
               </div>
             )}
            
-           {activeTab !== 'summary' && (
+                      {activeTab !== 'summary' && activeTab !== 'leads' && (
               <div>
                 {loading ? (
                   <div className="flex justify-center py-8"><Spinner size="md" /></div>

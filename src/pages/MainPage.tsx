@@ -163,21 +163,37 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const handlePhoneChange = async (phone: string) => {
-    setNewPatient({ ...newPatient, phone });
+    const handlePhoneChange = async (phone: string, leadNameFallback: string = '') => {
+    // Preserve existing name while typing, or apply the lead's name
+    setNewPatient(prev => ({ ...prev, phone, name: leadNameFallback || prev.name }));
+    
     if (phone.length >= 10) {
       try {
         const patient = await getPatientByPhone(phone, user!.id);
-                if (patient) {
+        if (patient) {
           setExistingPatient(patient);
-          setNewPatient({ phone, name: patient.name, age: patient.age.toString(), gender: patient.gender, uhid: patient.uhid || '', address: patient.address || '' });
-          // Prefill last visit date if the patient already has one
+          setNewPatient({ 
+            phone, 
+            name: patient.name, 
+            age: patient.age.toString(), 
+            gender: patient.gender, 
+            uhid: patient.uhid || '', 
+            address: patient.address || '' 
+          });
           if (patient.last_visit_at) {
             setLastVisitAt(patient.last_visit_at.split('T')[0]);
           }
         } else {
           setExistingPatient(null);
-                    setNewPatient({ phone, name: '', age: '', gender: 'Male', uhid: '', address: '' });
+          // Crucial fix: Don't wipe the name if we passed one in from a Lead!
+          setNewPatient(prev => ({ 
+            phone, 
+            name: leadNameFallback || prev.name, 
+            age: '', 
+            gender: 'Male', 
+            uhid: '', 
+            address: '' 
+          }));
         }
       } catch (error) {
         console.error('Error checking patient:', error);

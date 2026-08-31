@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Search, Mic, Settings, Filter, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Mic, Settings, Filter, ChevronDown, ChevronRight, Phone, Calendar, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';

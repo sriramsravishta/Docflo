@@ -169,9 +169,7 @@ export default function InpatientTab({
   }, {} as Record<number, IPDNoteRow[]>);
   const sortedDays = Object.keys(notesByDay).map(Number).sort((a, b) => b - a);
 
-  return (
-    <div className="p-6 space-y-6">
-       return (
+    return (
     <div className="p-6 space-y-8">
       {/* ── Active Admission Dashboard ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">

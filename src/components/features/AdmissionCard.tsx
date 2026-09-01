@@ -1,4 +1,4 @@
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, FileText } from 'lucide-react';
 import type { AdmissionRow } from '../../types/db';
 
 interface AdmissionCardProps {

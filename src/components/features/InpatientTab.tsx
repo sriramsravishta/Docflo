@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mic, Square, Play, Pause, XCircle, FileText, Plus, Clock, ChevronDown, ChevronRight, AlertCircle, Loader2, Calendar } from 'lucide-react';
+import { Mic, Square, Play, Pause, XCircle, FileText, Plus, Clock, ChevronDown, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useIPDRecording } from '../../hooks/useIPDRecording';
 import { createAdmission, triggerGenerateDS } from '../../lib/database';
 import type { AdmissionRow, IPDNoteRow, PatientRow } from '../../types/db';

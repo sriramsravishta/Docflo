@@ -28,49 +28,41 @@ export default function AdmissionCard({ admission, onClick, formatDate }: Admiss
 
   const hasDischargeSummary = admission.discharge_summary && Object.keys(admission.discharge_summary).length > 0;
 
-    return (
+      return (
     <div
       onClick={onClick}
-      className={`bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all ${onClick ? 'cursor-pointer hover:border-blue-300' : ''}`}
+      className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${status.bg} ${status.text}`}>
-            {status.label}
-          </span>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${type.bg} ${type.text}`}>
-            {type.label}
-          </span>
-        </div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
+          {status.label}
+        </span>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${type.bg} ${type.text}`}>
+          {type.label}
+        </span>
         {hasDischargeSummary && (
-          <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-            <FileText className="w-3.5 h-3.5" />
-            DS Ready
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+            DS Available
           </span>
         )}
       </div>
 
-      <h4 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2">
+      <p className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
         {admission.admitting_diagnosis || admission.final_diagnosis || 'No diagnosis recorded'}
-      </h4>
+      </p>
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="flex items-start gap-2 text-gray-600">
-          <Calendar className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" />
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wider">Period</span>
-            <span className="font-medium text-gray-800">
-              {formatDate(admission.admission_date)}
-              {admission.discharge_date ? ` - ${formatDate(admission.discharge_date)}` : ' - Present'}
-            </span>
-          </div>
+      <div className="flex items-center gap-4 text-xs text-gray-500">
+        <div className="flex items-center gap-1">
+          <Calendar className="w-3.5 h-3.5" />
+          <span>
+            {formatDate(admission.admission_date)}
+            {' — '}
+            {admission.discharge_date ? formatDate(admission.discharge_date) : 'Present'}
+          </span>
         </div>
-        <div className="flex items-start gap-2 text-gray-600">
-          <Clock className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" />
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wider">Duration</span>
-            <span className="font-medium text-gray-800">{los} {los === 1 ? 'day' : 'days'}</span>
-          </div>
+        <div className="flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" />
+          <span>{los} {los === 1 ? 'day' : 'days'}</span>
         </div>
       </div>
     </div>

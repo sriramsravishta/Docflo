@@ -123,8 +123,9 @@ function formatEventDate(dt: string): string {
     const { isRecording, isPaused, recordingTime, toast, clearToast, handleStartRecording, handlePauseRecording, handleEndRecording, handleCancelRecording, recordingMode, handleStartRecordingWithMode } =
        useRecording(patientId, user?.id, async () => { await loadPatientData(); }, realtimeEnabled && !chunkedSttEnabled, chunkedSttEnabled);
     const admissionData = useAdmissionData(patientId, user?.id);
-        const showOTNotes = useFeatureFlag('ot_notes');
+                const showOTNotes = useFeatureFlag('ot_notes');
     const showPregnancyTracker = useFeatureFlag('pregnancy_tracker');
+  const SHOW_INPATIENT_TAB = useFeatureFlag('inpatient');
 
   const [uiNow, setUiNow] = useState(Date.now());
   useEffect(() => {

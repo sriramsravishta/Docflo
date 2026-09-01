@@ -171,45 +171,53 @@ export default function InpatientTab({
 
   return (
     <div className="p-6 space-y-6">
-      {/* ── Admission Header Banner ── */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-green-500 p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-          <div>
-            <div className="flex items-center space-x-3 mb-2">
-              <span className="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                Day {daysSinceAdmission}
-              </span>
-              <span className="text-gray-500 text-sm">
-                Admitted {formatDate(active.admission_date)}
-              </span>
+       return (
+    <div className="p-6 space-y-8">
+      {/* ── Active Admission Dashboard ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-md text-center min-w-[80px]">
+              <span className="block text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-0.5">Day</span>
+              <span className="block text-white text-3xl font-black">{daysSinceAdmission}</span>
             </div>
-            <h3 className="text-lg font-bold text-gray-900">{active.admitting_diagnosis || 'No Diagnosis'}</h3>
-            {active.ward_bed && (
-              <p className="text-gray-600 text-sm mt-1">Ward/Bed: {active.ward_bed}</p>
-            )}
+            <div>
+              <h3 className="text-white text-2xl font-bold mb-2 tracking-tight">{active.admitting_diagnosis || 'Undiagnosed Admission'}</h3>
+              <div className="flex items-center gap-4 text-slate-300 text-sm">
+                 <span className="flex items-center font-medium"><Calendar className="w-4 h-4 mr-1.5" /> Admitted {formatDate(active.admission_date)}</span>
+                 {active.ward_bed && (
+                   <span className="flex items-center gap-2">
+                     <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                     <span className="font-medium text-white bg-white/10 px-2.5 py-0.5 rounded text-xs border border-white/10">Ward/Bed: {active.ward_bed}</span>
+                   </span>
+                 )}
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* ── Action Buttons ── */}
-          <div className="flex flex-wrap gap-2">
+        {/* ── Action Bar ── */}
+        <div className="px-6 py-4 bg-slate-50 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200">
+          <div className="flex flex-wrap gap-3">
             {!ipd.isRecording ? (
               <>
                 <button
                   onClick={ipd.handleStartRecording}
-                  className="flex items-center px-4 py-2 bg-[#024CDB] text-white rounded-lg hover:bg-[#023BA3] transition-colors font-medium shadow-sm"
+                  className="flex items-center px-5 py-2.5 bg-[#024CDB] text-white rounded-lg hover:bg-[#023BA3] transition-all font-semibold shadow-sm hover:shadow-md"
                 >
                   <Mic className="w-4 h-4 mr-2" />
-                  Record Note
+                  Record Progress Note
                 </button>
 
                 {active.ds_status === 'generating' || generatingDS ? (
-                  <button disabled className="flex items-center px-4 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium border border-gray-200 cursor-not-allowed">
+                  <button disabled className="flex items-center px-5 py-2.5 bg-gray-100 text-gray-500 rounded-lg font-semibold border border-gray-200 cursor-not-allowed">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Generating...
+                    Generating DS...
                   </button>
                 ) : dsReady ? (
                   <button
                     onClick={() => setShowDSModal(true)}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                    className="flex items-center px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-semibold shadow-sm hover:shadow-md"
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     View Discharge Summary
@@ -218,10 +226,10 @@ export default function InpatientTab({
                   <button
                     onClick={handleGenerateDS}
                     disabled={!hasSuccessfulNotes}
-                    className={`flex items-center px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
+                    className={`flex items-center px-5 py-2.5 rounded-lg font-semibold shadow-sm transition-all ${
                       !hasSuccessfulNotes
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
                     }`}
                   >
                     <FileText className="w-4 h-4 mr-2" />
@@ -230,31 +238,31 @@ export default function InpatientTab({
                 )}
               </>
             ) : (
-              <div className="flex items-center space-x-2 bg-red-50 rounded-lg p-1 border border-red-100">
+              <div className="flex items-center space-x-2 bg-red-50 rounded-lg p-1.5 border border-red-200 shadow-sm">
                 <button
                   onClick={() => ipd.handleEndRecording()}
-                  className="flex items-center px-4 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium shadow-sm animate-pulse"
+                  className="flex items-center px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-bold shadow-sm animate-pulse"
                 >
                   <Square className="w-4 h-4 mr-2" fill="currentColor" />
                   {fmt(ipd.recordingTime)}
                 </button>
                 <button
                   onClick={ipd.handlePauseRecording}
-                  className={`p-1.5 rounded-md transition-colors ${
+                  className={`p-2 rounded-md transition-colors ${
                     ipd.isPaused
                       ? 'bg-[#024CDB] text-white hover:bg-[#023BA3]'
                       : 'text-gray-600 hover:bg-gray-200'
                   }`}
                   title={ipd.isPaused ? 'Resume' : 'Pause'}
                 >
-                  {ipd.isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  {ipd.isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
                 </button>
                 <button
                   onClick={ipd.handleCancelRecording}
-                  className="p-1.5 text-gray-500 hover:bg-gray-200 hover:text-red-600 rounded-md transition-colors"
+                  className="p-2 text-gray-500 hover:bg-gray-200 hover:text-red-600 rounded-md transition-colors"
                   title="Cancel"
                 >
-                  <XCircle className="w-4 h-4" />
+                  <XCircle className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -263,39 +271,48 @@ export default function InpatientTab({
       </div>
 
       {/* ── Notes Timeline ── */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Daily Notes</h3>
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-6 px-1">Timeline & Notes</h3>
 
         {sortedDays.length > 0 ? (
-          <div className="space-y-6">
-            {sortedDays.map(day => (
-              <div key={day} className="space-y-3">
-                <h4 className="text-sm font-semibold text-gray-700 flex items-center">
-                  <span className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center mr-2 text-xs font-bold">
-                    {day}
-                  </span>
-                  Day {day}
-                  {day === daysSinceAdmission && (
-                    <span className="ml-2 text-xs text-green-600 font-normal">Today</span>
-                  )}
-                </h4>
-                <div className="pl-4 ml-3.5 border-l-2 border-gray-100 space-y-3">
-                  {notesByDay[day].map(note => (
-                    <IPDNoteCard
-                      key={note.id}
-                      note={note}
-                      onClick={() => note.status === 'success' && setSelectedNote(note)}
-                    />
-                  ))}
+          <div className="relative mb-8">
+            {/* Timeline vertical line */}
+            <div className="absolute top-0 bottom-0 left-[23px] w-0.5 bg-gray-200" />
+            
+            <div className="space-y-10 relative">
+              {sortedDays.map(day => (
+                <div key={day} className="relative z-10">
+                  <div className="flex items-start">
+                    {/* Circle on line */}
+                    <div className="w-12 h-12 bg-white rounded-full border-4 border-slate-50 flex items-center justify-center shrink-0 shadow-sm z-10 absolute left-0 top-0">
+                      <span className="text-sm font-black text-slate-700">D{day}</span>
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 ml-16 pt-2 min-w-0">
+                       <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center">
+                         Day {day} Notes
+                         {day === daysSinceAdmission && <span className="ml-3 text-emerald-700 text-[10px] font-black bg-emerald-100 px-2.5 py-0.5 rounded-full uppercase tracking-widest border border-emerald-200 shadow-sm">Today</span>}
+                       </h4>
+                       <div className="space-y-3">
+                         {notesByDay[day].map(note => (
+                           <IPDNoteCard
+                             key={note.id}
+                             note={note}
+                             onClick={() => note.status === 'success' && setSelectedNote(note)}
+                           />
+                         ))}
+                       </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <div className="bg-slate-50 rounded-xl border border-dashed border-gray-300 p-12 text-center">
             <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No notes yet</h3>
-            <p className="text-gray-500">Record your first daily note for this admission.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">No notes recorded yet</h3>
+            <p className="text-gray-500 text-sm">Start recording daily progress notes to build the inpatient timeline.</p>
           </div>
         )}
       </div>

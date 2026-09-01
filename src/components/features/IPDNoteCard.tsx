@@ -1,4 +1,4 @@
-import { Loader2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, ChevronRight, Activity, FileText, Stethoscope, ClipboardCheck } from 'lucide-react';
 import type { IPDNoteRow, IPDNoteSummary } from '../../types/db';
 
 interface IPDNoteCardProps {
@@ -7,11 +7,11 @@ interface IPDNoteCardProps {
   formatDate?: (s: string) => string;
 }
 
-const noteTypeLabels: Record<string, string> = {
-  admission_note: 'Admission Note',
-  progress_note: 'Progress Note',
-  procedure_note: 'Procedure Note',
-  pre_discharge: 'Pre-Discharge Note',
+const typeConfig: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+  admission_note: { label: 'Admission Note', icon: Stethoscope, color: 'text-purple-700', bg: 'bg-purple-100' },
+  progress_note: { label: 'Progress Note', icon: FileText, color: 'text-blue-700', bg: 'bg-blue-100' },
+  procedure_note: { label: 'Procedure Note', icon: Activity, color: 'text-orange-700', bg: 'bg-orange-100' },
+  pre_discharge: { label: 'Pre-Discharge Note', icon: ClipboardCheck, color: 'text-emerald-700', bg: 'bg-emerald-100' },
 };
 
 function formatTime(dateStr: string): string {

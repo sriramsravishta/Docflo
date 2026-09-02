@@ -150,9 +150,14 @@ export default function PrescriptionPage() {
                       {med.frequency && <span className="text-xs text-gray-500">{med.frequency}</span>}
                       {med.duration && <span className="text-xs text-gray-500">for {med.duration}</span>}
                       {med.food && <span className="text-xs text-gray-500">{med.food}</span>}
-                      {med.time && Array.isArray(med.time) && med.time.length > 0 && (
-                        <span className="text-xs text-gray-500">{med.time.join(', ')}</span>
-                      )}
+                                           {med.time && (() => {
+                        try {
+                          const t = typeof med.time === 'string' ? JSON.parse(med.time) : med.time;
+                          return Array.isArray(t) && t.length > 0
+                            ? <span className="text-xs text-gray-500">{t.join(', ')}</span>
+                            : med.time ? <span className="text-xs text-gray-500">{med.time}</span> : null;
+                        } catch { return med.time ? <span className="text-xs text-gray-500">{med.time as string}</span> : null; }
+                      })()}
                     </div>
                     {med.instructions && (
                       <p className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-0.5 rounded">

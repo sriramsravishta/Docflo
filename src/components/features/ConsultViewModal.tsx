@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Heart,
   History,
-  MessageCircle,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 import { Mic, Square } from 'lucide-react';
@@ -775,8 +774,7 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     onLoadPrevious,
     onRetryOptimistic,
     onClose,
-        onDownloadPDF,
-    onSendWhatsApp,
+    onDownloadPDF,
     formatDate,
     uiNow,
   } = props;
@@ -1084,20 +1082,12 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             </>
           )}
 
-                    <button
+          <button
             onClick={onDownloadPDF}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>PDF</span>
-          </button>
-
-          <button
-            onClick={onSendWhatsApp}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Send</span>
           </button>
         </>
       ) : (
@@ -1194,20 +1184,12 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             </>
           )}
           
-                    <button
+          <button
             onClick={onDownloadPDF}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>PDF</span>
-          </button>
-
-          <button
-            onClick={onSendWhatsApp}
-            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Send</span>
           </button>
         </>
       ) : (

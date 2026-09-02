@@ -1,5 +1,4 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import PrescriptionPage from './pages/PrescriptionPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { useAuth } from './contexts/AuthContext';
@@ -74,8 +73,7 @@ function AppRoutes() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={passwordRecovery ? <Navigate to="/reset-password" replace /> : <ProtectedRoute><MainPage /></ProtectedRoute>} />
             <Route path="/patient/:patientId" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
-                        <Route path="/pre-consult/:preConsultId" element={<PreConsultForm />} />
-            <Route path="/rx/:token" element={<PrescriptionPage />} />
+            <Route path="/pre-consult/:preConsultId" element={<PreConsultForm />} />
             <Route path="/clinical-summariser" element={<ProtectedRoute><ClinicalSummariserList /></ProtectedRoute>} />
             <Route path="/clinical-summariser/new" element={<ProtectedRoute><NewSummary /></ProtectedRoute>} />
             <Route path="/clinical-summariser/:id" element={<ProtectedRoute><SummaryDetail /></ProtectedRoute>} />

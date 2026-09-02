@@ -1047,35 +1047,10 @@ else{
     printWindow.document.close();
   };
 
-    const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = () => {
     if (!selectedConsult || !patient) return;
-
-    // Generate or reuse share_token
-    let token = selectedConsult.share_token;
-    if (!token) {
-      // Generate a UUID token
-      const newToken = crypto.randomUUID();
-      const { error } = await supabase
-        .from('consult')
-        .update({ share_token: newToken })
-        .eq('id', selectedConsult.id);
-      if (error) { console.error('Failed to generate share token:', error); return; }
-      token = newToken;
-      // Update local state so re-clicks reuse the same token
-      setSelectedConsult((prev: ConsultRow | null) => prev ? { ...prev, share_token: token } : prev);
-    }
-
     const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
-    const appBaseUrl = window.location.origin + window.location.pathname;
-    const prescriptionUrl = `${appBaseUrl}#/rx/${token}`;
-
-    const message =
-      `🩺 Dear ${patient.name},\n\n` +
-      `Thank you for your consultation with ${doctorName} today.\n\n` +
-      `Your prescription is ready. Tap the link below to view it anytime:\n` +
-      `${prescriptionUrl}\n\n` +
-      `Please take your medications as prescribed. Get well soon! 🙏`;
-
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${formatDate(selectedConsult.created_at)}.`;
     let phoneNumber = patient.phone.replace(/\D/g, '');
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');

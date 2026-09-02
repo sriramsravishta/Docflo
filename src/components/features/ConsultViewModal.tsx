@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Heart,
   History,
+  MessageCircle,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
 import { Mic, Square } from 'lucide-react';

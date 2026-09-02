@@ -1193,12 +1193,20 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             </>
           )}
           
-          <button
+                    <button
             onClick={onDownloadPDF}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>PDF</span>
+          </button>
+
+          <button
+            onClick={onSendWhatsApp}
+            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm transition-colors"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Send</span>
           </button>
         </>
       ) : (

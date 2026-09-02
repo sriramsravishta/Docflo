@@ -775,7 +775,8 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     onLoadPrevious,
     onRetryOptimistic,
     onClose,
-    onDownloadPDF,
+        onDownloadPDF,
+    onSendWhatsApp,
     formatDate,
     uiNow,
   } = props;

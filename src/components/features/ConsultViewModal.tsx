@@ -1884,7 +1884,7 @@ function ProcessingState({ consult, uiNow, onRetryOptimistic }: { consult: Consu
         body: JSON.stringify({
           record: { 
             id: consult.id,
-            doc_id: 'e34a9b39-1b59-48c2-be29-42dc52c03f00'
+            doc_id: consult.doc_id  // Use the consult's original doc_id
           }
         })
       });

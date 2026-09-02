@@ -47,7 +47,7 @@ export default function PrescriptionPage() {
         // Fetch patient name (also via anon — patient table RLS should allow this)
         const [{ data: patient }, { data: medicines }] = await Promise.all([
           supabase.from('patients').select('name, age, gender').eq('id', consult.patient_id).maybeSingle(),
-          supabase.from('consult_medicines').select('*').eq('consult_id', consult.id).order('created_at'),
+                    supabase.from('consult_medicine').select('*').eq('consult_id', consult.id).order('created_at'),
         ]);
 
         setData({

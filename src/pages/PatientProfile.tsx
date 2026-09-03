@@ -457,7 +457,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     if (selectedConsult?.id) await loadConsultMedicines(selectedConsult.id);
   };
 
-  const handleSaveConsult = async () => {
+    const handleSaveConsult = async () => {
     try {
       if (!selectedConsult) return;
       const originalSummary = (getConsultSummary(selectedConsult) as ConsultSummary) || {};
@@ -470,6 +470,15 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       const { id: _id, ...payload } = toSave;
       await updateConsultSummary(selectedConsult.id, payload);
       await saveMedicineDraftsToDB();
+
+      // Trigger edit sync — updates summary timeline, outcome, diagnoses
+      // Non-blocking: fire and forget, edit is already saved
+      triggerEditSync(
+        selectedConsult.id,
+        selectedConsult.patient_id,
+        selectedConsult.doc_id
+      );
+
       const { consultsData } = await loadPatientData();
       const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);
       if (updated) setSelectedConsult(updated);

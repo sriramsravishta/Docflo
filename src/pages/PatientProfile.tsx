@@ -38,7 +38,8 @@ import {
   updateConsultMedicine,
   deleteConsultMedicine,
   searchMedicines,
-  updateConsultSummary,
+    updateConsultSummary,
+  triggerEditSync,
   getAppointmentByConsultId, // CHANGED: added for PDF referred_by lookup
   getLocations, // CHANGED: for patient locations multi-select
 } from '../lib/database';

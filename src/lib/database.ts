@@ -1128,7 +1128,28 @@ export const triggerVoiceEdit = async (
   }
 };
 
-
+// Edit Sync — triggers downstream summary/outcome/diagnosis update after any edit
+export const triggerEditSync = async (
+  consultId: string,
+  patientId: string,
+  docId: string
+): Promise<void> => {
+  try {
+    const baseUrl = import.meta.env.VITE_N8N_WEBHOOK_BASE || 'https://atblink.app.n8n.cloud/webhook';
+    await fetch(`${baseUrl}/edit-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        consult_id: consultId,
+        patient_id: patientId,
+        doc_id: docId,
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to trigger edit sync:', e);
+    // Non-blocking — edit is already saved to DB, sync will catch up
+  }
+};
 
 // ============================================
 // IPD (Inpatient) Functions

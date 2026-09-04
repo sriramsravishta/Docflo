@@ -458,7 +458,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     if (selectedConsult?.id) await loadConsultMedicines(selectedConsult.id);
   };
 
-    const handleSaveConsult = async () => {
+  const handleSaveConsult = async () => {
     try {
       if (!selectedConsult) return;
       const originalSummary = (getConsultSummary(selectedConsult) as ConsultSummary) || {};

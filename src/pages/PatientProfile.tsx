@@ -472,13 +472,16 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       await updateConsultSummary(selectedConsult.id, payload);
       await saveMedicineDraftsToDB();
 
-      // Trigger edit sync — updates summary timeline, outcome, diagnoses
-      // Non-blocking: fire and forget, edit is already saved
-      triggerEditSync(
-        selectedConsult.id,
-        selectedConsult.patient_id,
-        selectedConsult.doc_id
-      );
+            // Trigger edit sync — only if consult is older than 6 min
+      // (main pipeline handles it during the initial 5-min wait window)
+      const consultAgeMs = Date.now() - new Date(selectedConsult.created_at).getTime();
+      if (consultAgeMs > 5 * 60 * 1000) {
+        triggerEditSync(
+          selectedConsult.id,
+          selectedConsult.patient_id,
+          selectedConsult.doc_id
+        );
+      }
 
       const { consultsData } = await loadPatientData();
       const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);

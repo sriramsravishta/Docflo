@@ -475,7 +475,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
             // Trigger edit sync — only if consult is older than 6 min
       // (main pipeline handles it during the initial 5-min wait window)
       const consultAgeMs = Date.now() - new Date(selectedConsult.created_at).getTime();
-      if (consultAgeMs > 7 * 60 * 1000) {
+      if (consultAgeMs > 5 * 60 * 1000) {
         triggerEditSync(
           selectedConsult.id,
           selectedConsult.patient_id,

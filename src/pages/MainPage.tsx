@@ -95,13 +95,26 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
   const sortedActiveAppointments = [...filteredActiveAppointments].sort(sortByWhenDesc);
   const pendingActiveAppointments = sortedActiveAppointments.filter((a) => a.completed !== true);
 
-  const hasAnyLocation = filteredActiveAppointments.some((a) => a.location_id);
+    // Resolve which location an appointment belongs to:
+  // 1. Patient has 1 location → use it
+  // 2. Patient has multiple → use appointment.location_id as tiebreaker
+  // 3. Patient has none → fall back to appointment.location_id
+  const getEffectiveLocationId = (a: AppointmentRow): string | null => {
+    const patLocIds = a.patients?.location_ids || [];
+    if (patLocIds.length === 1) return patLocIds[0];
+    if (patLocIds.length > 1) {
+      return (a.location_id && patLocIds.includes(a.location_id)) ? a.location_id : patLocIds[0];
+    }
+    return a.location_id || null;
+  };
+
+  const hasAnyLocation = filteredActiveAppointments.some((a) => getEffectiveLocationId(a));
   const locationGroups = (() => {
     if (!hasAnyLocation) return [];
     const matched = new Set<string>();
     const groups: { key: string; name: string; items: AppointmentRow[] }[] = [];
     locations.forEach((loc) => {
-      const items = filteredActiveAppointments.filter((a) => a.location_id === loc.id);
+      const items = filteredActiveAppointments.filter((a) => getEffectiveLocationId(a) === loc.id);
       if (items.length) {
         items.forEach((i) => matched.add(i.id));
         groups.push({ key: loc.id, name: loc.name, items: [...items].sort(sortByWhenDesc) });

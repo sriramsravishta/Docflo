@@ -33,7 +33,7 @@ export interface AppointmentRow {
   location_id?: string | null;
   scheduled_at?: string | null;
   created_at: string;
-  patients?: Pick<PatientRow, 'id' | 'name' | 'age' | 'gender' | 'phone' | 'last_visit_at' | 'case'>;
+  patients?: Pick<PatientRow, 'id' | 'name' | 'age' | 'gender' | 'phone' | 'last_visit_at' | 'case' | 'location_ids'>;
 }
 
 export interface PreConsultRow {

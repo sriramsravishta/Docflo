@@ -458,7 +458,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     if (selectedConsult?.id) await loadConsultMedicines(selectedConsult.id);
   };
 
-  const handleSaveConsult = async () => {
+    const handleSaveConsult = async () => {
     try {
       if (!selectedConsult) return;
       const originalSummary = (getConsultSummary(selectedConsult) as ConsultSummary) || {};
@@ -472,16 +472,13 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       await updateConsultSummary(selectedConsult.id, payload);
       await saveMedicineDraftsToDB();
 
-            // Trigger edit sync — only if consult is older than 6 min
-      // (main pipeline handles it during the initial 5-min wait window)
-      const consultAgeMs = Date.now() - new Date(selectedConsult.created_at).getTime();
-      if (consultAgeMs > 5.5 * 60 * 1000) {
-        triggerEditSync(
-          selectedConsult.id,
-          selectedConsult.patient_id,
-          selectedConsult.doc_id
-        );
-      }
+      // Trigger edit sync — updates summary timeline, outcome, diagnoses
+      // Non-blocking: fire and forget, edit is already saved
+      triggerEditSync(
+        selectedConsult.id,
+        selectedConsult.patient_id,
+        selectedConsult.doc_id
+      );
 
       const { consultsData } = await loadPatientData();
       const updated = consultsData.find((c: ConsultRow) => c.id === selectedConsult.id);
@@ -694,33 +691,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     const ptUhid = patient?.uhid;
     const ptPhone = patient?.phone;
 
-           // Print header (if enabled)
-    const brandColor = presConfig?.brand_color || '#024CDB';
-    const printHeaderEnabled = presConfig?.print_header_enabled || false;
-    const printFooterEnabled = presConfig?.print_footer_enabled || false;
-
-    let headerHtml = '';
-    if (printHeaderEnabled) {
-      const hName = presConfig?.print_header_doctor_name || doctorName || '';
-      const hQual = presConfig?.print_header_qualifications || '';
-      const hReg = presConfig?.print_header_reg_no || '';
-      const hContact = presConfig?.print_header_contact || '';
-      const hClinic = presConfig?.print_header_clinic_name || '';
-      const hAddr = presConfig?.print_header_clinic_address || '';
-      const logoUrl = presConfig?.logo_url || '';
-      const hasLogo = !!logoUrl;
-      headerHtml = `<div class="pres-header">
-        <div class="header-info">
-          <p class="header-name">${escapeHtml(hName)}</p>
-          ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` | Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
-          ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
-          ${hClinic || hAddr ? `<p class="header-contact">${[hClinic, hAddr].filter(Boolean).map(s => escapeHtml(s!)).join(', ')}</p>` : ''}
-        </div>
-        ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ''}
-      </div>`;
-    }
-
-    let content = `<div class="pres-wrapper">${headerHtml}<div class="pt-info">`;
+    let content = `<div class="pres-wrapper"><div class="pt-info">`;
 
     content += `<div class="pt-row">`;
     content += `<div><p class="pt-name">${escapeHtml(ptDisplay)}</p></div>`;
@@ -888,14 +859,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
           <p class="sig-date">Visit Date: ${escapeHtml(sigDate)}</p>
         </div>
       </div>
-        `;
-
-    // Print footer (if enabled)
-    if (printFooterEnabled && presConfig?.print_footer_text) {
-      content += `<div class="pres-footer" style="border-top-color:${brandColor}">
-        ${presConfig.print_footer_text.split('\n').map((l: string) => `<p>${escapeHtml(l)}</p>`).join('')}
-      </div>`;
-    }
+    `;
 
     content += `</div>`;
        return content;
@@ -1008,9 +972,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       ? doctorNameResult
       : user?.user_metadata?.display_name || '—';
 
-                              const isOTNote = (selectedConsult as any)?.type === 'ot_note';
-        const printHeaderEnabled = (presConfigResult as any)?.print_header_enabled || false;
-        const printFooterEnabled = (presConfigResult as any)?.print_footer_enabled || false;
+               const isOTNote = (selectedConsult as any)?.type === 'ot_note';
         let htmlContent = isOTNote
           ? generateOTNotePDFContent(selectedConsult, finalDoctorName)
           : generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, presConfigResult);
@@ -1074,21 +1036,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
 .sig-date{font-size:12px;color:#555;margin:0}
 
-/* Print header — clean white, doc left, logo right */
-.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}
-.header-info{flex:1;text-align:left}
-.header-logo{flex-shrink:0}
-.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}
-.header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}
-.header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
-.header-contact{font-size:11px;color:#555;margin:2px 0 0}
-
-/* Print footer — thin accent line + centered text */
-.pres-footer{border-top:3px solid ${brandColor};padding:8px 20px;text-align:center}
-.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
-
-/* Page margins — reduced when digital header/footer are active */
-@page{margin-top:${printHeaderEnabled ? '12mm' : '198px'};margin-bottom:${printFooterEnabled ? '12mm' : '138px'};margin-left:12mm;margin-right:12mm}
+/* Page margins dictate the spacing around the border */
+@page{margin-top:198px;margin-bottom:138px;margin-left:12mm;margin-right:12mm}
 
 /* FIX: Removed the code that hid the borders during print */
 @media print{body{margin:0}}
@@ -1108,8 +1057,9 @@ else{
     printWindow.document.close();
   };
 
-            const handleSavePDF = async () => {
+    const handleSavePDF = async () => {
     if (!selectedConsult || !patient) return;
+    // Reuse the same print logic but trigger download instead of print
     const attachedChartNames = (selectedConsult.consult_summary_final as any)?.attached_diet_charts || [];
     const [appt, doctorNameResult, chartData, presConfigResult] = await Promise.all([
       getAppointmentByConsultId(selectedConsult.id).catch(() => null),
@@ -1132,141 +1082,90 @@ else{
     const referredBy = appt?.referred_by || undefined;
     const finalDoctorName = typeof doctorNameResult === 'string' ? doctorNameResult : user?.user_metadata?.display_name || '—';
     const isOTNote = (selectedConsult as any)?.type === 'ot_note';
+    // For Save, always include header/footer (since user wants a complete document)
     const saveConfig = { ...(presConfigResult as Record<string, any>), print_header_enabled: true, print_footer_enabled: true };
     let htmlContent = isOTNote
       ? generateOTNotePDFContent(selectedConsult, finalDoctorName)
       : generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, saveConfig);
-
     for (const chart of (chartData as any[])) {
       for (const url of (chart.file_urls || [])) {
         htmlContent += `<div style="page-break-before: always; text-align: center; padding: 0;"><img src="${url}" style="width: 100%; max-width: 794px;" /></div>`;
       }
     }
-
+    // Build filename: PatientName_Age_Gender
     const ptName = (patient?.name || 'Patient').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
     const ptAge = patient?.age || '';
     const ptGender = patient?.gender || '';
     const fileName = `${ptName}_${ptAge}_${ptGender}`;
-
-    const container = document.createElement('div');
-    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px';
-    container.innerHTML = `<style>
-*{box-sizing:border-box}body{margin:0}
-.pres-wrapper{border:1.5px solid #111;margin:0;padding:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#111}
-.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}
-.header-info{flex:1;text-align:left}
-.header-logo{flex-shrink:0}
-.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}
-.header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}
-.header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
-.header-contact{font-size:11px;color:#555;margin:2px 0 0}
+    const saveWindow = window.open('', '_blank');
+    if (!saveWindow) { alert('Pop-up blocked. Please allow pop-ups to save the PDF.'); return; }
+    saveWindow.document.open();
+    saveWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>${fileName}</title><style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;font-size:14px;background:#fff}
+.pres-wrapper{border:1.5px solid #111;margin:0;padding:0}
 .pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}
 .pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}
 .pt-name{font-size:16px;font-weight:700;text-transform:uppercase;color:#111;margin:0 0 4px 0}
-.pt-meta{font-size:13px;color:#333}.pt-label{font-weight:400;color:#555}.pt-val{font-weight:400;color:#111}.pt-date-val{font-weight:700;color:#111}
-.section{margin:0;padding:12px 16px;border-bottom:1px solid #ccc}.section:last-child{border-bottom:none}
+.pt-meta{font-size:13px;color:#333}
+.pt-label{font-weight:400;color:#555}
+.pt-val{font-weight:400;color:#111}
+.pt-date-val{font-weight:700;color:#111}
+.section{margin:0;padding:12px 16px 12px 16px;border-bottom:1px solid #ccc}
+.section:last-child{border-bottom:none}
 .section-header{font-size:14px;font-weight:700;color:#111;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.02em}
 .section-text{margin:4px 0;font-size:14px;color:#222}
 .sub-label{font-size:12px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}
-.section-list{margin:4px 0 4px 18px;padding:0}.section-list li{font-size:14px;margin-bottom:3px;color:#222}
+.section-list{margin:4px 0 4px 18px;padding:0}
+.section-list li{font-size:14px;margin-bottom:3px;color:#222}
 .inv-priority{font-size:12px;color:#666;font-style:italic}
 .med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
 .med-table thead tr{background:#f3f4f6}
 .med-table th{text-align:left;padding:7px 8px;font-size:12px;font-weight:700;border:1px solid #d1d5db;color:#333}
 .med-table td{padding:7px 8px;border:1px solid #d1d5db;vertical-align:top;color:#222}
-.th-num,.td-num{width:28px;text-align:center}.th-man,.td-man{width:90px;text-align:center}.th-dur,.td-dur{width:80px}.th-detail,.td-detail{width:140px}
-.td-name strong{font-size:13px;font-weight:700}.med-sub{font-size:12px;color:#555;margin-top:2px}.med-instruction{font-size:12px;color:#555;margin-top:3px;font-style:italic}
-.row-even{background:#fff}.row-odd{background:#f9fafb}
-.man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
-.signature-wrapper{break-inside:avoid}.signature{text-align:right;padding:24px 20px 16px 16px}.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}.sig-date{font-size:12px;color:#555;margin:0}
-.pres-footer{border-top:3px solid #024CDB;padding:8px 20px;text-align:center}.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
-</style>${htmlContent}`;
-    document.body.appendChild(container);
-
-    try {
-      const { default: html2pdf } = await import('html2pdf.js');
-      await html2pdf().set({
-        margin: [10, 10, 10, 10],
-        filename: `${fileName}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      }).from(container).save();
-    } catch (err) {
-      console.error('PDF save error:', err);
-      alert('Failed to save PDF. Please try Print instead.');
-    } finally {
-      document.body.removeChild(container);
-    }
+.th-num,.td-num{width:28px;text-align:center}
+.th-man,.td-man{width:90px;text-align:center}
+.th-dur,.td-dur{width:80px}
+.th-detail,.td-detail{width:140px}
+.td-name strong{font-size:13px;font-weight:700}
+.med-sub{font-size:12px;color:#555;margin-top:2px}
+.med-instruction{font-size:12px;color:#555;margin-top:3px;font-style:italic}
+.row-even{background:#fff}
+.row-odd{background:#f9fafb}
+.man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}
+.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}
+.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}
+.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}
+.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
+.signature-wrapper{break-inside:avoid;page-break-inside:avoid}
+.signature{text-align:right;padding:24px 20px 16px 16px}
+.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}
+.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
+.sig-date{font-size:12px;color:#555;margin:0}
+.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;color:#fff}
+.header-left{flex:1}
+.header-name{font-size:17px;font-weight:700;margin:0;letter-spacing:0.02em}
+.header-qual{font-size:11.5px;margin:3px 0 0;opacity:0.9}
+.header-right{text-align:right;flex-shrink:0;margin-left:24px}
+.header-clinic{font-size:12px;font-weight:600;margin:0;opacity:0.95}
+.header-addr{font-size:11px;margin:2px 0 0;opacity:0.85}
+.pres-footer{border-top:3px solid #024CDB;padding:8px 20px;text-align:center}
+.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
+@page{margin:12mm}
+@media print{body{margin:0}}
+</style></head><body>${htmlContent}<script>
+var imgs=document.images;
+if(imgs.length===0){window.print();}
+else{var n=0;function tryPrint(){n++;if(n>=imgs.length){window.print();}}
+for(var i=0;i<imgs.length;i++){if(imgs[i].complete)tryPrint();else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}
+</script></body></html>`);
+    saveWindow.document.close();
   };
-            const handleSendWhatsApp = async () => {
+
+  const handleSendWhatsApp = () => {
     if (!selectedConsult || !patient) return;
-
-    const rawDoctorName = user?.user_metadata?.name || user?.email || 'Doctor';
-    const cleanName = rawDoctorName.replace(/^Dr\.?\s*/i, '').trim();
-
-    // Generate or reuse share_token
-    let token = (selectedConsult as any).share_token;
-    if (!token) {
-      const newToken = crypto.randomUUID();
-      const { error } = await supabase
-        .from('consult')
-        .update({ share_token: newToken })
-        .eq('id', selectedConsult.id);
-      if (error) { console.error('Failed to generate share token:', error); return; }
-      token = newToken;
-      setSelectedConsult((prev: any) => prev ? { ...prev, share_token: token } : prev);
-    }
-
-    const appBaseUrl = window.location.origin + window.location.pathname;
-    const prescriptionUrl = `${appBaseUrl}#/rx/${token}`;
-
-    // Fetch WA branding config
-    let waConfig: Record<string, any> = {};
-    if (user?.id) {
-      try {
-        const { data } = await supabase
-          .from('organizations')
-          .select('prescription_config')
-          .eq('auth_id', user.id)
-          .single();
-        waConfig = data?.prescription_config || {};
-      } catch {}
-    }
-
-    const lines: string[] = [];
-
-    // WA Header (if enabled — strip non-ASCII to avoid broken characters)
-    if (waConfig.wa_header_enabled && waConfig.wa_header_text) {
-      lines.push(waConfig.wa_header_text.replace(/[^\x00-\x7F]/g, '').trim());
-      lines.push('');
-    }
-
-    lines.push(`Dear ${patient.name},`);
-    lines.push('');
-    lines.push(`Thank you for your visit with *Dr. ${cleanName}* on *${formatDate(selectedConsult.created_at)}*. It was a pleasure seeing you today.`);
-    lines.push('');
-    lines.push('Your prescription is ready. Tap the link below to view it anytime:');
-    lines.push(prescriptionUrl);
-    lines.push('');
-    lines.push('Please take your medications on time and follow the instructions discussed during your consultation. A little care goes a long way!');
-    lines.push('');
-    lines.push('If you have any questions, we are always here for you.');
-    lines.push('');
-    lines.push('Wishing you good health and happiness.');
-    lines.push('');
-    lines.push('Warm regards,');
-    lines.push(`*Dr. ${cleanName}*`);
-    if (waConfig.department) lines.push(waConfig.department);
-
-    // WA Footer (if enabled)
-    if (waConfig.wa_footer_enabled && waConfig.wa_footer_text) {
-      lines.push('');
-      lines.push('---');
-      lines.push(waConfig.wa_footer_text.replace(/[^\x00-\x7F]/g, '').trim());
-    }
-
-    const message = lines.join('\n');
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${formatDate(selectedConsult.created_at)}.`;
     let phoneNumber = patient.phone.replace(/\D/g, '');
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
@@ -2155,7 +2054,7 @@ else{
       setSelectedConsult(null);
       handleCancelEdit(); // ensures edit mode is reset when closing (same outcome as before)
     }}
-        onDownloadPDF={handleDownloadPDF}
+    onDownloadPDF={handleDownloadPDF}
     onSavePDF={handleSavePDF}
     onSendWhatsApp={handleSendWhatsApp}
     formatDate={formatDate}

@@ -16,10 +16,9 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 
 /* Header — clean white with optional logo */
 .pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}
+.header-info{flex:1;text-align:left}
 .header-logo{flex-shrink:0}
-.header-logo img{max-height:50px;width:auto}
-.header-info{text-align:right;flex:1}
-.header-info.no-logo{text-align:left}
+.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}
 .header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}
 .header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
 .header-contact{font-size:11px;color:#555;margin:2px 0 0}

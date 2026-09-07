@@ -87,7 +87,8 @@ interface ConsultViewModalProps {
 
   // existing
   onClose: () => void;
-  onDownloadPDF: () => void;
+    onDownloadPDF: () => void;
+  onSavePDF?: () => void;
   onSendWhatsApp: () => void;
   formatDate: (s: string) => string;
   uiNow: number;

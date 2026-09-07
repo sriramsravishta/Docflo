@@ -252,10 +252,11 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     setAppointmentToRemove(null);
   };
 
-    const handleSendBookingWhatsApp = (appointment: AppointmentRow) => {
+        const handleSendBookingWhatsApp = (appointment: AppointmentRow) => {
     const pt = appointment.patients;
     if (!pt?.phone) return;
-    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const rawDoctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const cleanName = rawDoctorName.replace(/^Dr\.?\s*/i, '').trim();
     const locName = locations.find(l => l.id === appointment.location_id)?.name || '';
 
     const scheduledAt = appointment.scheduled_at
@@ -271,18 +272,18 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     const lines: string[] = [];
     lines.push(`Dear ${pt.name},`);
     lines.push('');
-    lines.push(`Your appointment with *Dr. ${doctorName}* has been confirmed! ✅`);
+    lines.push(`Your appointment with *Dr. ${cleanName}* has been confirmed.`);
     lines.push('');
     lines.push('*Appointment Details:*');
-    lines.push(`📅 ${dateStr}`);
-    lines.push(`🕐 ${timeStr}`);
-    if (locName) lines.push(`📍 ${locName}`);
+    lines.push(`Date: ${dateStr}`);
+    lines.push(`Time: ${timeStr}`);
+    if (locName) lines.push(`Location: ${locName}`);
     lines.push('');
     lines.push('Please arrive 10 minutes before your scheduled time. Kindly carry any previous prescriptions, reports, or medical records for the doctor to review.');
     lines.push('');
     lines.push('For any changes or queries, please contact us in advance.');
     lines.push('');
-    lines.push('Thank you & see you soon! 🙏');
+    lines.push('Thank you & see you soon.');
 
     const message = lines.join('\n');
     let phoneNumber = pt.phone.replace(/\D/g, '');

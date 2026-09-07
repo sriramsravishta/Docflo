@@ -15,7 +15,6 @@ import FavouritesPage from './pages/FavouritesPage';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import PrescriptionPage from './pages/PrescriptionPage';
-import PrescriptionPage from './pages/PrescriptionPage';
 
 // Pharmacy pages
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';

@@ -1083,8 +1083,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
 .header-contact{font-size:11px;color:#555;margin:2px 0 0}
 
-/* Print footer — thin accent line + centered text */
-.pres-footer{border-top:3px solid ${brandColor};padding:8px 20px;text-align:center}
+/* Print footer */
+.pres-footer{border-top:1px solid #d1d5db;padding:8px 20px;text-align:center}
 .pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
 
 /* Page margins — reduced when digital header/footer are active */

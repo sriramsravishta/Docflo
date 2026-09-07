@@ -886,7 +886,14 @@ const resetDrafts: Record<string, MedicineDraft> = {};
           <p class="sig-date">Visit Date: ${escapeHtml(sigDate)}</p>
         </div>
       </div>
-    `;
+        `;
+
+    // Print footer (if enabled)
+    if (printFooterEnabled && presConfig?.print_footer_text) {
+      content += `<div class="pres-footer" style="border-top-color:${brandColor}">
+        ${presConfig.print_footer_text.split('\n').map((l: string) => `<p>${escapeHtml(l)}</p>`).join('')}
+      </div>`;
+    }
 
     content += `</div>`;
        return content;

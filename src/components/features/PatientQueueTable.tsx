@@ -322,7 +322,7 @@ export default function PatientQueueTable({
       </div>
 
       <div className="md:hidden">
-        {appointments.map((apt) => (
+                {appointments.map((apt) => (
           <MobileRow
             key={apt.id}
             appointment={apt}
@@ -331,6 +331,7 @@ export default function PatientQueueTable({
             onMoveDown={onMoveDown}
             onRemove={onRemove}
             onReschedule={onReschedule}
+            onSendWhatsApp={onSendWhatsApp}
             showKebabMenu={showKebabMenu}
             setShowKebabMenu={setShowKebabMenu}
             formatDate={formatDate}

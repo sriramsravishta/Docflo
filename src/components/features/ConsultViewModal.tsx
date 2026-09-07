@@ -1184,7 +1184,7 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
                   <button
                     onClick={voiceEdit.cancelEditRecording}
                     className="px-2 py-1.5 text-gray-500 hover:text-red-600 text-sm transition-colors"
-                  > 
+                  >
                     Cancel
                   </button>
                 </>

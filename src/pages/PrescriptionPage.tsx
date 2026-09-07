@@ -187,7 +187,7 @@ export default function PrescriptionPage() {
 
       // Footer
       const footerText = (presConfig.print_footer_text||'').replace(/[^\x00-\x7F]/g,'').trim();
-      if (footerText) c += `<div class="pres-footer" style="border-top:3px solid ${brandColor}">${footerText.split('\n').map((l:string)=>`<p>${escapeHtml(l.trim())}</p>`).join('')}</div>`;
+            if (footerText) c += `<div class="pres-footer">${footerText.split('\n').map((l:string)=>`<p>${escapeHtml(l.trim())}</p>`).join('')}</div>`;
       c += `</div>`;
       setHtmlContent(c);
       setLoading(false);

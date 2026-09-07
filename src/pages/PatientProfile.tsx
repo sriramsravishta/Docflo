@@ -1106,7 +1106,7 @@ else{
     printWindow.document.close();
   };
 
-        const handleSendWhatsApp = async () => {
+            const handleSendWhatsApp = async () => {
     if (!selectedConsult || !patient) return;
 
     const rawDoctorName = user?.user_metadata?.name || user?.email || 'Doctor';
@@ -1143,7 +1143,7 @@ else{
 
     const lines: string[] = [];
 
-    // WA Header (if enabled)
+    // WA Header (if enabled — strip non-ASCII to avoid broken characters)
     if (waConfig.wa_header_enabled && waConfig.wa_header_text) {
       lines.push(waConfig.wa_header_text.replace(/[^\x00-\x7F]/g, '').trim());
       lines.push('');

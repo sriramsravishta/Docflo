@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronUp, ChevronDown, Trash2, ChevronRight, CalendarClock } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, ChevronRight, CalendarClock, MessageCircle } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 import { formatDateTimeShort, formatTimeShort } from '../../lib/utils';
 
@@ -17,6 +17,7 @@ interface Appointment {
     name: string;
     age: number;
     gender: string;
+    phone?: string;
     last_visit_at?: string;
     case?: string;
   };
@@ -29,6 +30,7 @@ interface PatientQueueTableProps {
   onMoveDown: (a: Appointment) => void;
   onRemove: (a: Appointment) => void;
   onReschedule?: (a: Appointment) => void;
+  onSendWhatsApp?: (a: Appointment) => void;
   showKebabMenu: string | null;
   setShowKebabMenu: (id: string | null) => void;
   formatDate: (s: string) => string;

@@ -429,18 +429,19 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                             {group.items.length}
                           </span>
                         </div>
-                        <PatientQueueTable
-                          appointments={group.items}
-                          pendingOnly={group.items.filter((a) => a.completed !== true)}
-                          onMoveUp={onMoveUp}
-                          onMoveDown={onMoveDown}
-                          onRemove={handleRemoveClick}
-                          onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
-                          showKebabMenu={showKebabMenu}
-                          setShowKebabMenu={setShowKebabMenu}
-                          formatDate={formatDate}
-                          showActions={true}
-                        />
+                                            <PatientQueueTable
+                      appointments={group.items}
+                      pendingOnly={group.items.filter((a) => a.completed !== true)}
+                      onMoveUp={onMoveUp}
+                      onMoveDown={onMoveDown}
+                      onRemove={handleRemoveClick}
+                      onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
+                      onSendWhatsApp={(a) => handleSendBookingWhatsApp(a as unknown as AppointmentRow)}
+                      showKebabMenu={showKebabMenu}
+                      setShowKebabMenu={setShowKebabMenu}
+                      formatDate={formatDate}
+                      showActions={true}
+                    />
                       </div>
                     ))}
                   </div>

@@ -132,8 +132,9 @@ export default function PrescriptionPage() {
           <div class="header-info">
             <p class="header-name">${escapeHtml(hName)}</p>
             ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` | Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
-            ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
+                       ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
           </div>
+          ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ''}
         </div>`;
       }
 

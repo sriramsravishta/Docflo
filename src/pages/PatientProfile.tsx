@@ -1060,10 +1060,53 @@ else{
     printWindow.document.close();
   };
 
-  const handleSendWhatsApp = () => {
+    const handleSendWhatsApp = async () => {
     if (!selectedConsult || !patient) return;
     const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
-    const message = `Hi ${patient.name}, here is your consultation summary for your visit with Dr ${doctorName} on ${formatDate(selectedConsult.created_at)}.`;
+
+    // Fetch WA branding config
+    let waConfig: Record<string, any> = {};
+    if (user?.id) {
+      try {
+        const { data } = await supabase
+          .from('organizations')
+          .select('prescription_config')
+          .eq('auth_id', user.id)
+          .single();
+        waConfig = data?.prescription_config || {};
+      } catch {}
+    }
+
+    const lines: string[] = [];
+
+    // WA Header (if enabled)
+    if (waConfig.wa_header_enabled && waConfig.wa_header_text) {
+      lines.push(waConfig.wa_header_text);
+      lines.push('');
+    }
+
+    lines.push(`Dear ${patient.name},`);
+    lines.push('');
+    lines.push(`Thank you for your visit with *Dr. ${doctorName}* on *${formatDate(selectedConsult.created_at)}*. It was a pleasure seeing you today! 😊`);
+    lines.push('');
+    lines.push('Your prescription has been prepared. Please take your medications on time and follow the instructions discussed during your consultation.');
+    lines.push('');
+    lines.push('A little care goes a long way — take good care of yourself! If you have any questions or need anything at all, we are always here for you.');
+    lines.push('');
+    lines.push('Wishing you good health and happiness! 🙏');
+    lines.push('');
+    lines.push('Warm regards,');
+    lines.push(`*Dr. ${doctorName}*`);
+    if (waConfig.department) lines.push(waConfig.department);
+
+    // WA Footer (if enabled)
+    if (waConfig.wa_footer_enabled && waConfig.wa_footer_text) {
+      lines.push('');
+      lines.push('─────────────');
+      lines.push(waConfig.wa_footer_text);
+    }
+
+    const message = lines.join('\n');
     let phoneNumber = patient.phone.replace(/\D/g, '');
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');

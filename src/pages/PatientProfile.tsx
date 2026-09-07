@@ -892,7 +892,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
 
     // Print footer (if enabled)
     if (printFooterEnabled && presConfig?.print_footer_text) {
-      content += `<div class="pres-footer" style="border-top-color:${brandColor}">
+            content += `<div class="pres-footer">
         ${presConfig.print_footer_text.split('\n').map((l: string) => `<p>${escapeHtml(l)}</p>`).join('')}
       </div>`;
     }

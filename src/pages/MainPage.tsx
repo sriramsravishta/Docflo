@@ -446,13 +446,14 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                     ))}
                   </div>
                 ) : (
-                  <PatientQueueTable
+                                    <PatientQueueTable
                     appointments={sortedActiveAppointments}
                     pendingOnly={pendingActiveAppointments}
                     onMoveUp={onMoveUp}
                     onMoveDown={onMoveDown}
                     onRemove={handleRemoveClick}
                     onReschedule={(a) => setRescheduleTarget(a as unknown as AppointmentRow)}
+                    onSendWhatsApp={(a) => handleSendBookingWhatsApp(a as unknown as AppointmentRow)}
                     showKebabMenu={showKebabMenu}
                     setShowKebabMenu={setShowKebabMenu}
                     formatDate={formatDate}

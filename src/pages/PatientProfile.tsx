@@ -694,7 +694,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     const ptUhid = patient?.uhid;
     const ptPhone = patient?.phone;
 
-        // Print header (if enabled)
+           // Print header (if enabled)
     const brandColor = presConfig?.brand_color || '#024CDB';
     const printHeaderEnabled = presConfig?.print_header_enabled || false;
     const printFooterEnabled = presConfig?.print_footer_enabled || false;
@@ -703,18 +703,20 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     if (printHeaderEnabled) {
       const hName = presConfig?.print_header_doctor_name || doctorName || '';
       const hQual = presConfig?.print_header_qualifications || '';
+      const hReg = presConfig?.print_header_reg_no || '';
+      const hContact = presConfig?.print_header_contact || '';
       const hClinic = presConfig?.print_header_clinic_name || '';
       const hAddr = presConfig?.print_header_clinic_address || '';
-      const hReg = presConfig?.print_header_reg_no || '';
-      headerHtml = `<div class="pres-header" style="background:${brandColor}">
-        <div class="header-left">
+      const logoUrl = presConfig?.logo_url || '';
+      const hasLogo = !!logoUrl;
+      headerHtml = `<div class="pres-header">
+        <div class="header-info">
           <p class="header-name">${escapeHtml(hName)}</p>
-          ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` · Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
+          ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` | Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
+          ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
+          ${hClinic || hAddr ? `<p class="header-contact">${[hClinic, hAddr].filter(Boolean).map(s => escapeHtml(s!)).join(', ')}</p>` : ''}
         </div>
-        ${hClinic || hAddr ? `<div class="header-right">
-          ${hClinic ? `<p class="header-clinic">${escapeHtml(hClinic)}</p>` : ''}
-          ${hAddr ? `<p class="header-addr">${escapeHtml(hAddr)}</p>` : ''}
-        </div>` : ''}
+        ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ''}
       </div>`;
     }
 

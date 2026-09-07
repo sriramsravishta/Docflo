@@ -1157,7 +1157,7 @@ else{
 .man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
 .signature-wrapper{break-inside:avoid;page-break-inside:avoid}.signature{text-align:right;padding:24px 20px 16px 16px}.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}.sig-date{font-size:12px;color:#555;margin:0}
 .pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;color:#fff}.header-left{flex:1}.header-name{font-size:17px;font-weight:700;margin:0;letter-spacing:0.02em}.header-qual{font-size:11.5px;margin:3px 0 0;opacity:0.9}.header-right{text-align:right;flex-shrink:0;margin-left:24px}.header-clinic{font-size:12px;font-weight:600;margin:0;opacity:0.95}.header-addr{font-size:11px;margin:2px 0 0;opacity:0.85}
-.pres-footer{border-top:3px solid #024CDB;padding:8px 20px;text-align:center}.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
+.pres-footer{border-top:1px solid #d1d5db;padding:8px 20px;text-align:center}.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
 @page{margin:12mm}@media print{body{margin:0}}
 </style></head><body>${htmlContent}<script>
 var imgs=document.images;if(imgs.length===0){window.print();}else{var n=0;function tryPrint(){n++;if(n>=imgs.length){window.print();}}for(var i=0;i<imgs.length;i++){if(imgs[i].complete)tryPrint();else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}</script></body></html>`);

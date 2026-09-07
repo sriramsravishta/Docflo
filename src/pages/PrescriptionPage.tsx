@@ -71,8 +71,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
   .th-detail,.td-detail{display:none}
   .th-man,.td-man{width:70px}
   .pres-header{flex-direction:column;gap:8px;align-items:center;text-align:center}
-  .header-info{text-align:center}
-  .header-info.no-logo{text-align:center}
+    .header-info{text-align:center}
 }
 `;
 

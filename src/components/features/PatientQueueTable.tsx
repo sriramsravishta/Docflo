@@ -46,6 +46,7 @@ function MobileRow({
   onMoveDown,
   onRemove,
   onReschedule,
+  onSendWhatsApp,
   showKebabMenu,
   setShowKebabMenu,
   formatDate,
@@ -57,11 +58,13 @@ function MobileRow({
   onMoveDown: (a: Appointment) => void;
   onRemove: (a: Appointment) => void;
   onReschedule?: (a: Appointment) => void;
+  onSendWhatsApp?: (a: Appointment) => void;
   showKebabMenu: string | null;
   setShowKebabMenu: (id: string | null) => void;
   formatDate: (s: string) => string;
   showActions?: boolean;
 }) {
+  
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const p = appointment.patients;
@@ -138,7 +141,7 @@ function MobileRow({
       Delete
     </button>
 
-    {onReschedule && (
+       {onReschedule && (
       <button
         type="button"
         onClick={() => onReschedule(appointment)}
@@ -146,6 +149,17 @@ function MobileRow({
       >
         <CalendarClock className="w-4 h-4" />
         Reschedule
+      </button>
+    )}
+
+    {onSendWhatsApp && appointment.patients?.phone && (
+      <button
+        type="button"
+        onClick={() => onSendWhatsApp(appointment)}
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-50"
+      >
+        <MessageCircle className="w-4 h-4" />
+        Send Booking
       </button>
     )}
 

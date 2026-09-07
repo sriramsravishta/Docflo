@@ -195,6 +195,7 @@ export default function PatientQueueTable({
   onMoveDown,
   onRemove,
   onReschedule,
+  onSendWhatsApp,
   showKebabMenu,
   setShowKebabMenu,
   formatDate,

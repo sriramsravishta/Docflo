@@ -16,9 +16,10 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 
 /* Header — clean white with optional logo */
 .pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}
-.header-info{flex:1;text-align:left}
 .header-logo{flex-shrink:0}
-.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}
+.header-logo img{max-height:50px;width:auto}
+.header-info{text-align:right;flex:1}
+.header-info.no-logo{text-align:left}
 .header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}
 .header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
 .header-contact{font-size:11px;color:#555;margin:2px 0 0}
@@ -71,7 +72,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
   .th-detail,.td-detail{display:none}
   .th-man,.td-man{width:70px}
   .pres-header{flex-direction:column;gap:8px;align-items:center;text-align:center}
-    .header-info{text-align:center}
+  .header-info{text-align:center}
+  .header-info.no-logo{text-align:center}
 }
 `;
 
@@ -127,13 +129,13 @@ export default function PrescriptionPage() {
       let headerHtml = '';
       if (hName) {
         const hasLogo = !!logoUrl;
-                headerHtml = `<div class="pres-header">
-          <div class="header-info">
+        headerHtml = `<div class="pres-header">
+          ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="Logo" /></div>` : ''}
+          <div class="header-info${hasLogo ? '' : ' no-logo'}">
             <p class="header-name">${escapeHtml(hName)}</p>
             ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` | Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
-                       ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
+            ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
           </div>
-          ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ''}
         </div>`;
       }
 

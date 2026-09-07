@@ -1,89 +1,285 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import {
+  normalizeTime,
+  escapeHtml,
+  toHtmlList,
+} from '../lib/utils';
+import type { DiagnosisSummary, TreatmentSummary, InvestigationsSummary } from '../types/db';
 
-interface PrescriptionData {
-  consult: any;
-  patient: any;
-  medicines: any[];
-  orgConfig: any;
+function formatDate(s: string) {
+  try {
+    return new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return s;
+  }
 }
 
-function getSummaryField(summary: any, field: string): string | null {
-  if (!summary) return null;
-  const val = summary[field];
-  if (!val) return null;
-
-  if (typeof val === 'string') return val;
-
-  // Handle structured objects
-  if (field === 'diagnosis') {
-    const d = val as any;
-    const prov = Array.isArray(d.provisional) ? d.provisional : [];
-    const clean = prov.filter((s: string) => !s.includes('AI-INFERRED'));
-    return clean.length ? clean.join('\n') : null;
-  }
-  if (field === 'investigations') {
-    const ordered = Array.isArray((val as any).ordered) ? (val as any).ordered : [];
-    if (ordered.length) return ordered.map((o: any) => `${o.name || o}${o.priority ? ` (${o.priority})` : ''}`).join('\n');
-    return null;
-  }
-  if (field === 'treatment_suggested') {
-    const t = val as any;
-    const imm = Array.isArray(t.immediate_plan) ? t.immediate_plan : [];
-    return imm.length ? imm.join('\n') : null;
-  }
-  if (Array.isArray(val)) return val.join('\n');
-  return String(val);
+const PRES_CSS = `
+.pres-wrapper{border:1.5px solid #111;margin:0;padding:0;background:#fff;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#111}
+.pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}
+.pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}
+.pt-name{font-size:16px;font-weight:700;text-transform:uppercase;color:#111;margin:0 0 4px 0}
+.pt-meta{font-size:13px;color:#333}
+.pt-label{font-weight:400;color:#555}
+.pt-val{font-weight:400;color:#111}
+.pt-date-val{font-weight:700;color:#111}
+.section{margin:0;padding:12px 16px 12px 16px;border-bottom:1px solid #ccc}
+.section:last-child{border-bottom:none}
+.section-header{font-size:14px;font-weight:700;color:#111;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.02em}
+.section-text{margin:4px 0;font-size:14px;color:#222}
+.sub-label{font-size:12px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}
+.section ul,.section-list{margin:4px 0 4px 18px;padding:0;list-style:disc}
+.section ul li,.section-list li{font-size:14px;margin-bottom:3px;color:#222}
+.inv-priority{font-size:12px;color:#666;font-style:italic}
+.med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+.med-table thead tr{background:#f3f4f6}
+.med-table th{text-align:left;padding:7px 8px;font-size:12px;font-weight:700;border:1px solid #d1d5db;color:#333}
+.med-table td{padding:7px 8px;border:1px solid #d1d5db;vertical-align:top;color:#222}
+.th-num,.td-num{width:28px;text-align:center}
+.th-man,.td-man{width:90px;text-align:center}
+.th-dur,.td-dur{width:80px}
+.th-detail,.td-detail{width:140px}
+.td-name strong{font-size:13px;font-weight:700}
+.med-sub{font-size:12px;color:#555;margin-top:2px}
+.med-instruction{font-size:12px;color:#555;margin-top:3px;font-style:italic}
+.row-even{background:#fff}
+.row-odd{background:#f9fafb}
+.man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}
+.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}
+.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}
+.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}
+.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
+.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;color:#fff}
+.header-left{flex:1}
+.header-name{font-size:17px;font-weight:700;margin:0;letter-spacing:0.02em}
+.header-qual{font-size:11.5px;margin:3px 0 0;opacity:0.9}
+.header-right{text-align:right;flex-shrink:0;margin-left:24px}
+.header-clinic{font-size:12px;font-weight:600;margin:0;opacity:0.95}
+.header-addr{font-size:11px;margin:2px 0 0;opacity:0.85}
+.pres-footer{border-top:3px solid #024CDB;padding:8px 20px;text-align:center}
+.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
+.signature-wrapper{break-inside:avoid}
+.signature{text-align:right;padding:24px 20px 16px 16px}
+.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}
+.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
+.sig-date{font-size:12px;color:#555;margin:0}
+@media(max-width:640px){
+  .pres-wrapper{border-width:1px}
+  .pt-row{grid-template-columns:1fr;gap:2px}
+  .med-table{font-size:11px}
+  .med-table th,.med-table td{padding:5px 4px}
+  .th-detail,.td-detail{display:none}
+  .th-man,.td-man{width:70px}
+  .pres-header{flex-direction:column;gap:4px;text-align:center}
+  .header-right{text-align:center;margin-left:0}
 }
-
-function parseMedTime(time: any): string[] {
-  if (Array.isArray(time)) return time;
-  if (typeof time === 'string') {
-    try { const p = JSON.parse(time); return Array.isArray(p) ? p : []; } catch { return []; }
-  }
-  return [];
-}
+`;
 
 export default function PrescriptionPage() {
   const { token } = useParams<{ token: string }>();
+  const [htmlContent, setHtmlContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [data, setData] = useState<PrescriptionData | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string>('');
 
   useEffect(() => {
     if (!token) { setNotFound(true); setLoading(false); return; }
 
     (async () => {
-      try {
-        // Fetch consult by share_token
-        const { data: consult, error } = await supabase
-          .from('consult')
-          .select('*')
-          .eq('share_token', token)
-          .maybeSingle();
+      // Single RPC call — bypasses RLS via SECURITY DEFINER
+      const { data, error } = await supabase.rpc('get_shared_prescription', { p_token: token });
 
-        if (error || !consult) { setNotFound(true); setLoading(false); return; }
-
-        // Parallel fetch: patient, medicines, org config (for header/footer)
-        const [patientRes, medsRes, orgRes] = await Promise.all([
-          supabase.from('patients').select('name, age, gender, phone').eq('id', consult.patient_id).maybeSingle(),
-          supabase.from('consult_medicine').select('*').eq('consult_id', consult.id).order('created_at'),
-          supabase.from('organizations').select('name, prescription_config').eq('auth_id', consult.doc_id).maybeSingle(),
-        ]);
-
-        setData({
-          consult,
-          patient: patientRes.data || null,
-          medicines: medsRes.data || [],
-          orgConfig: orgRes.data || null,
-        });
-      } catch (e) {
-        console.error(e);
+      if (error) {
+        console.error('RPC error:', error);
+        setErrorDetail(error.message);
         setNotFound(true);
-      } finally {
         setLoading(false);
+        return;
       }
+      if (!data || !data.consult) {
+        setErrorDetail('No prescription found for this link');
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const consult = data.consult;
+      const patient = data.patient;
+      const rawMeds: any[] = data.medicines || [];
+      const orgData = data.org || {};
+      const presConfig = orgData.prescription_config || {};
+      const brandColor = presConfig.brand_color || '#024CDB';
+
+      // Doctor name (clean Dr. prefix)
+      const rawDoctorName = orgData.name || '';
+      const cleanDoctorName = rawDoctorName.replace(/^Dr\.?\s*/i, '').trim();
+      const doctorName = cleanDoctorName ? `Dr. ${cleanDoctorName}` : rawDoctorName;
+
+      // Parse summary
+      let summary = consult.consult_summary_final;
+      if (typeof summary === 'string') { try { summary = JSON.parse(summary); } catch { summary = null; } }
+      if (typeof summary === 'string') { try { summary = JSON.parse(summary); } catch { summary = null; } }
+      if (!summary || typeof summary !== 'object' || Object.keys(summary).length === 0) {
+        setErrorDetail('Consultation summary not yet available');
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      // Normalize medicines
+      const meds = rawMeds.map((m: any) => ({
+        name: m.name || '', dosage: m.dosage || '', quantity: m.quantity || '',
+        type: m.type || '', frequency: m.frequency || '', time: normalizeTime(m.time),
+        food: m.food || '', duration: m.duration || '', instructions: m.instructions || '',
+        flags: m.flags || '',
+      }));
+
+      const getMaNGrid = (time: string[], quantity: string): string => {
+        const qty = (quantity || '').trim() || '1';
+        const nt = (time || []).map((t) => t.toLowerCase());
+        const morning = nt.some((t) => t.includes('morning')) ? qty : '0';
+        const afternoon = nt.some((t) => t.includes('afternoon') || t.includes('noon')) ? qty : '0';
+        const night = nt.some((t) => t.includes('night') || t.includes('evening')) ? qty : '0';
+        return `<table class="man-grid"><tr><td class="man-val">${escapeHtml(morning)}</td><td class="man-sep">-</td><td class="man-val">${escapeHtml(afternoon)}</td><td class="man-sep">-</td><td class="man-val">${escapeHtml(night)}</td></tr><tr><td class="man-label">M</td><td class="man-sep"> </td><td class="man-label">A</td><td class="man-sep"> </td><td class="man-label">N</td></tr></table>`;
+      };
+
+      // Section ordering
+      const sectionOrder: string[] = presConfig.section_order || ['diagnosis','chief_complaints','history','past_medical_history','examination_findings','medications','treatment','investigations','followup'];
+
+      // HEADER (ALWAYS ON for WhatsApp page)
+      const hName = presConfig.print_header_doctor_name || doctorName || '';
+      const hQual = presConfig.print_header_qualifications || '';
+      const hClinic = presConfig.print_header_clinic_name || '';
+      const hAddr = presConfig.print_header_clinic_address || '';
+      const hReg = presConfig.print_header_reg_no || '';
+
+      let headerHtml = '';
+      if (hName) {
+        headerHtml = `<div class="pres-header" style="background:${brandColor}">
+          <div class="header-left">
+            <p class="header-name">${escapeHtml(hName)}</p>
+            ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` · Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
+          </div>
+          ${hClinic || hAddr ? `<div class="header-right">
+            ${hClinic ? `<p class="header-clinic">${escapeHtml(hClinic)}</p>` : ''}
+            ${hAddr ? `<p class="header-addr">${escapeHtml(hAddr)}</p>` : ''}
+          </div>` : ''}
+        </div>`;
+      }
+
+      // Patient info
+      const ptName = (patient?.name || '').toUpperCase();
+      const ptAge = patient?.age ? `${patient.age}${(patient?.gender || '').charAt(0)}` : '';
+      const ptDisplay = [ptName, ptAge].filter(Boolean).join(', ');
+      const visitDate = formatDate(consult.created_at);
+
+      let content = `<div class="pres-wrapper">${headerHtml}<div class="pt-info">`;
+      content += `<div class="pt-row"><div><p class="pt-name">${escapeHtml(ptDisplay)}</p></div>`;
+      content += `<div style="text-align:right">`;
+      if (patient?.uhid) content += `<span class="pt-meta"><span class="pt-label">UHID: </span><span class="pt-val">${escapeHtml(patient.uhid)}</span></span>`;
+      content += `</div></div>`;
+      content += `<div class="pt-row" style="margin-top:4px"><div><span class="pt-meta"><span class="pt-label">Date: </span><span class="pt-date-val">${escapeHtml(visitDate)}</span></span></div><div style="text-align:right"></div></div>`;
+      if (patient?.phone) content += `<div style="margin-top:4px"><span class="pt-meta"><span class="pt-label">Phone: </span><span class="pt-val">${escapeHtml(String(patient.phone))}</span></span></div>`;
+      content += `</div>`;
+
+      // Sections (same logic as generatePDFHTMLContent)
+      const sMap: Record<string, string> = {};
+
+      if (summary.diagnosis) {
+        let dc = '';
+        if (typeof summary.diagnosis === 'string') {
+          dc = `<p class="section-text">${escapeHtml(summary.diagnosis)}</p>`;
+        } else {
+          const d = summary.diagnosis as DiagnosisSummary;
+          const prov = Array.isArray(d.provisional) ? d.provisional : [];
+          if (prov.length) dc += `<p class="sub-label">Provisional Diagnosis</p>${toHtmlList(prov)}`;
+        }
+        if (dc) sMap['diagnosis'] = `<div class="section"><div class="section-header">Diagnosis / Provisional Diagnosis</div>${dc}</div>`;
+      }
+
+      if (summary.chief_complaints) {
+        const cc = summary.chief_complaints;
+        const h = Array.isArray(cc) ? toHtmlList(cc) : `<p class="section-text">${escapeHtml(String(cc))}</p>`;
+        sMap['chief_complaints'] = `<div class="section"><div class="section-header">Chief Complaints</div>${h}</div>`;
+      }
+
+      if (summary.history) sMap['history'] = `<div class="section"><div class="section-header">History</div><p class="section-text">${escapeHtml(summary.history)}</p></div>`;
+
+      if (summary.past_medical_history) {
+        const pmh = summary.past_medical_history;
+        const arr = Array.isArray(pmh) ? pmh : String(pmh).split('\n');
+        const cleaned = arr.map((s: unknown) => String(s).replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+        if (cleaned.length) sMap['past_medical_history'] = `<div class="section"><div class="section-header">Past Medical History (K/C/O)</div><p class="section-text">${escapeHtml(cleaned.join(', '))}</p></div>`;
+      }
+
+      if (summary.examination_findings) {
+        const ef = summary.examination_findings;
+        const arr = Array.isArray(ef) ? ef : [String(ef)];
+        const cleaned = arr.map((s: unknown) => String(s).trim()).filter(Boolean);
+        if (cleaned.length) sMap['examination_findings'] = `<div class="section"><div class="section-header">Examination Findings</div>${toHtmlList(cleaned)}</div>`;
+      }
+
+      if (meds.length > 0) {
+        const rows = meds.map((m, i) => {
+          const man = getMaNGrid(m.time, m.quantity || m.dosage || '');
+          const dq = (m.quantity || '').trim() || '1';
+          const det = [m.type ? `${dq} ${escapeHtml(m.type)}` : '', m.frequency ? escapeHtml(m.frequency) : '', m.food ? `${escapeHtml(m.food)} food` : ''].filter(Boolean).join(' | ');
+          const inst = m.instructions ? `<div class="med-instruction">${escapeHtml(m.instructions)}</div>` : '';
+          return `<tr class="${i % 2 === 0 ? 'row-even' : 'row-odd'}"><td class="td-num">${i + 1}.</td><td class="td-name"><strong>${escapeHtml(m.name || '')}</strong>${m.dosage && m.dosage !== m.quantity ? `<div class="med-sub">${escapeHtml(m.dosage)}</div>` : ''}${inst}</td><td class="td-man">${man}</td><td class="td-detail">${det || ''}</td><td class="td-dur">${escapeHtml(m.duration || '')}</td></tr>`;
+        }).join('');
+        sMap['medications'] = `<div class="section"><div class="section-header">Medication Prescribed</div><table class="med-table"><thead><tr><th class="th-num">#</th><th class="th-name">Medicine Name</th><th class="th-man">Dosage</th><th class="th-detail">Medicine Details</th><th class="th-dur">Duration</th></tr></thead><tbody>${rows}</tbody></table><p class="man-legend"><strong>M-A-N:</strong> Morning - Afternoon - Night</p></div>`;
+      }
+
+      if (summary.treatment_suggested) {
+        let th = '';
+        if (typeof summary.treatment_suggested === 'string') {
+          th = `<p class="section-text">${escapeHtml(summary.treatment_suggested)}</p>`;
+        } else {
+          const t = summary.treatment_suggested as TreatmentSummary;
+          if (Array.isArray(t.immediate_plan) && t.immediate_plan.length) th += `<p class="sub-label">Immediate Plan</p>${toHtmlList(t.immediate_plan)}`;
+          if (Array.isArray(t.contingent_plan) && t.contingent_plan.length) th += `<p class="sub-label">Contingent Plan</p>${toHtmlList(t.contingent_plan)}`;
+        }
+        if (th) sMap['treatment'] = `<div class="section"><div class="section-header">Treatment Suggested</div>${th}</div>`;
+      }
+
+      if (summary.investigations) {
+        let ih = '';
+        if (typeof summary.investigations === 'string' && summary.investigations.trim()) {
+          ih = `<p class="section-text">${escapeHtml(summary.investigations)}</p>`;
+        } else if (typeof summary.investigations === 'object') {
+          const inv = summary.investigations as InvestigationsSummary;
+          const ord = Array.isArray(inv.ordered) ? inv.ordered : [];
+          if (ord.length) ih += `<ul class="section-list">${ord.map((o: any) => `<li><strong>${escapeHtml(o?.name || '')}</strong>${o?.body_part_or_type ? ` — ${escapeHtml(o.body_part_or_type)}` : ''}${o?.priority ? ` <span class="inv-priority">(${escapeHtml(o.priority)})</span>` : ''}</li>`).join('')}</ul>`;
+          if (inv.notes) ih += `<p class="section-text">${escapeHtml(inv.notes)}</p>`;
+        }
+        if (ih) sMap['investigations'] = `<div class="section"><div class="section-header">Investigations</div>${ih}</div>`;
+      }
+
+      if (summary.followup_recommendations) {
+        const fu = summary.followup_recommendations;
+        const fh = Array.isArray(fu) ? toHtmlList(fu) : `<p class="section-text">${escapeHtml(String(fu))}</p>`;
+        sMap['followup'] = `<div class="section"><div class="section-header">Advice & Instructions</div>${fh}</div>`;
+      }
+
+      // Render in config order
+      for (const k of sectionOrder) { if (sMap[k]) content += sMap[k]; }
+      for (const k of Object.keys(sMap)) { if (!sectionOrder.includes(k)) content += sMap[k]; }
+
+      // Signature
+      const sigDept = presConfig.department || '';
+      content += `<div class="signature-wrapper"><div class="signature"><p class="sig-name">${escapeHtml(doctorName.toUpperCase())}</p>${sigDept ? `<p class="sig-dept">${escapeHtml(sigDept)}</p>` : ''}<p class="sig-date">Visit Date: ${escapeHtml(visitDate)}</p></div></div>`;
+
+      // FOOTER (ALWAYS ON for WhatsApp page)
+      const footerText = (presConfig.print_footer_text || '').replace(/[^\x00-\x7F]/g, '').trim();
+      if (footerText) {
+        content += `<div class="pres-footer" style="border-top-color:${brandColor}">${footerText.split('\n').map((l: string) => `<p>${escapeHtml(l.trim())}</p>`).join('')}</div>`;
+      }
+
+      content += `</div>`; // close pres-wrapper
+      setHtmlContent(content);
+      setLoading(false);
     })();
   }, [token]);
 
@@ -98,199 +294,27 @@ export default function PrescriptionPage() {
     );
   }
 
-  if (notFound || !data) {
+  if (notFound || !htmlContent) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="max-w-sm text-center">
           <h1 className="text-xl font-bold text-gray-900 mb-2">Prescription not found</h1>
           <p className="text-gray-500 text-sm">This link may have expired or is invalid. Please contact your doctor's clinic.</p>
+          {errorDetail && <p className="text-xs text-red-400 mt-3">{errorDetail}</p>}
         </div>
       </div>
     );
   }
 
-  const { consult, patient, medicines, orgConfig } = data;
-
-  // Parse summary
-  let summary: any = consult.consult_summary_final;
-  if (typeof summary === 'string') {
-    try { summary = JSON.parse(summary); } catch { summary = {}; }
-  }
-  if (typeof summary === 'string') {
-    try { summary = JSON.parse(summary); } catch { summary = {}; }
-  }
-
-  const presConfig = orgConfig?.prescription_config || {};
-  const brandColor = presConfig.brand_color || '#024CDB';
-  const doctorName = orgConfig?.name || '';
-  const cleanDoctorName = doctorName.replace(/^Dr\.?\s*/i, '').trim();
-
-  // Header fields (ALWAYS shown on public page)
-  const hName = presConfig.print_header_doctor_name || (cleanDoctorName ? `Dr. ${cleanDoctorName}` : '');
-  const hQual = presConfig.print_header_qualifications || '';
-  const hClinic = presConfig.print_header_clinic_name || '';
-  const hAddr = presConfig.print_header_clinic_address || '';
-  const hReg = presConfig.print_header_reg_no || '';
-  const footerText = presConfig.print_footer_text || '';
-  const department = presConfig.department || '';
-
-  const chiefComplaints = getSummaryField(summary, 'chief_complaints');
-  const diagnosis = getSummaryField(summary, 'diagnosis');
-  const history = getSummaryField(summary, 'history');
-  const treatment = getSummaryField(summary, 'treatment_suggested');
-  const investigations = getSummaryField(summary, 'investigations');
-  const followup = getSummaryField(summary, 'followup_recommendations');
-  const examination = getSummaryField(summary, 'examination_findings');
-
-  const visitDate = consult.created_at
-    ? new Date(consult.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '';
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header — solid brand-color bar (ALWAYS shown) */}
-      {hName && (
-        <div style={{ background: brandColor }} className="text-white px-5 py-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-bold tracking-wide">{hName}</h1>
-              {hQual && <p className="text-sm opacity-90 mt-0.5">{hQual}{hReg ? ` | Reg: ${hReg}` : ''}</p>}
-            </div>
-            {(hClinic || hAddr) && (
-              <div className="text-right text-sm">
-                {hClinic && <p className="font-semibold opacity-95">{hClinic}</p>}
-                {hAddr && <p className="opacity-85 text-xs mt-0.5">{hAddr}</p>}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
-
-        {/* Patient info */}
-        {patient && (
-          <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Patient</p>
-                <p className="text-gray-900 font-semibold text-lg">{patient.name}</p>
-                <p className="text-gray-500 text-sm">{patient.age} yrs · {patient.gender}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Date</p>
-                <p className="text-sm font-semibold text-gray-900">{visitDate}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Diagnosis */}
-        {diagnosis && (
-          <div className="bg-blue-50 rounded-xl border border-blue-200 px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5">Diagnosis</p>
-            <p className="text-gray-900 text-sm whitespace-pre-line leading-relaxed">{diagnosis}</p>
-          </div>
-        )}
-
-        {/* Chief complaints */}
-        {chiefComplaints && (
-          <Section title="Chief Complaints" text={chiefComplaints} />
-        )}
-
-        {/* History */}
-        {history && (
-          <Section title="History of Present Illness" text={history} />
-        )}
-
-        {/* Examination */}
-        {examination && (
-          <Section title="Examination Findings" text={examination} />
-        )}
-
-        {/* Medications */}
-        {medicines.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Medications</p>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {medicines.map((med, i) => {
-                const timeArr = parseMedTime(med.time);
-                return (
-                  <div key={med.id} className="px-4 py-3 flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style={{ background: `${brandColor}15`, color: brandColor }}>
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">
-                        {med.name}{med.dosage ? ` ${med.dosage}` : ''}{med.type ? ` (${med.type})` : ''}
-                      </p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                        {timeArr.length > 0 && <span className="text-xs text-gray-500">{timeArr.join(', ')}</span>}
-                        {med.food && <span className="text-xs text-gray-500">{med.food === 'AF' ? 'After food' : med.food === 'BF' ? 'Before food' : med.food}</span>}
-                        {med.duration && <span className="text-xs text-gray-500">for {med.duration}</span>}
-                      </div>
-                      {med.instructions && (
-                        <p className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-0.5 rounded inline-block">
-                          {med.instructions}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Investigations */}
-        {investigations && (
-          <Section title="Investigations Advised" text={investigations} />
-        )}
-
-        {/* Treatment */}
-        {treatment && (
-          <Section title="Treatment Plan" text={treatment} />
-        )}
-
-        {/* Follow-up */}
-        {followup && (
-          <div className="bg-emerald-50 rounded-xl border border-emerald-200 px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-1.5">Follow-Up & Instructions</p>
-            <p className="text-gray-800 text-sm whitespace-pre-line leading-relaxed">{followup}</p>
-          </div>
-        )}
-
-        {/* Doctor signature */}
-        <div className="text-right pt-2 pr-2">
-          {cleanDoctorName && <p className="font-bold text-gray-900">Dr. {cleanDoctorName}</p>}
-          {department && <p className="text-sm text-gray-600">{department}</p>}
-          <p className="text-xs text-gray-400 mt-0.5">{visitDate}</p>
-        </div>
-
-        {/* Footer */}
-        {footerText && (
-          <div className="text-center pt-2 pb-2 border-t-2" style={{ borderColor: brandColor }}>
-            {footerText.split('\n').map((line: string, i: number) => (
-              <p key={i} className="text-xs text-gray-500">{line}</p>
-            ))}
-          </div>
-        )}
-
-        <div className="text-center pb-6">
-          <p className="text-xs text-gray-300">Powered by Docflo</p>
-        </div>
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-[800px] mx-auto my-4 sm:my-6 px-2 sm:px-0">
+        <style dangerouslySetInnerHTML={{ __html: PRES_CSS }} />
+        <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
       </div>
-    </div>
-  );
-}
-
-function Section({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">{title}</p>
-      <p className="text-gray-800 text-sm whitespace-pre-line leading-relaxed">{text}</p>
+      <div className="text-center py-4">
+        <p className="text-xs text-gray-400">Shared securely · Powered by Docflo</p>
+      </div>
     </div>
   );
 }

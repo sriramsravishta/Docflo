@@ -129,9 +129,9 @@ export default function PrescriptionPage() {
       let headerHtml = '';
       if (hName) {
         const hasLogo = !!logoUrl;
-        headerHtml = `<div class="pres-header">
-                    ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" style="height:48px;width:auto;max-width:160px;object-fit:contain" /></div>` : ''}
-          <div class="header-info${hasLogo ? '' : ' no-logo'}">
+                headerHtml = `<div class="pres-header">
+          ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" style="height:48px;width:auto;max-width:160px;object-fit:contain" /></div>` : ''}
+          <div class="header-info"${hasLogo ? ' style="text-align:right"' : ''}>
             <p class="header-name">${escapeHtml(hName)}</p>
             ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` | Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
             ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}

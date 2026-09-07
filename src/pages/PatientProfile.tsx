@@ -716,7 +716,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
           ${hContact ? `<p class="header-contact">${escapeHtml(hContact)}</p>` : ''}
           ${hClinic || hAddr ? `<p class="header-contact">${[hClinic, hAddr].filter(Boolean).map(s => escapeHtml(s!)).join(', ')}</p>` : ''}
         </div>
-        ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ''}
+                ${hasLogo ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="" style="height:48px;width:auto;max-width:160px;object-fit:contain" /></div>` : ''}
       </div>`;
     }
 

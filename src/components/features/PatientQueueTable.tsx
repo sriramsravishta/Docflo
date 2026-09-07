@@ -277,7 +277,7 @@ export default function PatientQueueTable({
         <span className="sr-only">Move Down</span>
       </button>
 
-      {onReschedule && (
+            {onReschedule && (
         <button
           type="button"
           title="Reschedule"
@@ -286,6 +286,18 @@ export default function PatientQueueTable({
         >
           <CalendarClock className="w-4 h-4 text-gray-500" />
           <span className="sr-only">Reschedule</span>
+        </button>
+      )}
+
+      {onSendWhatsApp && apt.patients?.phone && (
+        <button
+          type="button"
+          title="Send booking via WhatsApp"
+          onClick={(e) => { e.stopPropagation(); onSendWhatsApp(apt); }}
+          className="p-1 rounded-md hover:bg-green-50"
+        >
+          <MessageCircle className="w-4 h-4 text-green-600" />
+          <span className="sr-only">WhatsApp</span>
         </button>
       )}
 

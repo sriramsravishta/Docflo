@@ -694,7 +694,31 @@ const resetDrafts: Record<string, MedicineDraft> = {};
     const ptUhid = patient?.uhid;
     const ptPhone = patient?.phone;
 
-    let content = `<div class="pres-wrapper"><div class="pt-info">`;
+        // Print header (if enabled)
+    const brandColor = presConfig?.brand_color || '#024CDB';
+    const printHeaderEnabled = presConfig?.print_header_enabled || false;
+    const printFooterEnabled = presConfig?.print_footer_enabled || false;
+
+    let headerHtml = '';
+    if (printHeaderEnabled) {
+      const hName = presConfig?.print_header_doctor_name || doctorName || '';
+      const hQual = presConfig?.print_header_qualifications || '';
+      const hClinic = presConfig?.print_header_clinic_name || '';
+      const hAddr = presConfig?.print_header_clinic_address || '';
+      const hReg = presConfig?.print_header_reg_no || '';
+      headerHtml = `<div class="pres-header" style="background:${brandColor}">
+        <div class="header-left">
+          <p class="header-name">${escapeHtml(hName)}</p>
+          ${hQual ? `<p class="header-qual">${escapeHtml(hQual)}${hReg ? ` · Reg: ${escapeHtml(hReg)}` : ''}</p>` : ''}
+        </div>
+        ${hClinic || hAddr ? `<div class="header-right">
+          ${hClinic ? `<p class="header-clinic">${escapeHtml(hClinic)}</p>` : ''}
+          ${hAddr ? `<p class="header-addr">${escapeHtml(hAddr)}</p>` : ''}
+        </div>` : ''}
+      </div>`;
+    }
+
+    let content = `<div class="pres-wrapper">${headerHtml}<div class="pt-info">`;
 
     content += `<div class="pt-row">`;
     content += `<div><p class="pt-name">${escapeHtml(ptDisplay)}</p></div>`;

@@ -33,7 +33,7 @@ export interface AppointmentRow {
   location_id?: string | null;
   scheduled_at?: string | null;
   created_at: string;
-  patients?: Pick<PatientRow, 'id' | 'name' | 'age' | 'gender' | 'phone' | 'last_visit_at' | 'case' | 'location_ids'>;
+  patients?: Pick<PatientRow, 'id' | 'name' | 'age' | 'gender' | 'phone' | 'last_visit_at' | 'case'>;
 }
 
 export interface PreConsultRow {
@@ -55,7 +55,7 @@ export interface ConsultRow {
   consult_summary_ai?: string | null;
     consult_summary_final?: Record<string, unknown> | string | null;
   summary_streaming?: { completed_sections: string[]; data: Record<string, unknown> } | null;
-      type?: 'consultation' | 'ot_note';
+  type?: 'consultation' | 'ot_note';
   status?: string;
   updated_at?: string;
   created_at: string;

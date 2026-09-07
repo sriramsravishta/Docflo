@@ -74,7 +74,8 @@ function AppRoutes() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={passwordRecovery ? <Navigate to="/reset-password" replace /> : <ProtectedRoute><MainPage /></ProtectedRoute>} />
             <Route path="/patient/:patientId" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
-            <Route path="/pre-consult/:preConsultId" element={<PreConsultForm />} />
+                        <Route path="/pre-consult/:preConsultId" element={<PreConsultForm />} />
+            <Route path="/rx/:token" element={<PrescriptionPage />} />
             <Route path="/clinical-summariser" element={<ProtectedRoute><ClinicalSummariserList /></ProtectedRoute>} />
             <Route path="/clinical-summariser/new" element={<ProtectedRoute><NewSummary /></ProtectedRoute>} />
             <Route path="/clinical-summariser/:id" element={<ProtectedRoute><SummaryDetail /></ProtectedRoute>} />

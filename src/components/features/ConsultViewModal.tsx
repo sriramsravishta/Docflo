@@ -12,7 +12,7 @@ import {
   History,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
-import { Mic, Square, MessageCircle, Printer } from 'lucide-react';
+import { Mic, Square, Printer } from 'lucide-react';
 import { useVoiceEdit } from '../../hooks/useVoiceEdit';
 import { supabase } from '../../lib/supabase';
 import AttachmentGallery from '../AttachmentGallery';
@@ -775,9 +775,8 @@ export default function ConsultViewModal(props: ConsultViewModalProps) {
     onLoadPrevious,
     onRetryOptimistic,
     onClose,
-        onDownloadPDF,
+    onDownloadPDF,
     onSavePDF,
-    onSendWhatsApp,
     formatDate,
     uiNow,
   } = props;
@@ -1085,14 +1084,6 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             </>
           )}
 
-                    <button
-            onClick={onSendWhatsApp}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>WhatsApp</span>
-          </button>
-
           <button
             onClick={onDownloadPDF}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
@@ -1204,14 +1195,6 @@ const viewDiagnosis = useMemo(() => diagnosisToText(summary?.diagnosis, hasFindi
             </>
           )}
           
-                    <button
-            onClick={onSendWhatsApp}
-            className="flex items-center gap-2 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>WhatsApp</span>
-          </button>
-
           <button
             onClick={onDownloadPDF}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"

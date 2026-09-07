@@ -252,6 +252,44 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     setAppointmentToRemove(null);
   };
 
+    const handleSendBookingWhatsApp = (appointment: AppointmentRow) => {
+    const pt = appointment.patients;
+    if (!pt?.phone) return;
+    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const locName = locations.find(l => l.id === appointment.location_id)?.name || '';
+
+    const scheduledAt = appointment.scheduled_at
+      ? new Date(appointment.scheduled_at)
+      : new Date();
+    const dateStr = scheduledAt.toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const timeStr = scheduledAt.toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+
+    const lines: string[] = [];
+    lines.push(`Dear ${pt.name},`);
+    lines.push('');
+    lines.push(`Your appointment with *Dr. ${doctorName}* has been confirmed! ✅`);
+    lines.push('');
+    lines.push('*Appointment Details:*');
+    lines.push(`📅 ${dateStr}`);
+    lines.push(`🕐 ${timeStr}`);
+    if (locName) lines.push(`📍 ${locName}`);
+    lines.push('');
+    lines.push('Please arrive 10 minutes before your scheduled time. Kindly carry any previous prescriptions, reports, or medical records for the doctor to review.');
+    lines.push('');
+    lines.push('For any changes or queries, please contact us in advance.');
+    lines.push('');
+    lines.push('Thank you & see you soon! 🙏');
+
+    const message = lines.join('\n');
+    let phoneNumber = pt.phone.replace(/\D/g, '');
+    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) phoneNumber = '91' + phoneNumber;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const onSubmitForm = async () => {
     if (existingPatient) {
       if (!checkExistingAppointment(existingPatient.id)) {

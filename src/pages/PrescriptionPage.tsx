@@ -62,7 +62,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}
 .sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
 .sig-date{font-size:12px;color:#555;margin:0}
-.pres-footer{padding:8px 20px;text-align:center}
+.pres-footer{border-top:1px solid #d1d5db;padding:8px 20px;text-align:center}
 .pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
 @media(max-width:640px){
   .pres-wrapper{border-width:1px}

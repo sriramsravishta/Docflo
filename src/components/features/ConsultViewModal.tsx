@@ -12,7 +12,7 @@ import {
   History,
 } from 'lucide-react';
 import { CreditCard as Edit } from 'lucide-react';
-import { Mic, Square } from 'lucide-react';
+import { Mic, Square, MessageCircle } from 'lucide-react';
 import { useVoiceEdit } from '../../hooks/useVoiceEdit';
 import { supabase } from '../../lib/supabase';
 import AttachmentGallery from '../AttachmentGallery';

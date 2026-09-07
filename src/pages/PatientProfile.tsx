@@ -1074,17 +1074,17 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}
 .sig-date{font-size:12px;color:#555;margin:0}
 
-/* Print header — solid brand-color bar */
-.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;color:#fff}
-.header-left{flex:1}
-.header-name{font-size:17px;font-weight:700;margin:0;letter-spacing:0.02em}
-.header-qual{font-size:11.5px;margin:3px 0 0;opacity:0.9}
-.header-right{text-align:right;flex-shrink:0;margin-left:24px}
-.header-clinic{font-size:12px;font-weight:600;margin:0;opacity:0.95}
-.header-addr{font-size:11px;margin:2px 0 0;opacity:0.85}
+/* Print header — clean white, doc left, logo right */
+.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}
+.header-info{flex:1;text-align:left}
+.header-logo{flex-shrink:0}
+.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}
+.header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}
+.header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}
+.header-contact{font-size:11px;color:#555;margin:2px 0 0}
 
 /* Print footer — thin accent line + centered text */
-.pres-footer{border-top:3px solid #024CDB;padding:8px 20px;text-align:center}
+.pres-footer{border-top:3px solid ${brandColor};padding:8px 20px;text-align:center}
 .pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
 
 /* Page margins — reduced when digital header/footer are active */

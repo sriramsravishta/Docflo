@@ -2118,7 +2118,8 @@ var imgs=document.images;if(imgs.length===0){window.print();}else{var n=0;functi
       setSelectedConsult(null);
       handleCancelEdit(); // ensures edit mode is reset when closing (same outcome as before)
     }}
-    onDownloadPDF={handleDownloadPDF}
+        onDownloadPDF={handleDownloadPDF}
+    onSavePDF={handleSavePDF}
     onSendWhatsApp={handleSendWhatsApp}
     formatDate={formatDate}
     uiNow={uiNow}

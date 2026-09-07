@@ -1106,9 +1106,27 @@ else{
     printWindow.document.close();
   };
 
-    const handleSendWhatsApp = async () => {
+        const handleSendWhatsApp = async () => {
     if (!selectedConsult || !patient) return;
-    const doctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+
+    const rawDoctorName = user?.user_metadata?.name || user?.email || 'Doctor';
+    const cleanName = rawDoctorName.replace(/^Dr\.?\s*/i, '').trim();
+
+    // Generate or reuse share_token
+    let token = (selectedConsult as any).share_token;
+    if (!token) {
+      const newToken = crypto.randomUUID();
+      const { error } = await supabase
+        .from('consult')
+        .update({ share_token: newToken })
+        .eq('id', selectedConsult.id);
+      if (error) { console.error('Failed to generate share token:', error); return; }
+      token = newToken;
+      setSelectedConsult((prev: any) => prev ? { ...prev, share_token: token } : prev);
+    }
+
+    const appBaseUrl = window.location.origin + window.location.pathname;
+    const prescriptionUrl = `${appBaseUrl}#/rx/${token}`;
 
     // Fetch WA branding config
     let waConfig: Record<string, any> = {};
@@ -1127,29 +1145,32 @@ else{
 
     // WA Header (if enabled)
     if (waConfig.wa_header_enabled && waConfig.wa_header_text) {
-      lines.push(waConfig.wa_header_text);
+      lines.push(waConfig.wa_header_text.replace(/[^\x00-\x7F]/g, '').trim());
       lines.push('');
     }
 
     lines.push(`Dear ${patient.name},`);
     lines.push('');
-    lines.push(`Thank you for your visit with *Dr. ${doctorName}* on *${formatDate(selectedConsult.created_at)}*. It was a pleasure seeing you today! 😊`);
+    lines.push(`Thank you for your visit with *Dr. ${cleanName}* on *${formatDate(selectedConsult.created_at)}*. It was a pleasure seeing you today.`);
     lines.push('');
-    lines.push('Your prescription has been prepared. Please take your medications on time and follow the instructions discussed during your consultation.');
+    lines.push('Your prescription is ready. Tap the link below to view it anytime:');
+    lines.push(prescriptionUrl);
     lines.push('');
-    lines.push('A little care goes a long way — take good care of yourself! If you have any questions or need anything at all, we are always here for you.');
+    lines.push('Please take your medications on time and follow the instructions discussed during your consultation. A little care goes a long way!');
     lines.push('');
-    lines.push('Wishing you good health and happiness! 🙏');
+    lines.push('If you have any questions, we are always here for you.');
+    lines.push('');
+    lines.push('Wishing you good health and happiness.');
     lines.push('');
     lines.push('Warm regards,');
-    lines.push(`*Dr. ${doctorName}*`);
+    lines.push(`*Dr. ${cleanName}*`);
     if (waConfig.department) lines.push(waConfig.department);
 
     // WA Footer (if enabled)
     if (waConfig.wa_footer_enabled && waConfig.wa_footer_text) {
       lines.push('');
-      lines.push('─────────────');
-      lines.push(waConfig.wa_footer_text);
+      lines.push('---');
+      lines.push(waConfig.wa_footer_text.replace(/[^\x00-\x7F]/g, '').trim());
     }
 
     const message = lines.join('\n');

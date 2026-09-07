@@ -1006,7 +1006,9 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       ? doctorNameResult
       : user?.user_metadata?.display_name || '—';
 
-               const isOTNote = (selectedConsult as any)?.type === 'ot_note';
+                              const isOTNote = (selectedConsult as any)?.type === 'ot_note';
+        const printHeaderEnabled = (presConfigResult as any)?.print_header_enabled || false;
+        const printFooterEnabled = (presConfigResult as any)?.print_footer_enabled || false;
         let htmlContent = isOTNote
           ? generateOTNotePDFContent(selectedConsult, finalDoctorName)
           : generatePDFHTMLContent(selectedConsult, referredBy, finalDoctorName, presConfigResult);

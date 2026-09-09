@@ -28,7 +28,6 @@ const COLUMNS: ColumnDef[] = [
   { key: 'date',       label: 'Last Visit',  defaultOn: true },
   { key: 'name',       label: 'Name',        defaultOn: true },
   { key: 'age_gender', label: 'Age & Gender',defaultOn: true },
-  { key: 'case',       label: 'Case',        defaultOn: false },
   { key: 'phone',      label: 'Phone',       defaultOn: false },
   { key: 'uhid',       label: 'UHID',        defaultOn: false },
   { key: 'diagnoses',  label: 'Diagnoses',   defaultOn: false, width: 'max-w-[200px]' },

@@ -400,14 +400,3 @@ export const FREQUENCY_OPTIONS = [
 export const FOOD_OPTIONS = ['Before food', 'After food', 'Not applicable'];
 
 export const TIME_OPTIONS = ['Morning', 'Afternoon', 'Night', 'Not applicable'];
-
-
-export const FREQUENCY_OPTIONS = [
-  'Once daily', 'Twice daily', 'Thrice daily', 'Four times daily',
-  'Every 8 hours', 'Every 6 hours', 'Every 12 hours',
-  'Once weekly', 'Twice weekly', 'As needed (SOS)',
-];
-
-export const FOOD_OPTIONS = ['Before', 'After', 'With'];
-
-export const TIME_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Night'];

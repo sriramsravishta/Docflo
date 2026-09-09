@@ -119,9 +119,11 @@ function MobileRow({ patient, visibleCols, formatDate }: { patient: Patient; vis
 export default function AllPatientsTable({
   patients,
   formatDate,
+  userId,
 }: {
   patients: Patient[];
   formatDate: (s: string) => string;
+  userId?: string;
 }) {
   const navigate = useNavigate();
 

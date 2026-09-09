@@ -256,20 +256,20 @@ export default function SummaryTab({ docId }: { docId: string }) {
         </div>
       ) : (
         <>
-          {/* Desktop table */}
+                    {/* Desktop table */}
           <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Time</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Patient</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Diagnosis</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Outcome</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Action Needed</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Follow-up</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Surgery Date</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Notes</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Time</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Patient</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Diagnosis</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Outcome</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Action Needed</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Follow-up</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Surgery Date</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -288,8 +288,13 @@ export default function SummaryTab({ docId }: { docId: string }) {
                         </button>
                         <p className="text-xs text-gray-500">{row.patients?.age}y · {row.patients?.gender}</p>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-[140px] truncate">
-                        {safeGetDiagnosis(row)}
+                                            <td className="px-4 py-3 text-sm text-gray-700">
+                        <span
+                          className="block truncate max-w-[140px] cursor-default"
+                          title={safeGetDiagnosis(row)}
+                        >
+                          {safeGetDiagnosis(row)}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <select

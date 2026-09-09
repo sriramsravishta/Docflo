@@ -133,10 +133,19 @@ export default function AllPatientsTable({
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
 
-  const [showColPicker, setShowColPicker] = useState(false);
+    const [showColPicker, setShowColPicker] = useState(false);
   const [enabledCols, setEnabledCols] = useState<Set<ColumnKey>>(
     new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key))
   );
+
+  useEffect(() => {
+    if (!userId) return;
+    getUserPreferences(userId).then((prefs) => {
+      if (Array.isArray(prefs.patients_table_cols)) {
+        setEnabledCols(new Set(prefs.patients_table_cols as ColumnKey[]));
+      }
+    });
+  }, [userId]);
 
   const toggleCol = (key: ColumnKey) => {
     // Name column always visible — can't toggle off

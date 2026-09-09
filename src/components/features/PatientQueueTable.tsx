@@ -84,7 +84,12 @@ function MobileRow({
             className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
           />
           <div className="min-w-0">
-            <span className="font-medium text-gray-900 truncate block">{p?.name}</span>
+                        <span className="font-medium text-gray-900 truncate block">{p?.name}</span>
+            {p && (
+              p.last_visit_at
+                ? <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Follow-up</span>
+                : <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">New</span>
+            )}
             {appointmentWhen(appointment) && (
               <span className="text-xs text-gray-500">{formatTimeShort(appointmentWhen(appointment)!)}</span>
             )}

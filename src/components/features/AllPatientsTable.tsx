@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Filter, Columns3 } from 'lucide-react';
+import { getUserPreferences, setUserPreference } from '../../lib/database';
 
 interface Patient {
   id: string;

@@ -1324,3 +1324,27 @@ export const getAllCanonicalDiagnoses = async (docId: string): Promise<{ canonic
     .map(([canonical, count]) => ({ canonical, count }))
     .sort((a, b) => b.count - a.count);
 };
+
+
+export const getUserPreferences = async (authId: string): Promise<Record<string, any>> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('preferences')
+    .eq('auth_id', authId)
+    .single();
+  if (error || !data) return {};
+  return data.preferences || {};
+};
+
+export const setUserPreference = async (authId: string, key: string, value: any): Promise<void> => {
+  const { data } = await supabase
+    .from('users')
+    .select('preferences')
+    .eq('auth_id', authId)
+    .single();
+  const current = data?.preferences || {};
+  await supabase
+    .from('users')
+    .update({ preferences: { ...current, [key]: value } })
+    .eq('auth_id', authId);
+};

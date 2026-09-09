@@ -147,12 +147,12 @@ export default function AllPatientsTable({
     });
   }, [userId]);
 
-  const toggleCol = (key: ColumnKey) => {
-    // Name column always visible — can't toggle off
+    const toggleCol = (key: ColumnKey) => {
     if (key === 'name') return;
     setEnabledCols((prev) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
+      if (userId) setUserPreference(userId, 'patients_table_cols', [...next]);
       return next;
     });
   };

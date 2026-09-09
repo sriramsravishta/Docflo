@@ -239,7 +239,14 @@ export default function PatientQueueTable({
                   <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                     {appointmentWhen(apt) ? formatDateTimeShort(appointmentWhen(apt)!) : <span className="text-gray-400">—</span>}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{p?.name}</td>
+                                   <td className="px-4 py-3">
+                    <span className="font-medium text-gray-900 block">{p?.name}</span>
+                    {p && (
+                      p.last_visit_at
+                        ? <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Follow-up</span>
+                        : <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">New</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p?.age}yrs · {p?.gender}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {p?.last_visit_at ? formatDate(p.last_visit_at) : <span className="text-gray-400">—</span>}

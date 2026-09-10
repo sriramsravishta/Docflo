@@ -1034,6 +1034,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 
 /* FIX: Margin is strictly 0, solid border on all sides */
 .pres-wrapper{border:1.5px solid #111;margin:0;padding:0}
+.no-header-spacing{padding-top:24px}
+.no-footer-spacing{padding-bottom:24px}
 
 .pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}
 .pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}

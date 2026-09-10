@@ -1090,7 +1090,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 .pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
 
 /* Page margins — reduced when digital header/footer are active */
-@page{margin-top:${printHeaderEnabled ? '12mm' : '20mm'};margin-bottom:${printFooterEnabled ? '12mm' : '20mm'};margin-left:12mm;margin-right:12mm}
+@page{margin:20mm 12mm}
 
 /* FIX: Removed the code that hid the borders during print */
 @media print{body{margin:0}}

@@ -720,7 +720,7 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       </div>`;
     }
 
-    let content = `<div class="pres-wrapper">${headerHtml}<div class="pt-info">`;
+       let content = `<div class="pres-wrapper${!printHeaderEnabled ? ' no-header-spacing' : ''}${!printFooterEnabled ? ' no-footer-spacing' : ''}">${headerHtml}<div class="pt-info">`;
 
     content += `<div class="pt-row">`;
     content += `<div><p class="pt-name">${escapeHtml(ptDisplay)}</p></div>`;

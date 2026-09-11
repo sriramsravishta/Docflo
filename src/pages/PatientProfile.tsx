@@ -1174,8 +1174,9 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
     } catch (err) {
       console.error('PDF download error:', err);
       alert('Failed to download PDF. Please try the Print button instead.');
-    } finally {
+        } finally {
       document.body.removeChild(container);
+      document.head.removeChild(styleEl);
     }
   };
 

@@ -141,7 +141,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
     setFilterDate('');
     setFilterFrom('');
     setFilterTo('');
-    setAppliedMode('today');
+        setAppliedMode('specific');
     setAppliedDate('');
     setAppliedFrom('');
     setAppliedTo('');

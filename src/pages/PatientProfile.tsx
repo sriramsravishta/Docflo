@@ -1096,20 +1096,23 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
 
 /* FIX: Removed the code that hid the borders during print */
 @media print{body{margin:0}}
-</style></head><body>${htmlContent}<script>
-window.onafterprint=function(){window.close()};
-var imgs=document.images;
-if(imgs.length===0){window.focus();window.print();}
-else{
-  var n=0;
-  function tryPrint(){n++;if(n>=imgs.length){window.focus();window.print();}}
-  for(var i=0;i<imgs.length;i++){
-    if(imgs[i].complete){tryPrint();}
-    else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}
-  }
-}
-</script></body></html>`);
-    printWindow.document.close();
+</style></head><body>${htmlContent}</body></html>`);
+    iframeDoc.close();
+    const triggerPrint = () => {
+      iframe.contentWindow!.focus();
+      iframe.contentWindow!.print();
+      iframe.contentWindow!.onafterprint = () => { document.body.removeChild(iframe); };
+    };
+    const imgs = iframeDoc.images;
+    if (imgs.length === 0) { setTimeout(triggerPrint, 100); }
+    else {
+      let loaded = 0;
+      const onReady = () => { loaded++; if (loaded >= imgs.length) setTimeout(triggerPrint, 100); };
+      for (let i = 0; i < imgs.length; i++) {
+        if (imgs[i].complete) onReady();
+        else { imgs[i].onload = onReady; imgs[i].onerror = onReady; }
+      }
+    }
   };
 
         const handleSavePDF = async () => {

@@ -148,7 +148,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
     setShowFilter(false);
   };
 
-  const hasActiveFilter = appliedMode !== 'today';
+    const hasActiveFilter = appliedMode !== 'none';
 
   const filtered = outcomes.filter((o) => {
     if (activeSubTab === 'all') return true;

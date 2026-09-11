@@ -212,7 +212,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
             </button>
           )}
           <button
-            onClick={() => setShowFilter(true)}
+                        onClick={() => { setFilterMode('specific'); setShowFilter(true); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
               hasActiveFilter
                 ? 'bg-[#024CDB] text-white border-[#024CDB]'

@@ -136,12 +136,12 @@ export default function SummaryTab({ docId }: { docId: string }) {
     setShowFilter(false);
   };
 
-  const clearFilter = () => {
-        setFilterMode('specific');
+    const clearFilter = () => {
+        setFilterMode('none');
     setFilterDate('');
     setFilterFrom('');
     setFilterTo('');
-        setAppliedMode('specific');
+        setAppliedMode('none');
     setAppliedDate('');
     setAppliedFrom('');
     setAppliedTo('');

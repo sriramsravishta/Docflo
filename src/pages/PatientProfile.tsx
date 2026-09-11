@@ -1152,23 +1152,36 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
     const ptAge = patient?.age || '';
     const ptGender = patient?.gender || '';
     const fileName = `${ptName}_${ptAge}_${ptGender}`;
-    const saveWindow = window.open('', '_blank');
-    if (!saveWindow) { alert('Pop-up blocked. Please allow pop-ups to save the PDF.'); return; }
-    saveWindow.document.open();
-    saveWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>${fileName}</title><style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;font-size:14px;background:#fff}
+        const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;';
+    container.innerHTML = `<style>
+*{box-sizing:border-box}div{font-family:Arial,sans-serif;line-height:1.6;color:#111;font-size:14px}
 .pres-wrapper{border:1.5px solid #111;margin:0;padding:0}
 .pt-info{padding:14px 16px 12px 16px;border-bottom:1px solid #ccc}.pt-row{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-bottom:2px}.pt-name{font-size:16px;font-weight:700;text-transform:uppercase;color:#111;margin:0 0 4px 0}.pt-meta{font-size:13px;color:#333}.pt-label{font-weight:400;color:#555}.pt-val{font-weight:400;color:#111}.pt-date-val{font-weight:700;color:#111}
 .section{margin:0;padding:12px 16px;border-bottom:1px solid #ccc}.section:last-child{border-bottom:none}.section-header{font-size:14px;font-weight:700;color:#111;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.02em}.section-text{margin:4px 0;font-size:14px;color:#222}.sub-label{font-size:12px;font-weight:700;color:#444;margin:8px 0 4px 0;text-transform:uppercase;letter-spacing:0.03em}.section-list{margin:4px 0 4px 18px;padding:0}.section-list li{font-size:14px;margin-bottom:3px;color:#222}.inv-priority{font-size:12px;color:#666;font-style:italic}
 .med-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.med-table thead tr{background:#f3f4f6}.med-table th{text-align:left;padding:7px 8px;font-size:12px;font-weight:700;border:1px solid #d1d5db;color:#333}.med-table td{padding:7px 8px;border:1px solid #d1d5db;vertical-align:top;color:#222}.th-num,.td-num{width:28px;text-align:center}.th-man,.td-man{width:90px;text-align:center}.th-dur,.td-dur{width:80px}.th-detail,.td-detail{width:140px}.td-name strong{font-size:13px;font-weight:700}.med-sub{font-size:12px;color:#555;margin-top:2px}.med-instruction{font-size:12px;color:#555;margin-top:3px;font-style:italic}.row-even{background:#fff}.row-odd{background:#f9fafb}
 .man-grid{border-collapse:collapse;margin:0 auto;font-size:11px}.man-val{font-weight:700;text-align:center;padding:1px 4px;color:#111}.man-label{font-size:10px;text-align:center;color:#555;padding:0 4px}.man-sep{text-align:center;padding:1px 1px;color:#999;font-weight:400}.man-legend{font-size:10px;color:#666;margin-top:6px;font-style:italic}
-.signature-wrapper{break-inside:avoid;page-break-inside:avoid}.signature{text-align:right;padding:24px 20px 16px 16px}.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}.sig-date{font-size:12px;color:#555;margin:0}
-.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;color:#fff}.header-left{flex:1}.header-name{font-size:17px;font-weight:700;margin:0;letter-spacing:0.02em}.header-qual{font-size:11.5px;margin:3px 0 0;opacity:0.9}.header-right{text-align:right;flex-shrink:0;margin-left:24px}.header-clinic{font-size:12px;font-weight:600;margin:0;opacity:0.95}.header-addr{font-size:11px;margin:2px 0 0;opacity:0.85}
+.signature-wrapper{break-inside:avoid}.signature{text-align:right;padding:24px 20px 16px 16px}.sig-name{font-size:14px;font-weight:700;text-transform:uppercase;margin:0 0 2px 0;color:#111}.sig-dept{font-size:13px;font-weight:400;color:#111;margin:0 0 2px 0}.sig-date{font-size:12px;color:#555;margin:0}
+.pres-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid #e5e7eb;gap:16px}.header-info{flex:1;text-align:left}.header-logo{flex-shrink:0}.header-logo img{height:48px;width:auto;object-fit:contain;max-width:160px}.header-name{font-size:17px;font-weight:700;color:#111;margin:0;letter-spacing:0.01em}.header-qual{font-size:11px;color:#555;margin:2px 0 0;font-weight:400}.header-contact{font-size:11px;color:#555;margin:2px 0 0}
 .pres-footer{border-top:1px solid #d1d5db;padding:8px 20px;text-align:center}.pres-footer p{font-size:10.5px;color:#555;margin:1px 0}
-@page{margin:12mm}@media print{body{margin:0}}
-</style></head><body>${htmlContent}<script>
-var imgs=document.images;if(imgs.length===0){window.print();}else{var n=0;function tryPrint(){n++;if(n>=imgs.length){window.print();}}for(var i=0;i<imgs.length;i++){if(imgs[i].complete)tryPrint();else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}</script></body></html>`);
-    saveWindow.document.close();
+</style>${htmlContent}`;
+    document.body.appendChild(container);
+    try {
+      const { default: html2pdf } = await import('html2pdf.js');
+      await html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `${fileName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      }).from(container).save();
+    } catch (err) {
+      console.error('PDF download error:', err);
+      alert('Failed to download PDF. Please try the Print button instead.');
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
             const handleSendWhatsApp = async () => {

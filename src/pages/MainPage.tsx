@@ -125,7 +125,8 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
     return groups;
   })();
 
-    const [showFilters, setShowFilters] = useState(false);
+        const [showFilters, setShowFilters] = useState(false);
+  const [showColPicker, setShowColPicker] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     dateMode: 'none',
     date: '',

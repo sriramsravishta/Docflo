@@ -266,28 +266,7 @@ export default function AllPatientsTable({
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-end gap-2 mb-3">
-        {hasActiveFilter && (
-          <button onClick={clearFilter} className="text-xs text-gray-500 hover:text-gray-700 underline">
-            Clear filter
-          </button>
-        )}
-        <button
-          onClick={() => setShowColPicker((v) => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${showColPicker ? 'bg-[#024CDB] text-white border-[#024CDB]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
-        >
-          <Columns3 className="w-4 h-4" />
-          Columns
-        </button>
-        <button
-          onClick={() => setShowFilter(true)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${hasActiveFilter ? 'bg-[#024CDB] text-white border-[#024CDB]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
-        >
-          <Filter className="w-4 h-4" />
-          {hasActiveFilter ? 'Filtered' : 'Filter'}
-        </button>
-      </div>
+     
 
       {/* Desktop table */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">

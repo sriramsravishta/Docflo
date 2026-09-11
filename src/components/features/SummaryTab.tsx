@@ -137,7 +137,7 @@ export default function SummaryTab({ docId }: { docId: string }) {
   };
 
   const clearFilter = () => {
-    setFilterMode('today');
+        setFilterMode('specific');
     setFilterDate('');
     setFilterFrom('');
     setFilterTo('');

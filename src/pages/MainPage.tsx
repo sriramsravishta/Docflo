@@ -552,7 +552,7 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
             ) : filteredAllPatients.length === 0 ? (
               <EmptyState message="No patients found" />
             ) : (
-                           <AllPatientsTable patients={filteredAllPatients} formatDate={formatDate} userId={user?.id} />
+                                                     <AllPatientsTable patients={filteredAllPatients} formatDate={formatDate} userId={user?.id} showColPicker={showColPicker} setShowColPicker={setShowColPicker} />
             )}
           </section>
         </div>

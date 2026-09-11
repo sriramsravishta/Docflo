@@ -486,6 +486,13 @@ const [referredBy, setReferredBy] = useState(''); // CHANGED: added referredBy (
                     Clear all
                   </button>
                 )}
+                                <button
+                  onClick={() => setShowColPicker((v) => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${showColPicker ? 'bg-[#024CDB] text-white border-[#024CDB]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                >
+                  <Columns3 className="w-4 h-4" />
+                  Columns
+                </button>
                 <button
                   onClick={() => setShowFilters(true)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${

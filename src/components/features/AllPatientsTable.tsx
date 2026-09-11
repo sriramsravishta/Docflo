@@ -120,10 +120,14 @@ export default function AllPatientsTable({
   patients,
   formatDate,
   userId,
+  showColPicker,
+  setShowColPicker,
 }: {
   patients: Patient[];
   formatDate: (s: string) => string;
   userId?: string;
+  showColPicker: boolean;
+  setShowColPicker: (v: boolean) => void;
 }) {
   const navigate = useNavigate();
 

@@ -137,7 +137,7 @@ export default function AllPatientsTable({
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
 
-    const [showColPicker, setShowColPicker] = useState(false);
+       // showColPicker is now controlled via props from MainPage
   const [enabledCols, setEnabledCols] = useState<Set<ColumnKey>>(
     new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key))
   );

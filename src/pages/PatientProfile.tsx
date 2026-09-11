@@ -2140,7 +2140,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;
       setSelectedConsult(null);
       handleCancelEdit(); // ensures edit mode is reset when closing (same outcome as before)
     }}
-        onDownloadPDF={handleDownloadPDF}
+                onDownloadPDF={handleDownloadPDF}
+    onSavePDF={handleSavePDF}
     onSendWhatsApp={handleSendWhatsApp}
     formatDate={formatDate}
     uiNow={uiNow}

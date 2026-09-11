@@ -449,14 +449,14 @@ export default function SummaryTab({ docId }: { docId: string }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
-              {(['today', 'specific', 'range'] as const).map((m) => (
+                        <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
+              {(['specific', 'range'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMode(m)}
                   className={`flex-1 py-2 text-sm font-medium transition-colors ${filterMode === m ? 'bg-[#024CDB] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
-                  {m === 'today' ? 'Today' : m === 'specific' ? 'Date' : 'Range'}
+                  {m === 'specific' ? 'Date' : 'Range'}
                 </button>
               ))}
             </div>

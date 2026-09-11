@@ -1024,11 +1024,13 @@ const resetDrafts: Record<string, MedicineDraft> = {};
       }
     }
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) { alert('Pop-up blocked. Please allow pop-ups to download the PDF.'); return; }
-    printWindow.document.open();
-    // CHANGED: Replaced with Apollo-inspired clean print styles
-    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+       const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc || !iframe.contentWindow) { document.body.removeChild(iframe); return; }
+    iframeDoc.open();
+    iframeDoc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:0;padding:0;line-height:1.6;color:#111;font-size:14px;background:#fff}
 
